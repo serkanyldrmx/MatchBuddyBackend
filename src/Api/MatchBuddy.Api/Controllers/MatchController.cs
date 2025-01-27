@@ -115,7 +115,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _matchService.GetMatchTeam(matchId);
             return result.Data;
         }
-
+        //test
         //Maçtaki Takımları kayıt eder
         [HttpPost("SaveMatchTeam")]
         public IActionResult SaveMatchTeam(MatchTeamModel matchTeamModel)
