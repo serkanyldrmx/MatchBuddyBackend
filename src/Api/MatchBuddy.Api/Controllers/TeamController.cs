@@ -52,24 +52,21 @@ namespace MatchBuddy.Api.Controllers
             return BadRequest(result);
         }
 
-        //[HttpPost("SavePlayerTeam")]
-        //public IActionResult SavePlayerTeam(TeamModel teamModel)
-        //{
-        //    var playerTeam = new PlayerTeam()
-        //    {
-        //        PlayerId = teamModel.PlayerById,
-        //        TeamId = teamModel.TeamId // group nesnesinin Id'sini kullanarak gruba ait olduğu belirtiliyor
-        //    };
-
-        //    var result1 = _playerTeamService.Add(playerTeam);
-
-        //    if (!result1.Success)
-        //    {
-        //        return BadRequest(result1); // Eğer ekleme işlemi başarısız olursa, döngüyü sonlandırıp hata döndürüyoruz
-        //    }
-        //    return Ok(result1);
-        //    return BadRequest(result1);
-        //}
+        //Maç silmek için
+        [HttpPost("DeleteTeam")]
+        public IActionResult DeleteTeam(int teamId)
+        {
+            var team = new Team()
+            {
+                TeamId = teamId,
+            };
+            var result = _teamService.Delete(team);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
         [HttpGet("GetTeamList")]
         public List<GetTeamAndPlayer> GetTeamList()

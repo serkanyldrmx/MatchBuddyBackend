@@ -18,6 +18,7 @@ namespace MatchBuddy.DataAccess
             services.AddScoped<IGroupMessageDal, EFGroupMessageDal>();
             services.AddScoped<IGroupPlayerDal, EFGroupPLayerDal>();
             services.AddScoped<IMatchTeamDal, EFMatchTeamDal>();
+            services.AddScoped<IMatchCommentsDal, EFMatchCommentsDal>();
         }
     }
 }
