@@ -74,8 +74,19 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
         }
 
+        public void MatchLiked(int matchId)
+        {
+            using (MatchBuddyContext context = new MatchBuddyContext())
+            {
+                var match = context.Matchs.FirstOrDefault(m => m.MatchId == matchId);
 
-
+                if (match != null)
+                {
+                    match.Likes += 1;
+                    context.SaveChanges();
+                }
+            }
+        }
 
         public List<MatchComentsDto> GetMatchComents(int matchId)
         {

@@ -86,6 +86,12 @@ namespace MatchBuddy.Business.Concrete
             return new Result(true, Messages.Update);
         }
 
+        public IResult MatchLiked(int matchId)
+        {
+            _matchDal.MatchLiked(matchId);
+            return new Result(true, Messages.Update);
+        }
+
         //public IDataResult<List<Match>> StadiumToMatchDateControl(Match match)
         //{
 

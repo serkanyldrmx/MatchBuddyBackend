@@ -15,6 +15,7 @@ namespace MatchBuddy.Business.Abstract
         IResult Delete(Match match);
         //Maç silme
         IResult Update(Match match);
+        IResult MatchLiked(int matchId);
         //Maç ekle - oluştur
         IDataResult<List<MatchComentsDto>> GetMatchComents(int matchId);
         IDataResult<List<MatchTeamDto>> GetMatchTeam(int matchId);

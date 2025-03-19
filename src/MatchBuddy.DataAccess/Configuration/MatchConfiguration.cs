@@ -32,6 +32,10 @@ namespace MatchBuddy.DataAccess.Configuration
                 .Property(b => b.IsActive)
                 .IsRequired();
 
+            builder
+                .Property(b => b.Likes)
+                .IsRequired();
+
             builder.HasOne(x => x.Stadium)
                 .WithMany(x => x.Matches)
                 .HasPrincipalKey(x => x.StadiumId)

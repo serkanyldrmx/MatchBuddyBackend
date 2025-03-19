@@ -32,7 +32,7 @@ namespace MatchBuddy.Business.Concrete
 
         public IResult Delete(MatchComment matchComment)
         {
-            _matchCommentsDal.Add(matchComment);
+            _matchCommentsDal.Delete(matchComment);
             return new Result(true, Messages.Deleted);
         }
 

@@ -108,6 +108,17 @@ namespace MatchBuddy.Api.Controllers
             return result.Data;
         }
 
+        [HttpGet("MatchLiked")]
+        public IActionResult MatchLiked([FromQuery] int matchId)
+        {
+            var result = _matchService.MatchLiked(matchId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
         //bir maçtaki takımları ve bu takımlardaki oyuncu bilgilerini getirir
         [HttpGet("GetMatchTeamInfo")]
         public List<MatchTeamDto> GetMatchTeamInfo([FromQuery] int matchId)

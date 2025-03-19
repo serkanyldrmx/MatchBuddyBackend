@@ -8,6 +8,7 @@ namespace MatchBuddy.DataAccess.Abstract
     {
         List<MatchComentsDto> GetMatchComents(int matchId);
         List<MatchTeamDto> GetMatchTeam(int matchId);
+        void MatchLiked(int matchId);
         void MatchStatusUpdate(int matchId, byte status);
         List<Match> GetMatchToDate(Match match);
     }
