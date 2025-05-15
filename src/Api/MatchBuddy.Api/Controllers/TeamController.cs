@@ -52,6 +52,27 @@ namespace MatchBuddy.Api.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("SaveTeamByPlayerId")]
+        public IActionResult SaveTeamByPlayerId(TeamPlayerIdModel playerIdModel)
+        {
+            if (playerIdModel.PlayerIds != null && playerIdModel.TeamId != null)
+            {
+                var result1 = _teamService.AddPlayerById(playerIdModel.PlayerIds, playerIdModel.TeamId);
+
+                if (!result1.Success)
+                {
+                    return BadRequest(result1);
+                }
+
+                return Ok(true); // tüm kullanıcılar başarıyla eklendiyse burada dönüş yapılır
+            }
+            else
+            {
+                return BadRequest("PlayerId veya TeamId null olamaz.");
+            }
+        }
+
+
         //Maç silmek için
         [HttpPost("DeleteTeam")]
         public IActionResult DeleteTeam(int teamId)

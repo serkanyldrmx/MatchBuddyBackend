@@ -20,5 +20,7 @@ namespace MatchBuddy.Entities.Entity
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }
         public List<GroupPlayer> GroupPlayers { get; set; }
+        public List<PlayerNotification> PlayerNotifications { get; set; }
+
     }
 }

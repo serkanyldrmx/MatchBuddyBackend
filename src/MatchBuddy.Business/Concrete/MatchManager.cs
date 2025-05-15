@@ -77,12 +77,14 @@ namespace MatchBuddy.Business.Concrete
         public IResult AddMatchTeam(MatchTeam matchTeam)
         {
             _matchTeamDal.Add(matchTeam);
+            _matchDal.AddNotificationToMatch(matchTeam.MatchId, matchTeam.TeamId);
             return new Result(true, Messages.Added);
         }
 
         public IResult MatchStatusUpdate(int matchId, byte status)
         {
             _matchDal.MatchStatusUpdate(matchId, status);
+            _matchDal.NotificationMatchStatusUpdate(matchId, status);
             return new Result(true, Messages.Update);
         }
 

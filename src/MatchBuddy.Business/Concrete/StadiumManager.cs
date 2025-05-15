@@ -24,6 +24,7 @@ namespace MatchBuddy.Business.Concrete
                 return new ErrorResult(Messages.PlayerNameInvalid);
             }
             _stadiumDal.Add(stadium);
+            _stadiumDal.AddNotificationStadium(stadium);
             return new Result(true, Messages.Added);
         }
 

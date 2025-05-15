@@ -21,12 +21,54 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                              {
                                  TeamId = teamGroup.Key.TeamId,
                                  TeamName = teamGroup.Key.TeamName,
-                                 PlayerName = teamGroup.Where(x => x != null).Select(x => x.UserName).ToList()
+                                 PlayerName = teamGroup.Where(x => x != null).Select(x => x.UserName).ToList(),
+                                 PlayerId = teamGroup.Where(x => x != null).Select(x => x.PlayerId).ToList()
                              };
 
                 return result.ToList();
             }
         }
+
+        public void SaveTeamByPlayerId(List<int> playerIds, int teamId)
+        {
+            using (MatchBuddyContext context = new MatchBuddyContext())
+            {
+                // Takımın mevcut oyuncularını al
+                var existingPlayerIds = context.PlayerTeam
+                    .Where(pt => pt.TeamId == teamId)
+                    .Select(pt => pt.PlayerId)
+                    .ToList();
+
+                // Eklenmesi gereken yeni oyuncular (yeni gelen listede olup veritabanında olmayanlar)
+                var playersToAdd = playerIds.Except(existingPlayerIds).ToList();
+
+                // Silinmesi gereken oyuncular (veritabanında olup yeni gelen listede olmayanlar)
+                var playersToRemove = existingPlayerIds.Except(playerIds).ToList();
+
+                // Ekleme işlemi
+                foreach (var playerId in playersToAdd)
+                {
+                    context.PlayerTeam.Add(new PlayerTeam
+                    {
+                        PlayerId = playerId,
+                        TeamId = teamId
+                    });
+                }
+
+                // Silme işlemi
+                foreach (var playerId in playersToRemove)
+                {
+                    var playerTeam = context.PlayerTeam.FirstOrDefault(pt => pt.TeamId == teamId && pt.PlayerId == playerId);
+                    if (playerTeam != null)
+                    {
+                        context.PlayerTeam.Remove(playerTeam);
+                    }
+                }
+
+                context.SaveChanges();
+            }
+        }
+
 
 
     }

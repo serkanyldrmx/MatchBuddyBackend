@@ -15,5 +15,6 @@ namespace MatchBuddy.Business.Abstract
         IResult Delete(Team team);
         //Maç silme
         IDataResult<List<GetTeamAndPlayer>> GetTeamAndPlayer();
+        IResult AddPlayerById(List<int> playerIds, int teamId);
     }
 }

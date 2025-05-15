@@ -12,6 +12,7 @@ namespace MatchBuddy.Entities.DTOs
     {
         public int TeamId { get; set; }
         public string TeamName { get; set; }
+        public List<int> PlayerId { get; set; }
         public List<string> PlayerName { get; set; }
     }
 }

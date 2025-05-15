@@ -7,5 +7,6 @@ namespace MatchBuddy.DataAccess.Abstract
     public interface IStadiumDal : IEntityRepository<Stadium>
     {
         List<GetStadiumMatchModel> GetStadiumMatchs();
+        void AddNotificationStadium(Stadium stadium);
     }
 }

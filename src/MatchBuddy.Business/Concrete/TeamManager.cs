@@ -26,6 +26,12 @@ namespace MatchBuddy.Business.Concrete
             return new Result(true, Messages.Added);
         }
 
+        public IResult AddPlayerById(List<int> playerIds, int teamId)
+        {
+            _teamDal.SaveTeamByPlayerId(playerIds,teamId);
+            return new Result(true, Messages.Added);
+        }
+
         public IResult Delete(Team team)
         {
             //if (team.TeamName.Length < 3)

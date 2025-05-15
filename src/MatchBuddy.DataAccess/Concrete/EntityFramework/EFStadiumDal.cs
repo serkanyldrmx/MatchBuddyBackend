@@ -31,5 +31,47 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
         }
 
+        public void AddNotificationStadium(Stadium stadium)
+        {
+            using (MatchBuddyContext context = new MatchBuddyContext())
+            {
+                // Yeni stadyum için bildirim metni oluşturuyoruz
+                var notificationText = $"Tebrikler yeni bir stadyum ekledi: {stadium.StadiumName} - {stadium.Address}";
+
+                // Bildirim oluşturuluyor
+                var notification = new Notification
+                {
+                    Text = notificationText,
+                    Type = NotificationType.StadiumAdded, // Bildirimin türü "StadiumAdded"
+                    CreatedAt = DateTime.Now,
+                    IsRead = false,
+                    StadiumId = stadium.StadiumId,
+                    PlayerNotifications = new List<PlayerNotification>() // Bildirim tüm kullanıcılara gönderilecek
+                };
+
+                // Bildirimi veritabanına ekliyoruz
+                context.Notification.Add(notification);
+                context.SaveChanges();
+
+                // Tüm oyunculara bildirim gönderiyoruz
+                var players = context.Players.ToList(); // Tüm oyuncuları alıyoruz
+                foreach (var player in players)
+                {
+                    var playerNotification = new PlayerNotification
+                    {
+                        PlayerId = player.PlayerId,
+                        NotificationId = notification.NotificationId // Bildirimi ilişkilendiriyoruz
+                    };
+
+                    // PlayerNotification ekliyoruz
+                    context.PlayerNotification.Add(playerNotification);
+                }
+
+                // Değişiklikleri kaydediyoruz
+                context.SaveChanges();
+            }
+        }
+
+
     }
 }

@@ -19,6 +19,7 @@ namespace Business
             services.AddScoped<IGroupMessageService, GroupMessageManager>();
             services.AddScoped<IGroupPlayerService, GroupPlayerManager>();
             services.AddScoped<IMatchCommentsService, MatchCommentsManager>();
+            services.AddScoped<INotificationService, NotificationManager>();
         }
     }
 }

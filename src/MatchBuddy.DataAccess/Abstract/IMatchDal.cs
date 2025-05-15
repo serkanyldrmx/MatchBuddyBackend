@@ -11,5 +11,7 @@ namespace MatchBuddy.DataAccess.Abstract
         void MatchLiked(int matchId);
         void MatchStatusUpdate(int matchId, byte status);
         List<Match> GetMatchToDate(Match match);
+        void AddNotificationToMatch(int matchId, int teamId);
+        void NotificationMatchStatusUpdate(int matchId, byte status);
     }
 }
