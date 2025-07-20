@@ -27,7 +27,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                                  PlayerName = pl.PlayerName,
                                  PlayerSurname = pl.PlayerSurname,
                                  UserName = pl.UserName,
-                                 UserScore = pl.UserScore
+                                 UserScore = pl.UserScore,
+                                 ProfilePictureUrl=pl.ProfilePictureUrl
+
                              };
                 return result.ToList();
             }

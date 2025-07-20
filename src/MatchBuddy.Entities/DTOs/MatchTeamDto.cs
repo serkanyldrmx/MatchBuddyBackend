@@ -17,5 +17,6 @@ namespace MatchBuddy.Entities.DTOs
         public string? PlayerSurname { get; set; }
         public string? UserName { get; set; }
         public int UserScore { get; set; }
+        public string? ProfilePictureUrl { get; set; }
     }
 }

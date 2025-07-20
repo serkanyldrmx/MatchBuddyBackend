@@ -22,7 +22,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                                  TeamId = teamGroup.Key.TeamId,
                                  TeamName = teamGroup.Key.TeamName,
                                  PlayerName = teamGroup.Where(x => x != null).Select(x => x.UserName).ToList(),
-                                 PlayerId = teamGroup.Where(x => x != null).Select(x => x.PlayerId).ToList()
+                                 PlayerId = teamGroup.Where(x => x != null).Select(x => x.PlayerId).ToList(),
+                                 ProfilePictureUrl = teamGroup.Where(x => x != null).Select(x => x.ProfilePictureUrl).ToList()
                              };
 
                 return result.ToList();

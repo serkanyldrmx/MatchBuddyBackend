@@ -17,6 +17,7 @@ namespace MatchBuddy.Entities.Entity
         public int Age { get; set; }
         public byte IsAdmin { get; set; }
         public int UserScore { get; set; }
+        public string? ProfilePictureUrl { get; set; }
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }
         public List<GroupPlayer> GroupPlayers { get; set; }

@@ -1,4 +1,4 @@
-using Business;
+﻿using Business;
 using MatchBuddy.Core;
 using MatchBuddy.DataAccess;
 
@@ -46,6 +46,7 @@ namespace MatchBuddy.Api
 
             // Apply CORS policy before authorization
             app.UseCors("AllowAll");
+            app.UseStaticFiles(); // wwwroot içindeki dosyaları erişilebilir yapar
 
             // Enable Authorization middleware (if needed for authentication)
             app.UseAuthorization();

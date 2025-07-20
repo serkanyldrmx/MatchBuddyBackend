@@ -14,5 +14,6 @@ namespace MatchBuddy.Entities.DTOs
         public string TeamName { get; set; }
         public List<int> PlayerId { get; set; }
         public List<string> PlayerName { get; set; }
+        public List<string> ProfilePictureUrl { get; set; }
     }
 }
