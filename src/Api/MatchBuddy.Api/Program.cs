@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Threading.RateLimiting;
 using Business;
+using MatchBuddy.Api.Controllers;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Core;
@@ -96,13 +97,24 @@ namespace MatchBuddy.Api
             // OpenStreetMap (Nominatim / Overpass): 25 sn zaman aşımı, kimlik belirten User-Agent
             builder.Services.AddHttpClient(OsmService.HttpClientName, c =>
             {
-                c.Timeout = TimeSpan.FromSeconds(25);
-                c.DefaultRequestHeaders.UserAgent.ParseAdd("MatchBuddy/1.0 (local dev)");
+                // Overpass sorgusu 25 sn sunucu süresi alabilir; aynalar paralel denendiği için toplam bekleme bunu aşmaz
+                c.Timeout = TimeSpan.FromSeconds(40);
+                c.DefaultRequestHeaders.UserAgent.ParseAdd("MatchBuddy/1.0 (+https://github.com/serkanyldrmx/MatchBuddy)");
             });
             builder.Services.AddScoped<OsmService>();
 
             // Maç hatırlatmaları (Reminders:IntervalSeconds, varsayılan 600 sn)
             builder.Services.AddHostedService<MatchReminderService>();
+
+            // Medya hattı (docs/media-api.md): Storage:Provider = Local (varsayılan) | S3
+            builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.SectionName));
+            var storageOptions = builder.Configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>() ?? new StorageOptions();
+            if (storageOptions.IsS3)
+                builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
+            else
+                builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+            builder.Services.AddSingleton<IMediaService, MediaService>();
+            builder.Services.AddHostedService<MediaCleanupService>();
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -147,6 +159,31 @@ namespace MatchBuddy.Api
                             Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0,
                         }));
+
+                // Fotoğraf yükleme: kullanıcı başına dakikada N (varsayılan 20). UseAuthentication'dan sonra çalışır.
+                var uploadPermitLimit = builder.Configuration.GetValue("RateLimiting:UploadPermitLimit", 20);
+                options.AddPolicy(MediaUploadLimits.Policy, httpContext =>
+                {
+                    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    var key = !string.IsNullOrEmpty(userId)
+                        ? "user:" + userId
+                        : "ip:" + (httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+                    return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = uploadPermitLimit,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    });
+                });
+                options.OnRejected = async (context, ct) =>
+                {
+                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    await context.HttpContext.Response.WriteAsJsonAsync(new
+                    {
+                        Success = false,
+                        Message = "Çok fazla istek. Lütfen biraz sonra tekrar deneyin."
+                    }, ct);
+                };
             });
 
             var app = builder.Build();
@@ -181,12 +218,35 @@ namespace MatchBuddy.Api
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles(); // wwwroot/uploads (profil resimleri)
+            app.UseStaticFiles(); // wwwroot/uploads (eski profil / tesis resimleri; geçiş tamamlanana kadar)
+
+            // /media: yerel depoda dosyalar doğrudan (immutable cache), S3/R2'de PublicBaseUrl'e 302
+            if (storageOptions.IsS3)
+            {
+                var publicBase = (storageOptions.S3.PublicBaseUrl ?? string.Empty).TrimEnd('/');
+                app.MapGet("/media/{**key}", (string key) =>
+                        StorageKeys.IsSafe(key) ? Results.Redirect($"{publicBase}/{key}") : Results.NotFound())
+                    .AllowAnonymous()
+                    .ExcludeFromDescription();
+            }
+            else
+            {
+                var mediaRoot = storageOptions.ResolveLocalRoot(app.Environment.ContentRootPath);
+                Directory.CreateDirectory(mediaRoot);
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(mediaRoot),
+                    RequestPath = "/media",
+                    OnPrepareResponse = ctx =>
+                        ctx.Context.Response.Headers.CacheControl = StorageOptions.CacheControl,
+                });
+            }
 
             app.UseCors(CorsPolicy);
-            app.UseRateLimiter();
 
             app.UseAuthentication();
+            // Rate limiter kimlik doğrulamadan sonra: "upload" politikası kullanıcıya göre bölümlenir
+            app.UseRateLimiter();
             app.UseAuthorization();
 
             app.MapControllers();

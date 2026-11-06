@@ -31,6 +31,9 @@ namespace MatchBuddy.DataAccess.Configuration
                 .Property(b => b.Status)
                 .IsRequired();
 
+            // Resimli mesaj (docs/media-api.md); sadece resimli mesajda MatchMessage "" olur
+            builder.Property(x => x.ImageUrl).HasMaxLength(300);
+
 
 
         }

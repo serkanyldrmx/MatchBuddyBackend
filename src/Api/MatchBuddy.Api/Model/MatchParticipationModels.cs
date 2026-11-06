@@ -15,6 +15,28 @@ namespace MatchBuddy.Api.Model
         public byte Side { get; set; }
     }
 
+    // Misafir oyuncular
+    public class AddGuestModel
+    {
+        public int MatchId { get; set; }
+        public byte Side { get; set; }
+        public string? Name { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class UpdateGuestModel
+    {
+        public int GuestId { get; set; }
+        public string? Name { get; set; }
+        public string? Note { get; set; }
+        public byte Side { get; set; }
+    }
+
+    public class GuestIdModel
+    {
+        public int GuestId { get; set; }
+    }
+
     public class SubmitResultModel
     {
         public int MatchId { get; set; }

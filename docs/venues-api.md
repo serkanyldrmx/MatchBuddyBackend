@@ -387,3 +387,100 @@ Ardından seed eklenir:
 - `GET /api/Owner/Venue?stadiumId=`: işletmenin kendi tesisi, görünürlükten bağımsız. Dönüş Venues/Detail şeklinde; pasif sahalar dahil, ayrıca `isListed` ve `missing` alanları var.
 - Saat alanları istekte "HH:mm" ya da "HH:mm:ss" kabul eder; yanıtta "HH:mm" döner.
 - İşletme liste uç noktaları (Pitches, OpeningHours, PriceRules, Campaigns, Reviews) düz dizi döner. Reviews öğeleri `match: { matchId, matchName, matchDate }` alanını içerir.
+
+---
+
+# Ek paket: Harici rezervasyon, gelir-gider takibi, takım kadrosu düzeltmesi
+
+## 1. Harici rezervasyon (uygulama dışından gelen maçlar)
+İşletme, telefonla ya da elden aldığı rezervasyonları takvime girebilir. Bunun için mevcut `SlotBlocks` tablosu genişletilir:
+
+| Yeni alan | Tip | Not |
+|---|---|---|
+| Kind | byte, varsayılan 0 | 0 = Kapalı/bakım (eski davranış), 1 = Harici rezervasyon |
+| CustomerName | nvarchar(80) null | Kind 1 için zorunlu |
+| CustomerPhone | nvarchar(30) null | |
+| Price | decimal(10,2) null | Kind 1 için zorunlu, 0 veya üstü |
+| IsPaid | bit, varsayılan 0 | Ödeme alındı mı |
+| Note | nvarchar(200) null | |
+
+- `Reason` kind 0 için zorunlu kalır; kind 1'de opsiyoneldir (başlık gibi kullanılır, ör. "Şirket maçı").
+- Çakışma kuralları aynıdır. Harici rezervasyon da slotu doldurur; oyunculara "booked" (dolu) olarak görünür, "blocked" olarak değil.
+- `POST /api/Owner/Blocks/Save` gövdesi: `{ slotBlockId?, pitchId, startAt, endAt, kind, reason?, customerName?, customerPhone?, price?, isPaid?, note? }`. `slotBlockId` verilirse kayıt güncellenir (çakışma kontrolünde kendisi hariç tutulur).
+- Yeni: `POST /api/Owner/Blocks/SetPaid { slotBlockId, isPaid }`.
+- `GET /api/Owner/Blocks` ve `GET /api/Owner/Calendar` blok öğeleri yeni alanların tamamını döner: `kind, customerName, customerPhone, price, isPaid, note`.
+- Yeni: `POST /api/Owner/Quote { pitchId, start, durationMinutes }` → `{ pitchTotal, lines }`. İşletmenin kendi fiyat kurallarıyla saha ücretini hesaplar; tesis görünür olmasa da çalışır. Harici rezervasyon formunda fiyatı önceden doldurmak için kullanılır.
+
+## 2. Giderler
+Yeni tablo **VenueExpenses**:
+
+| Alan | Tip | Not |
+|---|---|---|
+| ExpenseId | PK | |
+| StadiumId | FK Cascade | |
+| Date | date | |
+| Category | nvarchar(40) | |
+| Amount | decimal(12,2) | > 0 |
+| Description | nvarchar(200) null | |
+| CreatedAt | datetime | |
+
+Kategoriler (sabit liste, frontend de kullanır): `Personel`, `Kira`, `Elektrik`, `Su`, `Doğalgaz`, `Bakım-onarım`, `Malzeme`, `Vergi`, `Reklam`, `Diğer`.
+
+| Metot | Yol | Not |
+|---|---|---|
+| GET | `/api/Owner/Expenses?stadiumId=&from=&to=` | Düz dizi, tarihe göre azalan |
+| POST | `/api/Owner/Expenses/Save` | `{ expenseId?, stadiumId, date, category, amount, description? }` |
+| POST | `/api/Owner/Expenses/Delete` | `{ expenseId }` |
+
+Yazma kuralları diğer işletme uç noktalarıyla aynıdır: tesis sahipliği kontrolü, üyelik aktif değilse 403.
+
+## 3. Gelir hesabı (otomatik)
+- **Uygulama maçı geliri:** IsActive = 2 (onaylı), PitchId dolu ve **bitmiş** (start + DurationMinutes ≤ şimdi) maçların `TotalPrice` toplamı.
+- **Harici rezervasyon geliri:** Kind = 1, bitmiş ve `IsPaid = true` olan blokların `Price` toplamı.
+- **Tahsil edilmemiş:** Kind = 1, bitmiş ve `IsPaid = false` olan blokların toplamı.
+- **Beklenen gelir:** Henüz oynanmamış onaylı maçlar ile harici rezervasyonların toplamı.
+- Gelir, maçın başlangıç tarihinin ayına yazılır.
+
+## 4. Finans özeti — `GET /api/Owner/Finance?stadiumId=&year=&month=`
+```json
+{ "year": 2026, "month": 11,
+  "income": { "matches": 18400, "manual": 6200, "total": 24600 },
+  "receivable": 1500,
+  "expectedIncome": 9800,
+  "expenses": 11200,
+  "net": 13400,
+  "marginPercent": 54.5,
+  "previous": { "income": 21000, "expenses": 10500, "net": 10500 },   // önceki ay, kıyas için
+  "counts": { "matches": 14, "manualBookings": 6, "hoursSold": 22.5 },
+  "daily": [{ "date": "2026-11-01", "income": 1200, "expense": 0 }],          // ayın her günü
+  "incomeByPitch": [{ "pitchId": 1, "name": "Saha 1", "income": 9000, "hours": 8 }],
+  "incomeBySource": [{ "source": "matches", "amount": 18400 }, { "source": "manual", "amount": 6200 }],
+  "expenseByCategory": [{ "category": "Personel", "amount": 6000 }],
+  "monthly": [{ "year": 2025, "month": 12, "income": 0, "expenses": 0, "net": 0 }],  // son 12 ay, eskiden yeniye, seçili ay dahil
+  "transactions": [{ "date": "2026-11-05T20:00:00", "type": "income" | "expense",
+                     "source": "match" | "manual" | "expense",
+                     "title": "Perşembe Maçı" | "Şirket maçı – Ahmet Y." | "Elektrik faturası",
+                     "category": null | "Elektrik", "pitchName": "Saha 1" | null,
+                     "amount": 2100, "isPaid": true, "refId": 123 }] }    // seçili ayın tüm hareketleri, tarihe göre azalan
+```
+`hoursSold`: bitmiş onaylı maçlar ve bitmiş harici rezervasyonların toplam süresi (saat).
+
+## 5. Takım kadrosu düzeltmesi (SaveMatch ve ClaimOpponent)
+Eski davranış: takım üyelerine sadece davet gidiyordu ve kadroda görünmüyorlardı. Yeni davranış:
+- `homeTeamId` verildiyse takımın **tüm üyeleri** (kurucu dahil) doğrudan maça eklenir: Status = Going, Side = 1, Confirmed = false; kurucu Confirmed = true.
+- `awayTeamId` verildiyse o takımın üyeleri de doğrudan eklenir: Going, Side = 2.
+- `ClaimOpponent` aynı şekilde talep eden takımın tüm üyelerini Side 2 olarak ekler.
+- Kapasite aşılırsa fazlası Waitlist olur (JoinedAt sırasıyla).
+- İşletme hesapları ve silinmiş hesaplar atlanır. Kurucuyu engelleyen ya da kurucunun engellediği oyuncular atlanmaz (takım üyeliği önceliklidir).
+- Eklenen her üyeye (kurucu hariç) bildirim gider: `MatchJoin` tipi, metin "X seni takımın 'Y' maçının kadrosuna ekledi. Gelemeyeceksen maçtan ayrıl." ve NotifyMatchUpdates tercihine uyulur.
+- Takım üyeleri için artık MatchInvite oluşturulmaz.
+- JoinedMatch aktivitesi sadece kurucu için yazılır; takım arkadaşları için yazılmaz (akış kalabalıklaşmasın).
+
+### Netleştirmeler
+- `GET /api/Owner/Calendar` öğelerinde `kind` alanı "match" ya da "block" metni olarak kalır. Blok öğelerinde blok türü ayrı bir `blockKind` alanında döner (0 = kapalı, 1 = harici rezervasyon); `customerName`, `customerPhone`, `price`, `isPaid` ve `note` de bu öğelerde yer alır.
+- `GET /api/Owner/Blocks` listesinde blok türü sayısal `kind` alanında döner; aynı değer `blockKind` alanında da tekrarlanabilir.
+- Finans `transactions[].refId` alanının anlamı kaynağa göre değişir:
+  - "match" → MatchId
+  - "manual" → SlotBlockId
+  - "expense" → ExpenseId
+- Tarih aralığı parametrelerinde `from` ve `to` iki uçta da dahildir (tüm gün).

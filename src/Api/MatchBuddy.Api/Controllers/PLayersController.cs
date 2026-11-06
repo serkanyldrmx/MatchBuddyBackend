@@ -23,9 +23,12 @@ namespace MatchBuddy.Api.Controllers
         private readonly IMatchParticipationService _participationService;
         private readonly ISocialService _socialService;
 
+        private readonly IMediaService _mediaService;
+
         public PLayersController(IPlayerService playerService, IJwtTokenService tokenService, ILogger<PLayersController> logger,
-            IMatchParticipationService participationService, ISocialService socialService)
+            IMatchParticipationService participationService, ISocialService socialService, IMediaService mediaService)
         {
+            _mediaService = mediaService;
             _socialService = socialService;
             _playerService = playerService;
             _tokenService = tokenService;
@@ -78,7 +81,7 @@ namespace MatchBuddy.Api.Controllers
         [AllowAnonymous]
         [EnableRateLimiting("auth")]
         [HttpPost("SavePlayer")]
-        public IActionResult SavePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture)
+        public async Task<IActionResult> SavePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture, CancellationToken ct)
         {
             PlayerModel? playerData;
             try
@@ -114,27 +117,30 @@ namespace MatchBuddy.Api.Controllers
                 ProfilePictureUrl = ""
             };
 
-            var imageUrl = UploadProfilePicture(profilePicture, out var errorMessage);
-            if (!string.IsNullOrEmpty(errorMessage))
+            // Profil fotoğrafı medya hattından geçer (docs/media-api.md); oyuncu henüz yok: sahibi kayıttan sonra yazılır
+            MediaDto? avatar = null;
+            if (profilePicture != null)
             {
-                return BadRequest(new { Success = false, Message = errorMessage });
-            }
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                player.ProfilePictureUrl = imageUrl;
+                var upload = await _mediaService.UploadAsync(profilePicture, MediaKind.Avatar, null, ct);
+                if (!upload.Success) return this.ToHttp(upload);
+                avatar = upload.Data;
+                player.ProfilePictureUrl = avatar.Url;
+                player.ProfileMediaId = avatar.MediaId;
             }
 
             var result = _playerService.Add(player);
             if (result.Success)
             {
-                return Ok(result);
+                if (avatar != null) _mediaService.MarkAttached(avatar.MediaId, player.PlayerId);
+                return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
             }
+            if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
             return BadRequest(result);
         }
 
         // Profil güncelle: sadece kendi profilini (admin herkesinkini)
         [HttpPost("UpdatePlayer")]
-        public IActionResult UpdatePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture)
+        public async Task<IActionResult> UpdatePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture, CancellationToken ct)
         {
             PlayerModel? playerData;
             try
@@ -196,21 +202,30 @@ namespace MatchBuddy.Api.Controllers
                 existingPlayer.Password = PasswordHasher.Hash(playerData.Password);
             }
 
-            var imageUrl = UploadProfilePicture(profilePicture, out var errorMessage);
-            if (!string.IsNullOrEmpty(errorMessage))
+            // Yeni profil fotoğrafı: medya hattı; başarılı güncellemeden sonra eskisi (medya ya da /uploads dosyası) silinir
+            MediaDto? avatar = null;
+            var oldMediaId = existingPlayer.ProfileMediaId;
+            var oldUrl = existingPlayer.ProfilePictureUrl;
+            if (profilePicture != null)
             {
-                return BadRequest(new { Success = false, Message = errorMessage });
-            }
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                existingPlayer.ProfilePictureUrl = imageUrl;
+                var upload = await _mediaService.UploadAsync(profilePicture, MediaKind.Avatar, User.GetPlayerId(), ct);
+                if (!upload.Success) return this.ToHttp(upload);
+                avatar = upload.Data;
+                existingPlayer.ProfilePictureUrl = avatar.Url;
+                existingPlayer.ProfileMediaId = avatar.MediaId;
             }
 
             var result = _playerService.Update(existingPlayer);
             if (result.Success)
             {
-                return Ok(result);
+                if (avatar != null)
+                {
+                    _mediaService.MarkAttached(avatar.MediaId);
+                    await _mediaService.DeleteImageAsync(oldMediaId, oldUrl, CancellationToken.None);
+                }
+                return Ok(new { result.Success, result.Message, existingPlayer.ProfilePictureUrl });
             }
+            if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
             return BadRequest(result);
         }
 
@@ -252,21 +267,6 @@ namespace MatchBuddy.Api.Controllers
                 return Forbid();
             }
             return _playerService.AISortByPlayer(playerId).Data;
-        }
-
-        // Doğrulama ve kayıt: Services/ImageUploads (tesis fotoğrafları da aynı kontrolleri kullanır)
-        private static string? UploadProfilePicture(IFormFile? profilePicture, out string errorMessage)
-        {
-            errorMessage = "";
-            if (profilePicture == null) return null;
-
-            var error = ImageUploads.Validate(profilePicture);
-            if (error != null)
-            {
-                errorMessage = error;
-                return null;
-            }
-            return ImageUploads.Save(profilePicture);
         }
     }
 }

@@ -249,6 +249,29 @@ namespace MatchBuddy.Api.Controllers
                 model.MatchId, User.GetPlayerId(), User.IsAdmin(), model.PlayerId, model.Side));
         }
 
+        // ---- Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular"); yetki: canManage ----
+
+        [HttpPost("AddGuest")]
+        public IActionResult AddGuest(AddGuestModel model)
+        {
+            var result = _participationService.AddGuest(model.MatchId, User.GetPlayerId(), User.IsAdmin(), model.Side, model.Name, model.Note);
+            return this.ToHttp(result, result.Success
+                ? new { Success = true, result.Message, GuestId = result.Data }
+                : null);
+        }
+
+        [HttpPost("UpdateGuest")]
+        public IActionResult UpdateGuest(UpdateGuestModel model)
+        {
+            return this.ToHttp(_participationService.UpdateGuest(model.GuestId, User.GetPlayerId(), User.IsAdmin(), model.Name, model.Note, model.Side));
+        }
+
+        [HttpPost("RemoveGuest")]
+        public IActionResult RemoveGuest(GuestIdModel model)
+        {
+            return this.ToHttp(_participationService.RemoveGuest(model.GuestId, User.GetPlayerId(), User.IsAdmin()));
+        }
+
         [HttpPost("SubmitResult")]
         public IActionResult SubmitResult(SubmitResultModel model)
         {

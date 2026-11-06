@@ -64,7 +64,10 @@ namespace MatchBuddy.Entities.DTOs
         public string? Description { get; set; }
         public byte IsActive { get; set; }
         public int Capacity { get; set; }
+        // Going + misafir (doluluk halkası için)
         public int GoingCount { get; set; }
+        // Misafir oyuncu sayısı
+        public int GuestCount { get; set; }
         public int WaitlistCount { get; set; }
         public int Likes { get; set; }
         public bool LikedByMe { get; set; }
@@ -102,6 +105,8 @@ namespace MatchBuddy.Entities.DTOs
         public bool MyConfirmed { get; set; }
         public byte? MySide { get; set; }
         public List<MatchParticipantDto> Participants { get; set; } = new();
+        // Misafir oyuncular (hesabı olmayan kişiler)
+        public List<MatchGuestDto> Guests { get; set; } = new();
         public MatchResultDto? Result { get; set; }
         public MatchMvpDto? Mvp { get; set; }
         public int? MyMvpVote { get; set; }
@@ -137,6 +142,16 @@ namespace MatchBuddy.Entities.DTOs
         public double? AvgRating { get; set; }
         // Sosyal paket: bu oyuncuyu takip ediyor muyum
         public bool IFollow { get; set; }
+    }
+
+    public class MatchGuestDto
+    {
+        public int GuestId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Note { get; set; }
+        public byte Side { get; set; }
+        public PlayerSummaryDto? AddedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public class MatchResultDto

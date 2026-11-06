@@ -23,6 +23,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                                  SendingDate = p.SendingDate,
                                  SendPlayerId = p.SendPlayerId,
                                  Status = p.Status,
+                                 ImageUrl = p.ImageUrl,
                                  UserName = pl.UserName  // Player tablosundan UserName alınıyor
                                                          // Diğer alanları buraya ekleyin
                              };

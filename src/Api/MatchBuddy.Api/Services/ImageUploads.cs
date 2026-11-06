@@ -1,8 +1,8 @@
 namespace MatchBuddy.Api.Services
 {
     /// <summary>
-    /// wwwroot/uploads altına resim kaydetme (profil resmi, tesis fotoğrafları).
-    /// Uzantı (jpg/jpeg/png), boyut (≤ 5MB) ve dosya imzası (magic bytes) kontrol edilir.
+    /// ESKİ: wwwroot/uploads altına resim kaydetme. Yeni yüklemeler medya hattından geçer (IMediaService, docs/media-api.md);
+    /// bu sınıf sadece eski /uploads dosyalarını silmek (Delete) için kullanılır.
     /// </summary>
     public static class ImageUploads
     {

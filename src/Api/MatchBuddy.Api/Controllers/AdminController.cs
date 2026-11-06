@@ -4,6 +4,7 @@ using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
+using MatchBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,11 @@ namespace MatchBuddy.Api.Controllers
         private readonly ISocialService _socialService;
         private readonly IVenueService _venueService;
         private readonly OsmService _osmService;
+        private readonly IMediaService _mediaService;
 
-        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService)
+        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService, IMediaService mediaService)
         {
+            _mediaService = mediaService;
             _socialService = socialService;
             _venueService = venueService;
             _osmService = osmService;
@@ -64,8 +67,9 @@ namespace MatchBuddy.Api.Controllers
 
         // multipart: model (JSON) + photos (1–10 dosya). Hata: 400 { success:false, message, field }
         [HttpPost("CreateOwner")]
-        [RequestSizeLimit(60 * 1024 * 1024)]
-        public IActionResult CreateOwner([FromForm] string? model, [FromForm] List<IFormFile>? photos)
+        [RequestSizeLimit(110 * 1024 * 1024)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 110 * 1024 * 1024)]
+        public async Task<IActionResult> CreateOwner([FromForm] string? model, [FromForm] List<IFormFile>? photos, CancellationToken ct)
         {
             CreateOwnerInput? input;
             try
@@ -82,20 +86,36 @@ namespace MatchBuddy.Api.Controllers
             var invalid = _venueService.ValidateCreateOwner(input, photos.Count);
             if (invalid != null) return BadRequest(new { Success = false, Message = invalid.Value.Message, Field = invalid.Value.Field });
 
+            // Medya hattı (kind venues); yükleyen admin. Hata olursa yüklenenler geri silinir.
+            var uploaded = new List<MediaDto>();
             foreach (var photo in photos)
             {
-                var error = ImageUploads.Validate(photo);
-                if (error != null) return BadRequest(new { Success = false, Message = $"{photo.FileName}: {error}", Field = "photos" });
+                var upload = await _mediaService.UploadAsync(photo, MediaKind.VenuePhoto, User.GetPlayerId(), ct);
+                if (!upload.Success)
+                {
+                    foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
+                    return BadRequest(new { Success = false, Message = $"{photo.FileName}: {upload.Message}", Field = "photos" });
+                }
+                uploaded.Add(upload.Data);
             }
 
-            var urls = photos.Select(p => ImageUploads.Save(p, "venues")).ToList();
-            var result = _venueService.CreateOwner(input!, urls);
+            var result = _venueService.CreateOwner(input!, uploaded.Select(m => m.Url).ToList());
             if (!result.Success)
             {
-                urls.ForEach(ImageUploads.Delete);
+                foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
                 return BadRequest(new { Success = false, result.Message, Field = "owner.userName" });
             }
+            _mediaService.LinkStadiumPhotos(result.Data.StadiumId, uploaded);
             return Ok(new { Success = true, result.Message, result.Data.OwnerId, result.Data.StadiumId });
+        }
+
+        // Tek seferlik geçiş: /uploads/... profil ve tesis fotoğraflarını medya hattından geçirir.
+        // İdempotent (ikinci çalıştırmada /uploads kaydı kalmaz); eski dosyalar silinmez.
+        [HttpPost("Media/MigrateLegacy")]
+        public async Task<IActionResult> MigrateLegacyMedia(CancellationToken ct)
+        {
+            var r = await _mediaService.MigrateLegacyAsync(ct);
+            return Ok(new { Success = true, r.MigratedAvatars, r.MigratedVenuePhotos, r.Missing });
         }
 
         [HttpPost("UpdateMembership")]

@@ -37,6 +37,7 @@ namespace MatchBuddy.DataAccess
         public DbSet<Notification> Notification { get; set; }
         public DbSet<PlayerNotification> PlayerNotification { get; set; }
         public DbSet<MatchParticipant> MatchParticipants { get; set; }
+        public DbSet<MatchGuest> MatchGuests { get; set; }
         public DbSet<MatchLike> MatchLikes { get; set; }
         public DbSet<MvpVote> MvpVotes { get; set; }
         public DbSet<PlayerRating> PlayerRatings { get; set; }
@@ -57,6 +58,8 @@ namespace MatchBuddy.DataAccess
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<SlotBlock> SlotBlocks { get; set; }
         public DbSet<VenueReview> VenueReviews { get; set; }
+        public DbSet<VenueExpense> VenueExpenses { get; set; }
+        public DbSet<Media> Media { get; set; }
 
     }
 }

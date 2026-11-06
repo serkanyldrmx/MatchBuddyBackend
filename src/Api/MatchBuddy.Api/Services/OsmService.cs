@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using MatchBuddy.DataAccess.Concrete;
 using MatchBuddy.Entities.DTOs;
@@ -12,16 +12,31 @@ namespace MatchBuddy.Api.Services
     public class OsmService
     {
         public const string HttpClientName = "osm";
-        private const string OverpassUrl = "https://overpass-api.de/api/interpreter";
         private const string NominatimUrl = "https://nominatim.openstreetmap.org/search";
+
+        /// <summary>
+        /// Overpass aynaları. Ana sunucu (overpass-api.de) yoğunken isteği uzun süre kuyrukta bekletebiliyor
+        /// ya da reddedebiliyor; bu yüzden aynalara paralel istek atılır ve ilk başarılı yanıt kullanılır.
+        /// appsettings: "Osm:OverpassUrls": [ ... ] ile değiştirilebilir.
+        /// </summary>
+        private static readonly string[] DefaultOverpassUrls =
+        {
+            "https://overpass-api.de/api/interpreter",
+            "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass.private.coffee/api/interpreter",
+        };
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<OsmService> _logger;
+        private readonly string[] _overpassUrls;
 
-        public OsmService(IHttpClientFactory httpClientFactory, ILogger<OsmService> logger)
+        public OsmService(IHttpClientFactory httpClientFactory, ILogger<OsmService> logger, IConfiguration configuration)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            var configured = configuration.GetSection("Osm:OverpassUrls").Get<string[]>();
+            _overpassUrls = configured is { Length: > 0 } ? configured : DefaultOverpassUrls;
         }
 
         public class OsmUnavailableException : Exception
@@ -50,10 +65,7 @@ namespace MatchBuddy.Api.Services
                         $"node[\"leisure\"=\"pitch\"][\"sport\"~\"soccer\"]({b});" +
                         $"way[\"leisure\"=\"pitch\"][\"sport\"~\"soccer\"]({b});" +
                         ");out center tags 200;";
-            using var doc = await GetJsonAsync(client, () => new HttpRequestMessage(HttpMethod.Post, OverpassUrl)
-            {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["data"] = query }),
-            }, ct);
+            using var doc = await FirstOverpassResponseAsync(client, query, ct);
 
             var result = new List<OsmCandidateDto>();
             if (!doc.RootElement.TryGetProperty("elements", out var elements)) return result;
@@ -114,6 +126,60 @@ namespace MatchBuddy.Api.Services
             {
                 c.AlreadyExists = osmIds.Contains(c.OsmId)
                                   || points.Any(p => VenueGeo.DistanceMeters(p.Item1, p.Item2, c.Lat, c.Lon) <= 150);
+            }
+        }
+
+        /// <summary>Sorguyu tüm Overpass aynalarına aynı anda gönderir; ilk geçerli JSON yanıtı döner, diğerleri iptal edilir.</summary>
+        private async Task<JsonDocument> FirstOverpassResponseAsync(HttpClient client, string query, CancellationToken ct)
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var pending = _overpassUrls.Select(url => TryOverpassAsync(client, url, query, linked.Token)).ToList();
+            while (pending.Count > 0)
+            {
+                var done = await Task.WhenAny(pending);
+                pending.Remove(done);
+                var doc = await done;
+                if (doc != null)
+                {
+                    linked.Cancel(); // kalan istekleri bırak
+                    return doc;
+                }
+            }
+            ct.ThrowIfCancellationRequested();
+            throw new OsmUnavailableException("OpenStreetMap sunucularının hiçbiri yanıt vermedi. Biraz sonra tekrar deneyin ya da daha küçük bir alan seçin.");
+        }
+
+        private async Task<JsonDocument?> TryOverpassAsync(HttpClient client, string url, string query, CancellationToken ct)
+        {
+            var started = DateTime.UtcNow;
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["data"] = query }),
+                };
+                req.Headers.Accept.ParseAdd("application/json");
+                using var resp = await client.SendAsync(req, ct);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Overpass {Url} {Status} döndü", url, (int)resp.StatusCode);
+                    return null;
+                }
+                await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+                var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+                if (!doc.RootElement.TryGetProperty("elements", out _))
+                {
+                    doc.Dispose();
+                    return null;
+                }
+                _logger.LogInformation("Overpass yanıtı {Url} üzerinden {Ms} ms'de alındı", url, (int)(DateTime.UtcNow - started).TotalMilliseconds);
+                return doc;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
+            {
+                if (!ct.IsCancellationRequested)
+                    _logger.LogInformation("Overpass {Url} başarısız: {Message}", url, ex.Message);
+                return null;
             }
         }
 

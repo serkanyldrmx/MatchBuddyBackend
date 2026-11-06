@@ -4,8 +4,10 @@ using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.Entities.DTOs;
+using MatchBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace MatchBuddy.Api.Controllers
 {
@@ -19,10 +21,12 @@ namespace MatchBuddy.Api.Controllers
     public class OwnerController : ControllerBase
     {
         private readonly IVenueService _venueService;
+        private readonly IMediaService _mediaService;
 
-        public OwnerController(IVenueService venueService)
+        public OwnerController(IVenueService venueService, IMediaService mediaService)
         {
             _venueService = venueService;
+            _mediaService = mediaService;
         }
 
         private int Me => User.GetPlayerId();
@@ -66,32 +70,36 @@ namespace MatchBuddy.Api.Controllers
         [HttpGet("Photos")]
         public IActionResult Photos([FromQuery] int stadiumId) => Data(_venueService.Photos(Me, stadiumId));
 
+        // Medya hattı (docs/media-api.md): kind venues, url = md URL
         [HttpPost("Photos/Upload")]
-        [RequestSizeLimit(6 * 1024 * 1024)]
-        public IActionResult UploadPhoto([FromForm] int stadiumId, [FromForm] IFormFile? file)
+        [EnableRateLimiting(MediaUploadLimits.Policy)]
+        [RequestSizeLimit(MediaUploadLimits.SingleRequestBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadLimits.SingleRequestBytes)]
+        public async Task<IActionResult> UploadPhoto([FromForm] int stadiumId, [FromForm] IFormFile? file, CancellationToken ct)
         {
             var permission = _venueService.CheckCanAddPhoto(Me, stadiumId);
             if (!permission.Success) return this.ToHttp(permission);
 
             if (file == null) return BadRequest(new { Success = false, Message = "Fotoğraf seçilmedi." });
-            var error = ImageUploads.Validate(file);
-            if (error != null) return BadRequest(new { Success = false, Message = error });
+            var upload = await _mediaService.UploadAsync(file, MediaKind.VenuePhoto, Me, ct);
+            if (!upload.Success) return this.ToHttp(upload);
 
-            var url = ImageUploads.Save(file, "venues");
-            var result = _venueService.AddPhoto(Me, stadiumId, url);
+            var result = _venueService.AddPhoto(Me, stadiumId, upload.Data.Url);
             if (!result.Success)
             {
-                ImageUploads.Delete(url);
+                await _mediaService.DeleteAsync(upload.Data.MediaId, CancellationToken.None);
                 return this.ToHttp(result);
             }
+            _mediaService.LinkStadiumPhoto(result.Data.PhotoId, upload.Data.MediaId);
             return Ok(new { Success = true, result.Message, result.Data.PhotoId, result.Data.Url, result.Data.IsCover });
         }
 
         [HttpPost("Photos/Delete")]
-        public IActionResult DeletePhoto(PhotoIdInput model)
+        public async Task<IActionResult> DeletePhoto(PhotoIdInput model)
         {
+            var mediaId = _mediaService.GetStadiumPhotoMediaId(model.PhotoId);
             var result = _venueService.DeletePhoto(Me, model.PhotoId);
-            if (result.Success) ImageUploads.Delete(result.Data);
+            if (result.Success) await _mediaService.DeleteImageAsync(mediaId, result.Data, CancellationToken.None);
             return this.ToHttp(result, result.Success ? new { Success = true, result.Message } : null);
         }
 
@@ -150,6 +158,30 @@ namespace MatchBuddy.Api.Controllers
 
         [HttpPost("Blocks/Delete")]
         public IActionResult DeleteBlock(BlockIdInput model) => this.ToHttp(_venueService.DeleteBlock(Me, model.SlotBlockId));
+
+        // Harici rezervasyonun ödeme durumu
+        [HttpPost("Blocks/SetPaid")]
+        public IActionResult SetBlockPaid(BlockPaidInput model) => this.ToHttp(_venueService.SetBlockPaid(Me, model));
+
+        // Harici rezervasyon formu için saha ücreti (tesis görünür olmasa da çalışır): { pitchTotal, lines }
+        [HttpPost("Quote")]
+        public IActionResult Quote(OwnerQuoteInput model) => Data(_venueService.OwnerQuote(Me, model));
+
+        // ---- Giderler ve finans
+
+        [HttpGet("Expenses")]
+        public IActionResult Expenses([FromQuery] int stadiumId, [FromQuery] DateTime? from, [FromQuery] DateTime? to) =>
+            Data(_venueService.Expenses(Me, stadiumId, from, to));
+
+        [HttpPost("Expenses/Save")]
+        public IActionResult SaveExpense(ExpenseSaveInput model) => Saved(_venueService.SaveExpense(Me, model), "expenseId");
+
+        [HttpPost("Expenses/Delete")]
+        public IActionResult DeleteExpense(ExpenseIdInput model) => this.ToHttp(_venueService.DeleteExpense(Me, model.ExpenseId));
+
+        [HttpGet("Finance")]
+        public IActionResult Finance([FromQuery] int? stadiumId, [FromQuery] int? year, [FromQuery] int? month) =>
+            Data(_venueService.Finance(Me, stadiumId, year, month));
 
         // ---- Yorumlar
 

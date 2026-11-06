@@ -16,6 +16,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <!-- Medya hattı (docs/media-api.md): SkiaSharp (MIT) + Linux native, S3/R2 depolama -->
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.9" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.511.8" />
   </ItemGroup>
 
   <ItemGroup>

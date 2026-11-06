@@ -41,12 +41,53 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 p.MatchId == match.MatchId && p.PlayerId == playerId && p.Status == ParticipantStatus.Going);
         }
 
-        // Daha az oyuncusu olan taraf (eşitse Home)
-        public static byte PickSide(IEnumerable<MatchParticipant> going)
+        // ---- Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular") ----
+        // Misafirler kadroya sayılır: toplam = Going + misafir, taraf = o taraftaki Going + misafir.
+
+        public const string SideFull = "Bu tarafta boş yer yok.";
+
+        public static List<MatchGuest> LoadGuests(MatchBuddyContext context, int matchId) =>
+            context.MatchGuests.Where(g => g.MatchId == matchId).ToList();
+
+        // Bir taraftaki kadro sayısı (Going oyuncular + misafirler)
+        public static int SideCount(IEnumerable<MatchParticipant> going, IEnumerable<MatchGuest> guests, byte side) =>
+            going.Count(p => p.Side == side) + guests.Count(g => g.Side == side);
+
+        // Maç başına kadro sayısı: Going + misafir (liste ekranları için)
+        public static Dictionary<int, int> RosterCounts(MatchBuddyContext context, List<int> matchIds)
+        {
+            var counts = context.MatchParticipants.AsNoTracking()
+                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
+                .GroupBy(p => p.MatchId)
+                .Select(g => new { MatchId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.MatchId, x => x.Count);
+            foreach (var g in GuestCounts(context, matchIds))
+            {
+                counts[g.Key] = (counts.TryGetValue(g.Key, out var c) ? c : 0) + g.Value;
+            }
+            return counts;
+        }
+
+        // Maç başına misafir sayısı (matchIds null ise tüm maçlar)
+        public static Dictionary<int, int> GuestCounts(MatchBuddyContext context, List<int>? matchIds)
+        {
+            var query = context.MatchGuests.AsNoTracking().AsQueryable();
+            if (matchIds != null) query = query.Where(g => matchIds.Contains(g.MatchId));
+            return query
+                .GroupBy(g => g.MatchId)
+                .Select(g => new { MatchId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.MatchId, x => x.Count);
+        }
+
+        // Daha az kişisi (Going + misafir) olan taraf (eşitse Home)
+        public static byte PickSide(IEnumerable<MatchParticipant> going, IEnumerable<MatchGuest>? guests = null)
         {
             var list = going.ToList();
-            var home = list.Count(p => p.Side == ParticipantSide.Home);
-            var away = list.Count(p => p.Side == ParticipantSide.Away);
+            var guestList = guests?.ToList() ?? new List<MatchGuest>();
+            var home = SideCount(list, guestList, ParticipantSide.Home);
+            var away = SideCount(list, guestList, ParticipantSide.Away);
             return away < home ? ParticipantSide.Away : ParticipantSide.Home;
         }
 
@@ -80,14 +121,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         // Kapasite doldukça yedekleri (en eski önce) asile yükseltir, bildirim ve aktivite yazar.
         // participants: maçın (takip edilen) tüm kayıtları, güncel durumlarıyla.
-        public static void PromoteFromWaitlist(MatchBuddyContext context, Match match, List<MatchParticipant> participants, byte? preferredSide)
+        // guests: maçın güncel misafirleri (null ise veritabanından okunur). Misafirler kapasiteye sayılır.
+        public static void PromoteFromWaitlist(MatchBuddyContext context, Match match, List<MatchParticipant> participants, byte? preferredSide,
+            List<MatchGuest>? guests = null)
         {
             if (match.IsActive == RejectedStatus || IsPast(match)) return;
+            guests ??= LoadGuests(context, match.MatchId);
 
             while (true)
             {
                 var going = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
-                if (going.Count >= match.UserCount) break;
+                if (going.Count + guests.Count >= match.UserCount) break;
 
                 var next = participants
                     .Where(p => p.Status == ParticipantStatus.Waitlist)
@@ -97,7 +141,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 if (next == null) break;
 
                 next.Status = ParticipantStatus.Going;
-                next.Side = preferredSide ?? PickSide(going);
+                // Boşalan taraf tercih edilir (doluysa daha az kişili taraf)
+                next.Side = preferredSide.HasValue && SideCount(going, guests, preferredSide.Value) < SideCapacity(match)
+                    ? preferredSide.Value
+                    : PickSide(going, guests);
                 next.Confirmed = false;
                 next.ReminderSentAt = null;
                 preferredSide = null; // boşalan taraf sadece ilk yükselen için
@@ -132,14 +179,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 return OperationResult<byte>.BadRequest("Zaten bu maçın yedek listesindesin.");
 
             var going = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
+            var guests = LoadGuests(context, matchId);
             byte status;
             byte? side;
-            if (going.Count < match.UserCount)
+            // Kapasite: Going + misafir < UserCount (misafir yüzünden dolu maça katılan yedeğe düşer)
+            if (going.Count + guests.Count < match.UserCount)
             {
                 status = ParticipantStatus.Going;
-                side = PickSide(going);
+                side = PickSide(going, guests);
                 // Takım daveti / rakip takım: tercih edilen taraf doluysa normal kural (PickSide)
-                if (preferredSide.HasValue && going.Count(p => p.Side == preferredSide.Value) < SideCapacity(match))
+                if (preferredSide.HasValue && SideCount(going, guests, preferredSide.Value) < SideCapacity(match))
                 {
                     side = preferredSide.Value;
                 }

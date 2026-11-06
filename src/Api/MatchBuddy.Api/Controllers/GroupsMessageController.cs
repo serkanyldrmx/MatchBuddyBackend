@@ -1,5 +1,6 @@
 ﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
+using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
@@ -15,9 +16,11 @@ namespace MatchBuddy.Api.Controllers
     {
         private readonly IGroupMessageService _groupMessageService;
         private readonly IGroupPlayerService _groupPlayerService;
+        private readonly IMediaService _mediaService;
 
-        public GroupsMessageController(IGroupMessageService groupMessageService, IGroupPlayerService groupPlayerService)
+        public GroupsMessageController(IGroupMessageService groupMessageService, IGroupPlayerService groupPlayerService, IMediaService mediaService)
         {
+            _mediaService = mediaService;
             _groupMessageService = groupMessageService;
             _groupPlayerService = groupPlayerService;
         }
@@ -28,18 +31,35 @@ namespace MatchBuddy.Api.Controllers
         [HttpPost("SaveGroupMessage")]
         public IActionResult SaveGroupMessage(GroupMessageModel groupMessageModel)
         {
+            // Metin ya da fotoğraf (mediaId) dolu olmalı
+            if (string.IsNullOrWhiteSpace(groupMessageModel.MatchMessage) && groupMessageModel.MediaId == null)
+            {
+                return BadRequest(new { Success = false, Message = "Mesaj boş olamaz." });
+            }
+
             if (!CanAccessGroup(groupMessageModel.GroupId))
             {
                 return Forbid();
             }
 
+            // Fotoğraf: gönderene ait, Pending, MessageImage olmalı -> Attached
+            string? imageUrl = null;
+            if (groupMessageModel.MediaId.HasValue)
+            {
+                var attach = _mediaService.Attach(groupMessageModel.MediaId.Value, MediaKind.MessageImage, User.GetPlayerId());
+                if (!attach.Success) return this.ToHttp(attach);
+                imageUrl = attach.Data.Url;
+            }
+
             var groupMessage = new GroupMessage()
             {
                 GroupId = groupMessageModel.GroupId,
-                MatchMessage = groupMessageModel.MatchMessage,
+                MatchMessage = groupMessageModel.MatchMessage ?? string.Empty,
                 SendingDate = groupMessageModel.SendingDate,
                 SendPlayerId = User.GetPlayerId(), // Gönderen her zaman token sahibidir
-                Status = groupMessageModel.Status
+                Status = groupMessageModel.Status,
+                MediaId = groupMessageModel.MediaId,
+                ImageUrl = imageUrl,
             };
 
             var result = _groupMessageService.Add(groupMessage);

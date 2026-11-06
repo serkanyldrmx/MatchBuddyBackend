@@ -11,8 +11,15 @@ Veriler gerçek API üzerinden eklenir (şifreler hash'lenir, iş kuralları ça
   - 16 demo oyuncu (demo_<ad>, şifre Demo!2026), 3 demo takım
   - 12 gelecek maç (bekleyen / onaylı, 2 takım maçı, 1 "rakip aranıyor") ve
     6 geçmiş maç (skor, MVP oyları, puanlar, tesis yorumları + işletme yanıtları)
+  - takım maçlarında takım üyeleri SaveMatch / ClaimOpponent ile doğrudan kadroya eklenir (davet yok)
+  - finans demosu (docs/venues-api.md "Ek paket"): her tesise son 60 gün + gelecek 14 güne yayılmış 6–10
+    harici rezervasyon (fiyat Owner/Quote ile, ödenmiş/ödenmemiş karışık) ve bu ay + önceki 2 ayın giderleri
 Geçmiş maçlar: gelecek bir saate kurulur, onaylanır, sonra tarihleri SQL ile geçmişe taşınır
 (SaveMatch geçmiş saat kabul etmez).
+
+Sadece finans demosunu (mevcut demo tesislerine) yeniden yüklemek için:
+  python -I scripts/seed_demo.py --finance-only [API_BASE]
+  (demo tesislerin mevcut harici rezervasyonları ve giderleri silinip aynı kurallarla yeniden eklenir)
 
 Hesaplar docs/demo-accounts.md dosyasındadır.
 """
@@ -20,6 +27,7 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
+import calendar
 import json
 import os
 import random
@@ -29,7 +37,9 @@ from datetime import datetime, timedelta
 
 import requests
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:5099/api"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+FINANCE_ONLY = "--finance-only" in sys.argv
+BASE = ARGS[0] if ARGS else "http://localhost:5099/api"
 FRONTEND_REPO = r"D:\Project\repos\MatchBuddyReact"
 OWNER_PASSWORD = "Isletme!2026"
 DEMO_PASSWORD = "Demo!2026"
@@ -208,6 +218,199 @@ REVIEWS = [
 REPLIES = ["Güzel yorumunuz için teşekkür ederiz, yine bekleriz!", "Geri bildiriminiz için teşekkürler, otopark için çalışıyoruz."]
 
 
+# ---------------------------------------------------------------- finans demosu
+
+CUSTOMERS = ["Ahmet Yıldız", "Mehmet Kaya", "Mustafa Şen", "Emre Aksoy", "Burak Güneş", "Oğuz Tekin", "Serkan Uçar",
+             "Hasan Koç", "Yusuf Arı", "Okan Bulut", "Tuncay Eren", "Volkan Taş", "Caner Yalçın", "Sinan Öztürk",
+             "Barış Kurt", "Ozan Çakır", "Fatih Ekinci", "Cengiz Akın"]
+BOOKING_TITLES = [None, "Şirket maçı", "Doğum günü maçı", "Okul takımı antrenmanı", "Halı saha ligi", "Arkadaş grubu", None,
+                  "Mahalle turnuvası", None]
+BOOKING_NOTES = [None, None, "Kapora alındı", "Telefonla rezervasyon", None, "Yelek ve top istendi"]
+
+# tesis başına aylık sabit giderler (kira, personel) ve değişken gider aralıkları (₺)
+EXPENSE_PROFILE = {
+    "isletme_yesilvadi": dict(kira=45000, personel=62000, elektrik=(7000, 10500), su=(1400, 2400)),
+    "isletme_besiktasarena": dict(kira=60000, personel=55000, elektrik=(6500, 9500), su=(1200, 2000)),
+    "isletme_atasehirpark": dict(kira=55000, personel=78000, elektrik=(8500, 12000), su=(1800, 3000)),
+    "isletme_cankayagol": dict(kira=30000, personel=42000, elektrik=(5000, 7500), su=(900, 1600)),
+    "isletme_bornovafm": dict(kira=25000, personel=31000, elektrik=(4000, 5500), su=(700, 1200)),
+}
+
+
+def r10(x):
+    return int(round(x / 10.0)) * 10
+
+
+def q(s):
+    """SQL metin değeri (N'...')."""
+    return "NULL" if s is None else "N'" + str(s).replace("'", "''") + "'"
+
+
+class ApiWriter:
+    """Normal yol: işletme hesabıyla Owner/Quote, Owner/Blocks/Save, Owner/Expenses/Save."""
+
+    def __init__(self, tok):
+        self.tok = tok
+
+    def quote(self, pitch, start, dur):
+        return post("Owner/Quote", self.tok, dict(pitchId=pitch, start=iso(start), durationMinutes=dur))["pitchTotal"]
+
+    def booking(self, body):
+        r = requests.post(f"{BASE}/Owner/Blocks/Save", headers=H(self.tok), json=body, timeout=60)
+        if r.status_code not in (200, 400):  # 400 = çakışma, başka saat denenir
+            raise RuntimeError(f"Blocks/Save: {r.status_code} {r.text[:300]}")
+        return r.status_code == 200
+
+    def expense(self, body):
+        post("Owner/Expenses/Save", self.tok, body)
+
+
+class SqlWriter:
+    """
+    --finance-only yedeği: işletme şifresi değiştirilmişse (giriş yapılamıyorsa) fiyat oyuncu Venues/Quote ile
+    (aynı fiyat mantığı) hesaplanır, satırlar SQL ile ve aynı çakışma kuralıyla (bekleyen/onaylı maç ya da başka blok) eklenir.
+    """
+
+    def __init__(self, player_tok):
+        self.tok = player_tok
+
+    def quote(self, pitch, start, dur):
+        d = post("Venues/Quote", self.tok, dict(pitchId=pitch, start=iso(start), durationMinutes=dur, userCount=10,
+                                                cleatCount=0, cameraRequested=False))
+        return d["pitchTotal"]
+
+    def booking(self, b):
+        s, e = b["startAt"], b["endAt"]
+        rows = sql(f"""
+IF NOT EXISTS (SELECT 1 FROM Matchs m WHERE m.PitchId = {b['pitchId']} AND m.IsActive IN (1, 2)
+               AND m.MatchDate < '{e}' AND DATEADD(minute, m.DurationMinutes, m.MatchDate) > '{s}')
+   AND NOT EXISTS (SELECT 1 FROM SlotBlocks x WHERE x.PitchId = {b['pitchId']} AND x.StartAt < '{e}' AND x.EndAt > '{s}')
+BEGIN
+  INSERT INTO SlotBlocks (PitchId, StartAt, EndAt, Reason, Kind, CustomerName, CustomerPhone, Price, IsPaid, Note)
+  VALUES ({b['pitchId']}, '{s}', '{e}', {q(b['reason'] or '')}, 1, {q(b['customerName'])}, {q(b['customerPhone'])},
+          {b['price']}, {1 if b['isPaid'] else 0}, {q(b['note'])});
+  SELECT 1 AS ok;
+END
+ELSE SELECT 0 AS ok;""")
+        return bool(rows and rows[0]["ok"])
+
+    def expense(self, b):
+        sql(f"""INSERT INTO VenueExpenses (StadiumId, Date, Category, Amount, Description, CreatedAt)
+                VALUES ({b['stadiumId']}, '{b['date']}', {q(b['category'])}, {b['amount']}, {q(b['description'])}, GETDATE()); SELECT 1 AS ok""")
+
+
+def seed_finance(venue, writer=None):
+    """Tek tesis: harici rezervasyonlar (Kind 1) + son 3 ayın giderleri. Rastgelelik tesis adına göre sabit."""
+    v, tok, sid, pitch_ids = venue["v"], venue["tok"], venue["sid"], venue["pitches"]
+    writer = writer or ApiWriter(tok)
+    rng = random.Random(f"finance-{v['user']}")
+    now = datetime.now()
+
+    # ---- harici rezervasyonlar
+    added = 0
+    target = rng.randint(6, 10)
+    attempts = 0
+    while added < target and attempts < target * 6:
+        attempts += 1
+        day = rng.randint(1, 14) if added < 2 else rng.randint(-60, 14)  # en az 2 gelecek rezervasyon
+        hour = rng.choice([10, 11, 12, 13, 14, 15, 16, 17, 22])
+        dur = rng.choice([60, 60, 60, 90, 120])
+        start = (now + timedelta(days=day)).replace(hour=hour, minute=0, second=0, microsecond=0)
+        if abs((start - now).total_seconds()) < 3 * 3600:
+            continue
+        end = start + timedelta(minutes=dur)
+        pitch = rng.choice(pitch_ids)
+        price = writer.quote(pitch, start, dur)
+        past = end <= now
+        paid = rng.random() < (0.75 if past else 0.3)
+        body = dict(pitchId=pitch, startAt=iso(start), endAt=iso(end), kind=1, reason=rng.choice(BOOKING_TITLES),
+                    customerName=rng.choice(CUSTOMERS), customerPhone=f"05{rng.randint(30, 55)}{rng.randint(1000000, 9999999)}",
+                    price=price, isPaid=paid, note=rng.choice(BOOKING_NOTES))
+        if writer.booking(body):
+            added += 1
+
+    # ---- giderler: bu ay + önceki 2 ay
+    prof = EXPENSE_PROFILE[v["user"]]
+    first = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    months = [first]
+    for _ in range(2):
+        months.insert(0, (months[0] - timedelta(days=1)).replace(day=1))
+    count = 0
+    for ms in months:
+        current = ms == first
+        mname = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"][ms.month - 1]
+        items = [(1, "Kira", prof["kira"], f"{mname} kirası"),
+                 (5, "Personel", r10(prof["personel"] * rng.uniform(0.97, 1.05)), f"{mname} maaşları"),
+                 (12, "Elektrik", r10(rng.uniform(*prof["elektrik"])), "Elektrik faturası"),
+                 (14, "Su", r10(rng.uniform(*prof["su"])), "Su faturası")]
+        if ms.month in (10, 11, 12, 1, 2, 3):
+            items.append((16, "Doğalgaz", r10(rng.uniform(2000, 6000) * (1.6 if ms.month in (12, 1, 2) else 1)), "Doğalgaz faturası (soyunma odası)"))
+        items.append((rng.randint(3, 25), "Malzeme", r10(rng.uniform(1500, 4500)), rng.choice(["Top ve yelek alımı", "Kale filesi", "Temizlik malzemesi"])))
+        if rng.random() < 0.7:
+            items.append((rng.randint(3, 25), "Bakım-onarım", r10(rng.uniform(2500, 9000)), rng.choice(["Suni çim bakımı", "Aydınlatma tamiri", "Duş tesisatı onarımı"])))
+        if rng.random() < 0.5:
+            items.append((rng.randint(3, 25), "Reklam", r10(rng.uniform(1000, 3500)), "Sosyal medya reklamı"))
+        if ms.month % 3 == 2:
+            items.append((20, "Vergi", r10(rng.uniform(4000, 9000)), "Geçici vergi"))
+        last_day = calendar.monthrange(ms.year, ms.month)[1]
+        for day, cat, amount, desc in items:
+            day = min(day, last_day)
+            if current:
+                day = min(day, now.day)  # bu ay: bugüne kadar oluşmuş giderler
+            writer.expense(dict(stadiumId=sid, date=ms.replace(day=day).strftime("%Y-%m-%d"), category=cat,
+                                amount=amount, description=desc))
+            count += 1
+    print(f"  finans {sid} {v['name']}: {added} harici rezervasyon, {count} gider")
+
+
+def clear_finance(venue):
+    """--finance-only: tesisin harici rezervasyonları (Kind 1) ve giderleri API üzerinden silinir."""
+    tok, sid = venue["tok"], venue["sid"]
+    now = datetime.now()
+    blocks = get("Owner/Blocks", tok, stadiumId=sid, **{"from": (now - timedelta(days=400)).strftime("%Y-%m-%d"),
+                                                       "to": (now + timedelta(days=400)).strftime("%Y-%m-%d")})
+    for b in blocks:
+        if b.get("kind") == 1:
+            post("Owner/Blocks/Delete", tok, dict(slotBlockId=b["slotBlockId"]))
+    for e in get("Owner/Expenses", tok, stadiumId=sid):
+        post("Owner/Expenses/Delete", tok, dict(expenseId=e["expenseId"]))
+
+
+def finance_only():
+    print(f"API: {BASE} (sadece finans demosu)")
+    player_tok = None
+    for v in VENUES:
+        try:
+            tok, _ = login(v["user"], OWNER_PASSWORD)
+        except RuntimeError:
+            tok = None
+        if tok:
+            mine = get("Owner/MyVenues", tok)["venues"]
+            if not mine:
+                print(f"  {v['user']}: tesis yok, atlandı")
+                continue
+            sid = mine[0]["stadiumId"]
+            pitches = [p["pitchId"] for p in get("Owner/Pitches", tok, stadiumId=sid) if p["isActive"]]
+            venue = dict(v=v, tok=tok, sid=sid, pitches=pitches)
+            clear_finance(venue)
+            seed_finance(venue)
+            continue
+        # İşletme şifresi değiştirilmiş: şifreye dokunulmaz, SQL yedeği kullanılır
+        rows = sql(f"""SELECT TOP 1 s.StadiumId FROM Stadiums s JOIN Players o ON o.PlayerId = s.OwnerPlayerId
+                       WHERE o.UserName = '{v['user']}' ORDER BY s.StadiumId""")
+        if not rows:
+            print(f"  {v['user']}: tesis yok, atlandı")
+            continue
+        sid = rows[0]["StadiumId"]
+        pitches = [r["PitchId"] for r in sql(f"SELECT PitchId FROM Pitches WHERE StadiumId = {sid} AND IsActive = 1 ORDER BY Name, PitchId")]
+        print(f"  {v['user']}: giriş yapılamadı (şifre değişmiş), SQL yedeği kullanılıyor")
+        sql(f"""DELETE b FROM SlotBlocks b JOIN Pitches p ON p.PitchId = b.PitchId WHERE p.StadiumId = {sid} AND b.Kind = 1;
+                DELETE FROM VenueExpenses WHERE StadiumId = {sid}; SELECT 1 AS ok""")
+        if player_tok is None:
+            player_tok, _ = login("demo_ali", DEMO_PASSWORD)
+        seed_finance(dict(v=v, tok=None, sid=sid, pitches=pitches), SqlWriter(player_tok))
+
+
 def main():
     print(f"API: {BASE}")
     images = extract_images()
@@ -319,13 +522,6 @@ def main():
         def respond(venue, mid, approve, reason=None):
             post("Owner/RespondReservation", venue["tok"], dict(matchId=mid, approve=approve, reason=reason))
 
-        def accept_invites(mid, who):
-            for k in who:
-                inv = get("Invites/My", players[k]["tok"])
-                for i in inv.get("matchInvites", []):
-                    if i["match"]["matchId"] == mid:
-                        post("Invites/Respond", players[k]["tok"], dict(kind="match", inviteId=i["inviteId"], accept=True))
-
         # ---------------- 12 gelecek maç
         future = []
         plan = [
@@ -353,17 +549,14 @@ def main():
             future.append(mid)
             print(f"gelecek maç {mid}: {name} ({'onaylı' if approve else 'bekliyor'})")
 
-        # 2 takım maçı
+        # 2 takım maçı: takım üyeleri SaveMatch ile doğrudan kadroya eklenir (ev sahibi Side 1, rakip Side 2)
         mid = create("ali", venues[0], 0, at(7, 21), "Kartallar - Moda Spor", users=14, home="Kadıköy Kartalları", away="Moda Spor", camera=True)
-        accept_invites(mid, ["burak", "cem", "deniz", "furkan", "gokhan", "hakan"])
         respond(venues[0], mid, True)
         future.append(mid)
         mid = create("levent", venues[2], 1, at(8, 20), "Yıldızlar - Kartallar Rövanş", users=14, home="Anadolu Yıldızları", away="Kadıköy Kartalları")
-        accept_invites(mid, ["mert", "onur", "emre"])
         future.append(mid)
         # 1 rakip aranıyor
         mid = create("furkan", venues[1], 0, at(9, 21), "Moda Spor rakip arıyor", users=14, home="Moda Spor", lfo=True)
-        accept_invites(mid, ["gokhan", "kaan"])
         respond(venues[1], mid, True)
         future.append(mid)
         print(f"{len(future)} gelecek maç")
@@ -404,6 +597,10 @@ def main():
             for j, r in enumerate(reviews[:2]):
                 post("Owner/Reviews/Reply", venue["tok"], dict(reviewId=r["reviewId"], reply=REPLIES[j % len(REPLIES)]))
 
+        # finans demosu: harici rezervasyonlar + giderler (maçlardan sonra; çakışan saatler atlanır)
+        for venue in venues:
+            seed_finance(venue)
+
         print("\n==== ÖZET ====")
         print(f"tesis: {len(venues)}, işletme: {len(venues)}, demo oyuncu: {len(players)}, takım: {len(teams)}, "
               f"gelecek maç: {len(future)}, geçmiş maç: {len(past)}")
@@ -422,4 +619,4 @@ SELECT 1 AS ok""")
 
 
 if __name__ == "__main__":
-    main()
+    finance_only() if FINANCE_ONLY else main()

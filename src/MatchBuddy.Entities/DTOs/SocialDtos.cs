@@ -70,6 +70,7 @@ namespace MatchBuddy.Entities.DTOs
         public string? Text { get; set; }
         public DateTime SendingDate { get; set; }
         public bool Mine { get; set; }
+        public bool HasImage { get; set; }
     }
 
     public class MessageContactDto

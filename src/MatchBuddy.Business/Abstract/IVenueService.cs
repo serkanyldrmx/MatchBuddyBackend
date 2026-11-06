@@ -45,6 +45,12 @@ namespace MatchBuddy.Business.Abstract
         OperationResult<List<SlotBlockDto>> Blocks(int me, int stadiumId, DateTime? from, DateTime? to);
         OperationResult<int> SaveBlock(int me, BlockSaveInput input);
         OperationResult<bool> DeleteBlock(int me, int slotBlockId);
+        OperationResult<bool> SetBlockPaid(int me, BlockPaidInput input);
+        OperationResult<OwnerQuoteDto> OwnerQuote(int me, OwnerQuoteInput input);
+        OperationResult<List<VenueExpenseDto>> Expenses(int me, int stadiumId, DateTime? from, DateTime? to);
+        OperationResult<int> SaveExpense(int me, ExpenseSaveInput input);
+        OperationResult<bool> DeleteExpense(int me, int expenseId);
+        OperationResult<OwnerFinanceDto> Finance(int me, int? stadiumId, int? year, int? month);
         OperationResult<List<VenueReviewDto>> OwnerReviews(int me, int stadiumId);
         OperationResult<bool> ReplyReview(int me, ReviewReplyInput input);
 

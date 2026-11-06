@@ -325,12 +325,19 @@
 
     public class CalendarBlockItemDto
     {
+        // Öğe ayırıcı ("match" | "block"); bloğun türü (0 kapalı, 1 harici rezervasyon) BlockKind'da
         public string Kind { get; set; } = "block";
+        public byte BlockKind { get; set; }
         public int SlotBlockId { get; set; }
         public int PitchId { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPaid { get; set; }
+        public string? Note { get; set; }
     }
 
     public class OwnerCalendarDto
@@ -445,7 +452,15 @@
         public string? PitchName { get; set; }
         public DateTime StartAt { get; set; }
         public DateTime EndAt { get; set; }
+        // 0 = kapalı/bakım, 1 = harici rezervasyon (BlockKind aynı değer, Calendar ile simetri için)
+        public byte Kind { get; set; }
+        public byte BlockKind => Kind;
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPaid { get; set; }
+        public string? Note { get; set; }
     }
 
     public class BlockSaveInput
@@ -454,7 +469,154 @@
         public int PitchId { get; set; }
         public DateTime? StartAt { get; set; }
         public DateTime? EndAt { get; set; }
+        public int Kind { get; set; }
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool? IsPaid { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class BlockPaidInput
+    {
+        public int SlotBlockId { get; set; }
+        public bool IsPaid { get; set; }
+    }
+
+    // ------------------------------------------------------------------ Ek paket: harici rezervasyon fiyatı, giderler, finans
+
+    public class OwnerQuoteInput
+    {
+        public int PitchId { get; set; }
+        public DateTime? Start { get; set; }
+        public int DurationMinutes { get; set; } = 60;
+    }
+
+    public class OwnerQuoteDto
+    {
+        public decimal PitchTotal { get; set; }
+        public List<QuoteLineDto> Lines { get; set; } = new();
+    }
+
+    public class VenueExpenseDto
+    {
+        public int ExpenseId { get; set; }
+        public int StadiumId { get; set; }
+        // "yyyy-MM-dd"
+        public string Date { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ExpenseSaveInput
+    {
+        public int? ExpenseId { get; set; }
+        public int StadiumId { get; set; }
+        public DateTime? Date { get; set; }
+        public string? Category { get; set; }
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class ExpenseIdInput
+    {
+        public int ExpenseId { get; set; }
+    }
+
+    public class FinanceIncomeDto
+    {
+        public decimal Matches { get; set; }
+        public decimal Manual { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class FinancePeriodDto
+    {
+        public decimal Income { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+    }
+
+    public class FinanceCountsDto
+    {
+        public int Matches { get; set; }
+        public int ManualBookings { get; set; }
+        public double HoursSold { get; set; }
+    }
+
+    public class FinanceDailyDto
+    {
+        // "yyyy-MM-dd"
+        public string Date { get; set; } = string.Empty;
+        public decimal Income { get; set; }
+        public decimal Expense { get; set; }
+    }
+
+    public class FinancePitchDto
+    {
+        public int PitchId { get; set; }
+        public string? Name { get; set; }
+        public decimal Income { get; set; }
+        public double Hours { get; set; }
+    }
+
+    public class FinanceSourceDto
+    {
+        public string Source { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
+    public class FinanceCategoryDto
+    {
+        public string Category { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
+    public class FinanceMonthDto
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public decimal Income { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+    }
+
+    public class FinanceTransactionDto
+    {
+        public DateTime Date { get; set; }
+        // "income" | "expense"
+        public string Type { get; set; } = string.Empty;
+        // "match" | "manual" | "expense"
+        public string Source { get; set; } = string.Empty;
+        public string? Title { get; set; }
+        public string? Category { get; set; }
+        public string? PitchName { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsPaid { get; set; }
+        public int RefId { get; set; }
+    }
+
+    public class OwnerFinanceDto
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public FinanceIncomeDto Income { get; set; } = new();
+        public decimal Receivable { get; set; }
+        public decimal ExpectedIncome { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+        public double MarginPercent { get; set; }
+        public FinancePeriodDto Previous { get; set; } = new();
+        public FinanceCountsDto Counts { get; set; } = new();
+        public List<FinanceDailyDto> Daily { get; set; } = new();
+        public List<FinancePitchDto> IncomeByPitch { get; set; } = new();
+        public List<FinanceSourceDto> IncomeBySource { get; set; } = new();
+        public List<FinanceCategoryDto> ExpenseByCategory { get; set; } = new();
+        public List<FinanceMonthDto> Monthly { get; set; } = new();
+        public List<FinanceTransactionDto> Transactions { get; set; } = new();
     }
 
     public class BlockIdInput

@@ -129,10 +129,130 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (target == null || target.Status != ParticipantStatus.Going)
                 return OperationResult<bool>.BadRequest("Oyuncu bu maçta asil kadroda değil.");
 
+            // Hedef tarafın kapasitesi: o taraftaki Going (oyuncu hariç) + misafir < ceil(UserCount / 2)
+            if (target.Side != side)
+            {
+                var others = context.MatchParticipants
+                    .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going && p.PlayerId != targetPlayerId)
+                    .ToList();
+                if (SideCount(others, LoadGuests(context, matchId), side) >= SideCapacity(match))
+                    return OperationResult<bool>.BadRequest(SideFull);
+            }
+
             target.Side = side;
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<bool>.Ok(true, "Oyuncunun tarafı güncellendi.");
+        }
+
+        // ------------------------------------------------------------------
+        // Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular")
+        // ------------------------------------------------------------------
+
+        // Yönetim + maç durumu kontrolü (kilitli satır üzerinde)
+        private static OperationResult<T>? GuestGuard<T>(MatchBuddyContext context, Match match, int actorPlayerId, bool isAdmin)
+        {
+            if (!CanManage(context, match, actorPlayerId, isAdmin)) return OperationResult<T>.Forbidden();
+            if (match.IsActive == RejectedStatus)
+                return OperationResult<T>.BadRequest("Bu maç reddedildi, kadro değiştirilemez.");
+            if (IsPast(match))
+                return OperationResult<T>.BadRequest("Maç tarihi geçti, kadro değiştirilemez.");
+            return null;
+        }
+
+        public OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string name, string? note)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var match = LockMatch(context, matchId);
+            if (match == null) return OperationResult<int>.NotFound("Maç bulunamadı.");
+            var guard = GuestGuard<int>(context, match, actorPlayerId, isAdmin);
+            if (guard != null) return guard;
+
+            // Kapasite: Going + misafir < UserCount ve o taraftaki Going + misafir < ceil(UserCount / 2)
+            var going = context.MatchParticipants
+                .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
+                .ToList();
+            var guests = LoadGuests(context, matchId);
+            if (going.Count + guests.Count >= match.UserCount || SideCount(going, guests, side) >= SideCapacity(match))
+                return OperationResult<int>.BadRequest(SideFull);
+
+            var guest = new MatchGuest
+            {
+                MatchId = matchId,
+                Name = name,
+                Note = note,
+                Side = side,
+                AddedByPlayerId = actorPlayerId,
+                CreatedAt = DateTime.Now,
+            };
+            context.MatchGuests.Add(guest);
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<int>.Ok(guest.GuestId, "Misafir oyuncu eklendi.");
+        }
+
+        public OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string name, string? note, byte side)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var matchId = context.MatchGuests.AsNoTracking().Where(g => g.GuestId == guestId).Select(g => (int?)g.MatchId).FirstOrDefault();
+            if (matchId == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            var match = LockMatch(context, matchId.Value);
+            if (match == null) return OperationResult<bool>.NotFound("Maç bulunamadı.");
+            var guard = GuestGuard<bool>(context, match, actorPlayerId, isAdmin);
+            if (guard != null) return guard;
+
+            var guests = LoadGuests(context, match.MatchId);
+            var guest = guests.FirstOrDefault(g => g.GuestId == guestId);
+            if (guest == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+
+            // Taraf değişiminde hedef tarafın kapasitesi (misafirin kendisi hariç)
+            if (guest.Side != side)
+            {
+                var going = context.MatchParticipants
+                    .Where(p => p.MatchId == match.MatchId && p.Status == ParticipantStatus.Going)
+                    .ToList();
+                if (SideCount(going, guests.Where(g => g.GuestId != guestId), side) >= SideCapacity(match))
+                    return OperationResult<bool>.BadRequest(SideFull);
+            }
+
+            guest.Name = name;
+            guest.Note = note;
+            guest.Side = side;
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<bool>.Ok(true, "Misafir oyuncu güncellendi.");
+        }
+
+        public OperationResult<bool> RemoveGuest(int guestId, int actorPlayerId, bool isAdmin)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var matchId = context.MatchGuests.AsNoTracking().Where(g => g.GuestId == guestId).Select(g => (int?)g.MatchId).FirstOrDefault();
+            if (matchId == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            var match = LockMatch(context, matchId.Value);
+            if (match == null) return OperationResult<bool>.NotFound("Maç bulunamadı.");
+            var guard = GuestGuard<bool>(context, match, actorPlayerId, isAdmin);
+            if (guard != null) return guard;
+
+            var guests = LoadGuests(context, match.MatchId);
+            var guest = guests.FirstOrDefault(g => g.GuestId == guestId);
+            if (guest == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+
+            context.MatchGuests.Remove(guest);
+            guests.Remove(guest);
+
+            // Boşalan yere yedekteki ilk oyuncu yükselir, misafirin tarafına atanır (bildirim dahil)
+            var participants = context.MatchParticipants.Where(p => p.MatchId == match.MatchId).ToList();
+            PromoteFromWaitlist(context, match, participants, guest.Side, guests);
+
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<bool>.Ok(true, "Misafir oyuncu kadrodan çıkarıldı.");
         }
 
         public OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput> stats)
@@ -437,6 +557,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             // Sosyal: takip ettiklerim ve engeller (iki yön)
             var graph = SocialGraph.Load(context, playerId);
 
+            // Misafir sayıları (kadroya / doluluğa sayılır)
+            var guestCounts = GuestCounts(context, null);
+
             var likedMatchIds = context.MatchLikes.AsNoTracking()
                 .Where(l => l.PlayerId == playerId)
                 .Select(l => l.MatchId)
@@ -480,6 +603,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 var rows = participantsByMatch[m.MatchId].ToList();
                 var mine = rows.FirstOrDefault(p => p.PlayerId == playerId);
+                var guestCount = guestCounts.TryGetValue(m.MatchId, out var gc) ? gc : 0;
                 var item = new MatchFeedItemDto
                 {
                     MatchId = m.MatchId,
@@ -488,7 +612,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     Description = m.Description,
                     IsActive = m.IsActive,
                     Capacity = m.UserCount,
-                    GoingCount = rows.Count(p => p.Status == ParticipantStatus.Going),
+                    GoingCount = rows.Count(p => p.Status == ParticipantStatus.Going) + guestCount,
+                    GuestCount = guestCount,
                     WaitlistCount = rows.Count(p => p.Status == ParticipantStatus.Waitlist),
                     Likes = m.Likes,
                     LikedByMe = likedMatchIds.Contains(m.MatchId),
@@ -527,6 +652,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .Where(p => p.MatchId == matchId)
                 .ToList();
             var mine = participants.FirstOrDefault(p => p.PlayerId == playerId);
+
+            var guests = context.MatchGuests.AsNoTracking()
+                .Include(g => g.AddedByPlayer)
+                .Where(g => g.MatchId == matchId)
+                .OrderBy(g => g.CreatedAt).ThenBy(g => g.GuestId)
+                .ToList();
 
             var myFollowing = context.Follows.AsNoTracking()
                 .Where(f => f.FollowerId == playerId)
@@ -635,6 +766,15 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                         IFollow = myFollowing.Contains(p.PlayerId),
                     })
                     .ToList(),
+                Guests = guests.Select(g => new MatchGuestDto
+                {
+                    GuestId = g.GuestId,
+                    Name = g.Name,
+                    Note = g.Note,
+                    Side = g.Side,
+                    AddedBy = g.AddedByPlayer == null ? null : PlayerSummaryDto.FromPlayer(g.AddedByPlayer),
+                    CreatedAt = g.CreatedAt,
+                }).ToList(),
                 Result = match.HomeScore.HasValue && match.AwayScore.HasValue
                     ? new MatchResultDto { HomeScore = match.HomeScore.Value, AwayScore = match.AwayScore.Value, EnteredAt = match.ResultEnteredAt }
                     : null,
@@ -817,12 +957,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                            }).ToList();
 
             var matchIds = matches.Select(m => m.MatchId).ToList();
-            var goingCounts = context.MatchParticipants.AsNoTracking()
-                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
-                .GroupBy(p => p.MatchId)
-                .Select(g => new { MatchId = g.Key, Count = g.Count() })
-                .ToList()
-                .ToDictionary(x => x.MatchId, x => x.Count);
+            // Going + misafir
+            var goingCounts = RosterCounts(context, matchIds);
 
             return matches
                 .OrderBy(m => m.MatchDate)

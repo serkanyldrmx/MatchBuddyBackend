@@ -62,14 +62,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         private static double? RoundRating(double? v) => v.HasValue ? Math.Round(v.Value, 1) : null;
 
-        // Dilim durumu: past > booked > pending > blocked > free
+        // Dilim durumu: past > booked > pending > blocked > free.
+        // Harici rezervasyon (blok Kind 1) oyunculara "booked", kapalı/bakım bloğu (Kind 0) "blocked" görünür.
         private static string SlotStatus(DateTime start, DateTime end, int pitchId, List<VenueRules.BusyMatch> busy, List<SlotBlock> blocks, DateTime now)
         {
             if (start < now) return "past";
             var overlapping = busy.Where(m => m.PitchId == pitchId && VenuePricing.Overlaps(m.Start, m.End, start, end)).ToList();
-            if (overlapping.Any(m => m.Status == MatchStatus.Approved)) return "booked";
+            var overlappingBlocks = blocks.Where(b => b.PitchId == pitchId && VenuePricing.Overlaps(b.StartAt, b.EndAt, start, end)).ToList();
+            if (overlapping.Any(m => m.Status == MatchStatus.Approved) || overlappingBlocks.Any(b => b.Kind == SlotBlockKind.Manual)) return "booked";
             if (overlapping.Count > 0) return "pending";
-            if (blocks.Any(b => b.PitchId == pitchId && VenuePricing.Overlaps(b.StartAt, b.EndAt, start, end))) return "blocked";
+            if (overlappingBlocks.Count > 0) return "blocked";
             return "free";
         }
 
@@ -394,41 +396,77 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         // ------------------------------------------------------------------ Maç kurma (SaveMatch)
 
+        // Takımın (silinmemiş, işletme olmayan) üyeleri, takıma katılma sırasıyla
         private static List<int> TeamMemberIds(MatchBuddyContext context, int teamId) =>
             (from pt in context.PlayerTeam
              join p in context.Players on pt.PlayerId equals p.PlayerId
              where pt.TeamId == teamId && !p.IsDeleted && p.Role != PlayerRoles.Owner
-             select p.PlayerId).Distinct().ToList();
+             orderby pt.PlayerTeamId
+             select p.PlayerId).ToList().Distinct().ToList();
 
-        // Takım üyelerine taraflı maç daveti (mevcut davet satırı yeniden açılır). Davet edilen id'leri döner.
-        private static List<int> InviteTeam(MatchBuddyContext context, Match match, int inviterId, IEnumerable<int> memberIds, byte side, ISet<int> skip)
+        /// <summary>
+        /// Takım kadrosu kuralı (docs/venues-api.md "Ek paket" §5): takımın tüm üyeleri doğrudan maça eklenir
+        /// (Going, verilen taraf, Confirmed = false). Taraf kapasitesi (ceil(UserCount / 2)) ya da toplam kapasite
+        /// doluysa fazlası Waitlist olur (JoinedAt = ekleme sırası). Zaten Going/Waitlist olanlar atlanır; "gelemiyor"
+        /// kaydı yeniden kullanılır. Engelleme kontrolü yapılmaz (takım üyeliği önceliklidir). MatchInvite oluşturulmaz,
+        /// takım arkadaşları için JoinedMatch aktivitesi yazılmaz. Eklenen her üyeye (actor hariç) MatchJoin bildirimi
+        /// (NotifyMatchUpdates tercihi) gider. SaveChanges çağırmaz. Eklenen (Going) ve yedeğe alınan id'leri döner.
+        /// </summary>
+        private static (List<int> Going, List<int> Waitlisted) AddTeamToSquad(MatchBuddyContext context, Match match, int actorId, Player? actor, int teamId, byte side)
         {
-            var ids = memberIds.Where(id => id != inviterId && !skip.Contains(id)).Distinct().ToList();
-            if (ids.Count == 0) return ids;
-            var existing = context.MatchInvites.Where(i => i.MatchId == match.MatchId && ids.Contains(i.InviteeId)).ToList()
-                .ToDictionary(i => i.InviteeId);
+            var going = new List<int>();
+            var waitlisted = new List<int>();
+            var memberIds = TeamMemberIds(context, teamId);
+            if (memberIds.Count == 0) return (going, waitlisted);
+
+            // Veritabanındaki kayıtlar + bu context'te henüz kaydedilmemiş (kurucu gibi) kayıtlar
+            context.MatchParticipants.Where(p => p.MatchId == match.MatchId).Load();
+            var participants = context.MatchParticipants.Local.Where(p => p.MatchId == match.MatchId).ToList();
+            var sideCapacity = SideCapacity(match);
+            // Misafirler kadroya (toplam ve taraf) sayılır
+            var guests = LoadGuests(context, match.MatchId);
             var now = DateTime.Now;
-            foreach (var id in ids)
+            var order = 0;
+
+            foreach (var id in memberIds)
             {
-                if (existing.TryGetValue(id, out var row))
+                var row = participants.FirstOrDefault(p => p.PlayerId == id);
+                if (row != null && (row.Status == ParticipantStatus.Going || row.Status == ParticipantStatus.Waitlist)) continue;
+
+                var goingRows = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
+                var canGo = goingRows.Count + guests.Count < match.UserCount && SideCount(goingRows, guests, side) < sideCapacity;
+                if (row == null)
                 {
-                    row.InviterId = inviterId;
-                    row.Status = InviteStatus.Pending;
-                    row.CreatedAt = now;
-                    row.RespondedAt = null;
-                    row.Side = side;
+                    row = new MatchParticipant { MatchId = match.MatchId, PlayerId = id };
+                    context.MatchParticipants.Add(row);
+                    participants.Add(row);
                 }
-                else
-                {
-                    context.MatchInvites.Add(new MatchInvite
-                    {
-                        MatchId = match.MatchId, InviterId = inviterId, InviteeId = id,
-                        Status = InviteStatus.Pending, CreatedAt = now, Side = side,
-                    });
-                }
-                skip.Add(id);
+                row.Status = canGo ? ParticipantStatus.Going : ParticipantStatus.Waitlist;
+                row.Side = canGo ? side : null;
+                row.Confirmed = false;
+                row.JoinedAt = now.AddMilliseconds(order++);
+                row.ReminderSentAt = null;
+                row.Goals = 0;
+                row.Assists = 0;
+                (canGo ? going : waitlisted).Add(id);
             }
-            return ids;
+
+            var name = DisplayName(actor);
+            var goingRecipients = going.Where(id => id != actorId).ToList();
+            if (goingRecipients.Count > 0)
+            {
+                AddNotification(context, NotificationType.MatchJoin,
+                    $"{name} seni takımın '{match.MatchName}' maçının kadrosuna ekledi. Gelemeyeceksen maçtan ayrıl.",
+                    match.MatchId, goingRecipients);
+            }
+            var waitRecipients = waitlisted.Where(id => id != actorId).ToList();
+            if (waitRecipients.Count > 0)
+            {
+                AddNotification(context, NotificationType.MatchJoin,
+                    $"{name} seni takımın '{match.MatchName}' maçının kadrosuna ekledi; kadro dolu olduğu için yedek listesindesin. Gelemeyeceksen maçtan ayrıl.",
+                    match.MatchId, waitRecipients);
+            }
+            return (going, waitlisted);
         }
 
         public OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input)
@@ -523,30 +561,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             });
             AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
 
-            // Takımlar: MatchTeam (eski ekranlar için) + üyelere taraflı davet
-            var skip = new HashSet<int> { creatorId };
+            // Takımlar: MatchTeam (eski ekranlar için) + üyeler doğrudan kadroya (ev sahibi Side 1, rakip Side 2)
             var when = $"{start:dd.MM.yyyy HH:mm}";
             if (home != null)
             {
                 context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
-                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, home.TeamId), ParticipantSide.Home, skip);
-                if (invited.Count > 0)
-                {
-                    NotificationWriter.Add(context, NotificationType.MatchInvite,
-                        $"{DisplayName(creator)} seni '{match.MatchName}' maçına {home.TeamName} kadrosunda davet etti ({when}).",
-                        match.MatchId, null, invited);
-                }
+                AddTeamToSquad(context, match, creatorId, creator, home.TeamId, ParticipantSide.Home);
             }
             if (away != null)
             {
                 context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
-                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, away.TeamId), ParticipantSide.Away, skip);
-                if (invited.Count > 0)
-                {
-                    NotificationWriter.Add(context, NotificationType.MatchInvite,
-                        $"{DisplayName(creator)}, {away.TeamName} takımını '{match.MatchName}' maçına rakip olarak davet etti ({when}).",
-                        match.MatchId, null, invited);
-                }
+                AddTeamToSquad(context, match, creatorId, creator, away.TeamId, ParticipantSide.Away);
             }
 
             // İşletmeye rezervasyon talebi
@@ -595,7 +620,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var mine = context.MatchParticipants.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
             if (mine?.Status == ParticipantStatus.Going)
             {
-                mine.Side = ParticipantSide.Away;
+                // Zaten kadrodaysam Deplasman'a geçerim; Deplasman doluysa (Going + misafir) tarafım korunur
+                if (mine.Side != ParticipantSide.Away)
+                {
+                    var awayGoing = context.MatchParticipants
+                        .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going && p.PlayerId != me).ToList();
+                    if (SideCount(awayGoing, LoadGuests(context, matchId), ParticipantSide.Away) < SideCapacity(match))
+                        mine.Side = ParticipantSide.Away;
+                }
             }
             else
             {
@@ -612,22 +644,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                         ? OperationResult<bool>.Forbidden(join.Message)
                         : OperationResult<bool>.BadRequest(join.Message);
                 }
-                var row = context.MatchParticipants.Local.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
-                if (row != null && row.Status == ParticipantStatus.Going) row.Side = ParticipantSide.Away;
+                // Join tercih edilen tarafa (Deplasman) yerleştirir; Deplasman doluysa (Going + misafir)
+                // daha az kişili tarafa koyar: taraf kapasitesi aşılmasın diye burada zorlanmaz.
             }
 
-            // Takımın diğer üyelerine davet (Side 2); kadroda olanlar atlanır
-            var inSquad = context.MatchParticipants
-                .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
-                .Select(p => p.PlayerId).ToHashSet();
-            inSquad.Add(me);
-            var invited = InviteTeam(context, match, me, TeamMemberIds(context, teamId), ParticipantSide.Away, inSquad);
-            if (invited.Count > 0)
-            {
-                NotificationWriter.Add(context, NotificationType.MatchInvite,
-                    $"{DisplayName(player)}, {team.TeamName} takımıyla '{match.MatchName}' maçına rakip olarak katıldı; seni de kadroya davet ediyor ({match.MatchDate:dd.MM.yyyy HH:mm}).",
-                    matchId, null, invited);
-            }
+            // Takımın diğer üyeleri doğrudan kadroya (Side 2); kadroda olanlar atlanır
+            AddTeamToSquad(context, match, me, player, teamId, ParticipantSide.Away);
             if (match.CreatedByPlayerId.HasValue && match.CreatedByPlayerId.Value != me)
             {
                 AddNotification(context, NotificationType.MatchJoin,

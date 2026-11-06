@@ -26,6 +26,9 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder.Property(x=>x.RecipientPlayerId).IsRequired(false);
 
+            // Resimli mesaj (docs/media-api.md); sadece resimli mesajda MatchMessage "" olur
+            builder.Property(x => x.ImageUrl).HasMaxLength(300);
+
         }
     }
 }

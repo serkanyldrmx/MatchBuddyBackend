@@ -8,5 +8,7 @@
         public int? SendPlayerId { get; set; }
         public string? UserName { get; set; }
         public byte Status { get; set; }
+        // Media/Upload (kind=message) ile yüklenmiş, gönderene ait Pending medya
+        public int? MediaId { get; set; }
     }
 }

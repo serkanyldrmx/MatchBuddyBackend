@@ -15,5 +15,6 @@ namespace MatchBuddy.Entities.DTOs
         public int? SendPlayerId { get; set; }
         public string? UserName { get; set; }
         public byte Status { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

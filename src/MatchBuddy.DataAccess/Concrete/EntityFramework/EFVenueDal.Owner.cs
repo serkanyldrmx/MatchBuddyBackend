@@ -76,10 +76,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             if (matches.Count == 0) return new List<ReservationDto>();
             var matchIds = matches.Select(m => m.MatchId).ToList();
-            var going = context.MatchParticipants.AsNoTracking()
-                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
-                .GroupBy(p => p.MatchId).Select(g => new { g.Key, Count = g.Count() })
-                .ToList().ToDictionary(x => x.Key, x => x.Count);
+            // Going + misafir
+            var going = ParticipationCore.RosterCounts(context, matchIds);
             var creatorIds = matches.Where(m => m.CreatedByPlayerId.HasValue).Select(m => m.CreatedByPlayerId!.Value).Distinct().ToList();
             var creators = context.Players.AsNoTracking().Where(p => creatorIds.Contains(p.PlayerId)).ToList().ToDictionary(p => p.PlayerId);
             var lookup = VenueRules.MatchVenueLookup.Load(context, matches);
@@ -227,10 +225,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .OrderBy(m => m.MatchDate).ThenBy(m => m.MatchId)
                 .ToList();
             var matchIds = matches.Select(m => m.MatchId).ToList();
-            var going = context.MatchParticipants.AsNoTracking()
-                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
-                .GroupBy(p => p.MatchId).Select(x => new { x.Key, Count = x.Count() })
-                .ToList().ToDictionary(x => x.Key, x => x.Count);
+            // Going + misafir
+            var going = ParticipationCore.RosterCounts(context, matchIds);
             var creatorIds = matches.Where(m => m.CreatedByPlayerId.HasValue).Select(m => m.CreatedByPlayerId!.Value).Distinct().ToList();
             var creators = context.Players.AsNoTracking().Where(p => creatorIds.Contains(p.PlayerId)).ToList()
                 .ToDictionary(p => p.PlayerId, PlayerSummaryDto.FromPlayer);
@@ -251,11 +247,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }));
             items.AddRange(VenueRules.Blocks(context, pitchIds, from, to).OrderBy(b => b.StartAt).Select(b => new CalendarBlockItemDto
             {
+                BlockKind = b.Kind,
                 SlotBlockId = b.SlotBlockId,
                 PitchId = b.PitchId,
                 Start = b.StartAt,
                 End = b.EndAt,
-                Reason = b.Reason,
+                Reason = string.IsNullOrEmpty(b.Reason) ? null : b.Reason,
+                CustomerName = b.CustomerName,
+                CustomerPhone = b.CustomerPhone,
+                Price = b.Price,
+                IsPaid = b.IsPaid,
+                Note = b.Note,
             }));
 
             return OperationResult<OwnerCalendarDto>.Ok(new OwnerCalendarDto
@@ -612,13 +614,31 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var pitches = context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId).ToList().ToDictionary(p => p.PitchId);
             return OperationResult<List<SlotBlockDto>>.Ok(VenueRules.Blocks(context, pitches.Keys.ToList(), from, to)
                 .OrderBy(b => b.StartAt).ThenBy(b => b.SlotBlockId)
-                .Select(b => new SlotBlockDto
-                {
-                    SlotBlockId = b.SlotBlockId, PitchId = b.PitchId, PitchName = pitches[b.PitchId].Name,
-                    StartAt = b.StartAt, EndAt = b.EndAt, Reason = b.Reason,
-                }).ToList());
+                .Select(BlockMapper(pitches)).ToList());
         }
 
+        private static Func<SlotBlock, SlotBlockDto> BlockMapper(IReadOnlyDictionary<int, Pitch> pitches) => b => new SlotBlockDto
+        {
+            SlotBlockId = b.SlotBlockId,
+            PitchId = b.PitchId,
+            PitchName = pitches.TryGetValue(b.PitchId, out var p) ? p.Name : null,
+            StartAt = b.StartAt,
+            EndAt = b.EndAt,
+            Kind = b.Kind,
+            Reason = string.IsNullOrEmpty(b.Reason) ? null : b.Reason,
+            CustomerName = b.CustomerName,
+            CustomerPhone = b.CustomerPhone,
+            Price = b.Price,
+            IsPaid = b.IsPaid,
+            Note = b.Note,
+        };
+
+        /// <summary>
+        /// Blok (Kind 0) ya da harici rezervasyon (Kind 1) kaydı. Çakışma: aynı sahada bekleyen/onaylı maç → 400;
+        /// harici rezervasyon başka bir blokla/rezervasyonla, kapalı blok da bir harici rezervasyonla çakışamaz
+        /// (güncellemede kaydın kendisi hariç). Harici rezervasyon geçmiş tarihli de girilebilir (gelir kaydı için).
+        /// Girdi doğrulaması (kind, müşteri adı, fiyat, uzunluklar) VenueManager'da.
+        /// </summary>
         public OperationResult<int> SaveBlock(int me, BlockSaveInput input)
         {
             using var context = new MatchBuddyContext();
@@ -636,10 +656,20 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var g = Guard(context, me, StadiumOf(context, pitch.StadiumId), true);
             if (g != null) return Fail<int>(g.Value);
 
+            var kind = (byte)input.Kind;
             var start = input.StartAt!.Value;
             var end = input.EndAt!.Value;
-            if (VenueRules.BusyMatches(context, new[] { pitch.PitchId }, start, end).Count > 0)
+            var ids = new[] { pitch.PitchId };
+            if (VenueRules.BusyMatches(context, ids, start, end).Count > 0)
                 return OperationResult<int>.BadRequest("Bu aralıkta bekleyen ya da onaylı bir rezervasyon var.");
+            var selfId = block?.SlotBlockId ?? 0;
+            var others = VenueRules.Blocks(context, ids, start, end).Where(b => b.SlotBlockId != selfId).ToList();
+            if (kind == SlotBlockKind.Manual && others.Count > 0)
+                return OperationResult<int>.BadRequest(others.Any(b => b.Kind == SlotBlockKind.Manual)
+                    ? "Bu aralıkta başka bir harici rezervasyon var."
+                    : "Bu aralık kapalı (bakım/blok) olarak işaretli.");
+            if (kind == SlotBlockKind.Closed && others.Any(b => b.Kind == SlotBlockKind.Manual))
+                return OperationResult<int>.BadRequest("Bu aralıkta bir harici rezervasyon var.");
 
             if (block == null)
             {
@@ -649,10 +679,42 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             block.PitchId = pitch.PitchId;
             block.StartAt = start;
             block.EndAt = end;
-            block.Reason = input.Reason!;
+            block.Kind = kind;
+            if (kind == SlotBlockKind.Manual)
+            {
+                block.Reason = input.Reason ?? string.Empty;
+                block.CustomerName = input.CustomerName;
+                block.CustomerPhone = input.CustomerPhone;
+                block.Price = input.Price;
+                block.IsPaid = input.IsPaid ?? false;
+                block.Note = input.Note;
+            }
+            else
+            {
+                block.Reason = input.Reason ?? "Kapalı";
+                block.CustomerName = null;
+                block.CustomerPhone = null;
+                block.Price = null;
+                block.IsPaid = false;
+                block.Note = input.Note;
+            }
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<int>.Ok(block.SlotBlockId, "Saat kapatıldı.");
+            return OperationResult<int>.Ok(block.SlotBlockId, kind == SlotBlockKind.Manual ? "Rezervasyon kaydedildi." : "Saat kapatıldı.");
+        }
+
+        public OperationResult<bool> SetBlockPaid(int me, int slotBlockId, bool isPaid)
+        {
+            using var context = new MatchBuddyContext();
+            var block = context.SlotBlocks.FirstOrDefault(b => b.SlotBlockId == slotBlockId);
+            if (block == null) return OperationResult<bool>.NotFound("Blok bulunamadı.");
+            var g = Guard(context, me, StadiumOfPitch(context, block.PitchId), true);
+            if (g != null) return Fail<bool>(g.Value);
+            if (block.Kind != SlotBlockKind.Manual)
+                return OperationResult<bool>.BadRequest("Ödeme durumu sadece harici rezervasyonlar için değiştirilebilir.");
+            block.IsPaid = isPaid;
+            context.SaveChanges();
+            return OperationResult<bool>.Ok(true, isPaid ? "Ödeme alındı olarak işaretlendi." : "Ödeme bekleniyor olarak işaretlendi.");
         }
 
         public OperationResult<bool> DeleteBlock(int me, int slotBlockId)

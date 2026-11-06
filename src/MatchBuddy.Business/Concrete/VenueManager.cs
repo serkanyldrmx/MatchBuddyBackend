@@ -237,16 +237,95 @@ namespace MatchBuddy.Business.Concrete
         public OperationResult<int> SaveBlock(int me, BlockSaveInput input)
         {
             if (input == null || input.PitchId <= 0) return Bad<int>("Saha seçilmelidir.");
+            if (input.Kind != SlotBlockKind.Closed && input.Kind != SlotBlockKind.Manual)
+                return Bad<int>("Geçersiz tür (0 = kapalı/bakım, 1 = harici rezervasyon).");
             if (input.StartAt == null || input.EndAt == null) return Bad<int>("Başlangıç ve bitiş zamanı gerekli.");
             if (input.EndAt <= input.StartAt) return Bad<int>("Bitiş zamanı başlangıçtan sonra olmalıdır.");
             if ((input.EndAt.Value - input.StartAt.Value).TotalDays > 31) return Bad<int>("Tek blok en fazla 31 gün olabilir.");
-            input.Reason = Clean(input.Reason) ?? "Kapalı";
-            var err = CheckLength(input.Reason, 100, "Sebep");
+            input.Reason = Clean(input.Reason);
+            input.CustomerName = Clean(input.CustomerName);
+            input.CustomerPhone = Clean(input.CustomerPhone);
+            input.Note = Clean(input.Note);
+            if (input.Kind == SlotBlockKind.Manual)
+            {
+                if (input.CustomerName == null) return Bad<int>("Müşteri adı girilmelidir.");
+                if (input.Price == null) return Bad<int>("Ücret girilmelidir.");
+                if (input.Price < 0 || input.Price > MaxPrice) return Bad<int>($"Ücret 0 ile {MaxPrice:0} arasında olmalıdır.");
+            }
+            else
+            {
+                // Kapalı blokta sebep zorunlu; boşsa eski davranıştaki gibi "Kapalı" yazılır
+                input.Reason ??= "Kapalı";
+            }
+            var err = CheckLength(input.Reason, 100, "Sebep") ?? CheckLength(input.CustomerName, 80, "Müşteri adı")
+                      ?? CheckLength(input.CustomerPhone, 30, "Telefon") ?? CheckLength(input.Note, 200, "Not");
             if (err != null) return Bad<int>(err);
             return _venueDal.SaveBlock(me, input);
         }
 
         public OperationResult<bool> DeleteBlock(int me, int slotBlockId) => _venueDal.DeleteBlock(me, slotBlockId);
+
+        public OperationResult<bool> SetBlockPaid(int me, BlockPaidInput input)
+        {
+            if (input == null || input.SlotBlockId <= 0) return Bad<bool>("Rezervasyon seçilmelidir.");
+            return _venueDal.SetBlockPaid(me, input.SlotBlockId, input.IsPaid);
+        }
+
+        public OperationResult<OwnerQuoteDto> OwnerQuote(int me, OwnerQuoteInput input)
+        {
+            if (input == null || input.PitchId <= 0) return Bad<OwnerQuoteDto>("Lütfen bir saha seçin.");
+            if (input.Start == null) return Bad<OwnerQuoteDto>("Başlangıç zamanı gerekli.");
+            if (input.DurationMinutes < 15 || input.DurationMinutes > 24 * 60)
+                return Bad<OwnerQuoteDto>("Süre 15 ile 1440 dakika arasında olmalıdır.");
+            return _venueDal.OwnerQuote(me, input.PitchId, input.Start.Value, input.DurationMinutes);
+        }
+
+        // ------------------------------------------------------------------ Giderler / finans
+
+        private const decimal MaxExpense = 100000000m;
+
+        public OperationResult<List<VenueExpenseDto>> Expenses(int me, int stadiumId, DateTime? from, DateTime? to)
+        {
+            if (from.HasValue && to.HasValue && to.Value.Date < from.Value.Date)
+                return Bad<List<VenueExpenseDto>>("Bitiş tarihi başlangıçtan önce olamaz.");
+            return _venueDal.Expenses(me, stadiumId, from, to);
+        }
+
+        public OperationResult<int> SaveExpense(int me, ExpenseSaveInput input)
+        {
+            if (input == null) return Bad<int>("Gider bilgileri boş olamaz.");
+            if (input.StadiumId <= 0 && input.ExpenseId is not > 0) return Bad<int>("Tesis seçilmelidir.");
+            if (input.Date == null) return Bad<int>("Tarih girilmelidir.");
+            if (input.Date.Value.Year < 2000 || input.Date.Value.Date > DateTime.Today.AddYears(1))
+                return Bad<int>("Tarih geçersiz.");
+            var category = Clean(input.Category);
+            var canonical = ExpenseCategories.All.FirstOrDefault(c => string.Equals(c, category, StringComparison.OrdinalIgnoreCase));
+            if (canonical == null) return Bad<int>($"Kategori şunlardan biri olmalıdır: {string.Join(", ", ExpenseCategories.All)}.");
+            input.Category = canonical;
+            if (input.Amount <= 0) return Bad<int>("Tutar 0'dan büyük olmalıdır.");
+            if (input.Amount > MaxExpense) return Bad<int>($"Tutar en fazla {MaxExpense:0} olabilir.");
+            if (decimal.Round(input.Amount, 2) != input.Amount) return Bad<int>("Tutar en fazla 2 ondalık basamak içerebilir.");
+            input.Description = Clean(input.Description);
+            var err = CheckLength(input.Description, 200, "Açıklama");
+            if (err != null) return Bad<int>(err);
+            return _venueDal.SaveExpense(me, input);
+        }
+
+        public OperationResult<bool> DeleteExpense(int me, int expenseId)
+        {
+            if (expenseId <= 0) return Bad<bool>("Gider seçilmelidir.");
+            return _venueDal.DeleteExpense(me, expenseId);
+        }
+
+        public OperationResult<OwnerFinanceDto> Finance(int me, int? stadiumId, int? year, int? month)
+        {
+            var today = DateTime.Today;
+            var y = year ?? today.Year;
+            var m = month ?? today.Month;
+            if (y < 2000 || y > 2100) return Bad<OwnerFinanceDto>("Yıl geçersiz.");
+            if (m < 1 || m > 12) return Bad<OwnerFinanceDto>("Ay 1 ile 12 arasında olmalıdır.");
+            return _venueDal.Finance(me, stadiumId, y, m);
+        }
 
         public OperationResult<List<VenueReviewDto>> OwnerReviews(int me, int stadiumId) => _venueDal.OwnerReviews(me, stadiumId);
 

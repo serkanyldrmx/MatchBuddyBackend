@@ -176,12 +176,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                             .ToList();
 
             var matchIds = matchRows.Select(r => r.Match.MatchId).Distinct().ToList();
-            var goingCounts = context.MatchParticipants.AsNoTracking()
-                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
-                .GroupBy(p => p.MatchId)
-                .Select(g => new { MatchId = g.Key, Count = g.Count() })
-                .ToList()
-                .ToDictionary(x => x.MatchId, x => x.Count);
+            // Going + misafir
+            var goingCounts = RosterCounts(context, matchIds);
 
             var teamRows = (from i in context.TeamInvites.AsNoTracking()
                             join t in context.Teams.AsNoTracking() on i.TeamId equals t.TeamId

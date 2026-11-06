@@ -10,5 +10,8 @@ namespace MatchBuddy.Entities.Entity
         public byte Status { get; set; }
         public int? SendPlayerId { get; set; }
         public int? RecipientPlayerId { get; set; }
+        // Resimli mesaj: medya ve md URL'si (yoksa null)
+        public int? MediaId { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

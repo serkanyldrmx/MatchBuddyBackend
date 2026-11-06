@@ -466,6 +466,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     m.MessageId,
                     m.SendingDate,
                     m.MatchMessage,
+                    HasImage = m.ImageUrl != null,
                     Mine = m.SendPlayerId == me
                 })
                 .ToList()
@@ -490,7 +491,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 Player = ToSocial(p, graph),
                 LastMessage = lastMessages.TryGetValue(p.PlayerId, out var m)
-                    ? new LastMessageDto { Text = m.MatchMessage, SendingDate = m.SendingDate, Mine = m.Mine }
+                    ? new LastMessageDto
+                    {
+                        // Resimli ve metinsiz mesaj: "📷 Fotoğraf" (docs/media-api.md)
+                        Text = m.HasImage && string.IsNullOrWhiteSpace(m.MatchMessage) ? "📷 Fotoğraf" : m.MatchMessage,
+                        SendingDate = m.SendingDate,
+                        Mine = m.Mine,
+                        HasImage = m.HasImage,
+                    }
                     : null,
             }).ToList();
 
@@ -621,6 +629,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             player.PhoneNumber = string.Empty;
             player.Address = string.Empty;
             player.ProfilePictureUrl = null;
+            player.ProfileMediaId = null; // medya dosyaları API katmanında (MediaService) silinir
             player.Password = randomPasswordHash;
             player.IsDeleted = true;
             player.DeletedAt = now;

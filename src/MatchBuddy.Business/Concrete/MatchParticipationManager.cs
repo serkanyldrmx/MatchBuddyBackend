@@ -39,6 +39,39 @@ namespace MatchBuddy.Business.Concrete
             return _participationDal.SetSide(matchId, actorPlayerId, isAdmin, targetPlayerId, side);
         }
 
+        // ---- Misafir oyuncular ----
+
+        private static string? ValidateGuest(byte side, ref string? name, ref string? note)
+        {
+            if (side != ParticipantSide.Home && side != ParticipantSide.Away)
+                return "Taraf 1 (ev sahibi) veya 2 (deplasman) olmalıdır.";
+            name = name?.Trim();
+            if (string.IsNullOrEmpty(name) || name.Length < MatchGuestRules.NameMinLength || name.Length > MatchGuestRules.NameMaxLength)
+                return $"Misafir adı {MatchGuestRules.NameMinLength}–{MatchGuestRules.NameMaxLength} karakter olmalıdır.";
+            note = note?.Trim();
+            if (string.IsNullOrEmpty(note)) note = null;
+            else if (note.Length > MatchGuestRules.NoteMaxLength)
+                return $"Not en fazla {MatchGuestRules.NoteMaxLength} karakter olabilir.";
+            return null;
+        }
+
+        public OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string? name, string? note)
+        {
+            var error = ValidateGuest(side, ref name, ref note);
+            if (error != null) return OperationResult<int>.BadRequest(error);
+            return _participationDal.AddGuest(matchId, actorPlayerId, isAdmin, side, name!, note);
+        }
+
+        public OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string? name, string? note, byte side)
+        {
+            var error = ValidateGuest(side, ref name, ref note);
+            if (error != null) return OperationResult<bool>.BadRequest(error);
+            return _participationDal.UpdateGuest(guestId, actorPlayerId, isAdmin, name!, note, side);
+        }
+
+        public OperationResult<bool> RemoveGuest(int guestId, int actorPlayerId, bool isAdmin) =>
+            _participationDal.RemoveGuest(guestId, actorPlayerId, isAdmin);
+
         public OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput>? stats)
         {
             if (homeScore < 0 || homeScore > MaxScore || awayScore < 0 || awayScore > MaxScore)

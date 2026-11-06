@@ -19,6 +19,11 @@ namespace MatchBuddy.Business.Abstract
         OperationResult<ToggleLikeResultDto> Like(int matchId, int playerId);
         void FillFromWaitlist(int matchId);
 
+        // Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular")
+        OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string? name, string? note);
+        OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string? name, string? note, byte side);
+        OperationResult<bool> RemoveGuest(int guestId, int actorPlayerId, bool isAdmin);
+
         IDataResult<List<MatchFeedItemDto>> GetMatchFeed(int playerId);
         IDataResult<MatchDetailDto?> GetMatchDetail(int matchId, int playerId, bool isAdmin);
         IDataResult<PlayerStatsDto?> GetPlayerStats(int playerId);

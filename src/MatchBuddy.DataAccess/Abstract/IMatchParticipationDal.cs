@@ -23,6 +23,12 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<bool> RatePlayers(int matchId, int raterPlayerId, List<PlayerRatingInput> ratings);
         OperationResult<ToggleLikeResultDto> ToggleLike(int matchId, int playerId, bool likeOnly);
 
+        // Misafir oyuncular (canManage; maç geçmemiş ve reddedilmemiş olmalı). Girdi iş katmanında doğrulanır.
+        OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string name, string? note);
+        OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string name, string? note, byte side);
+        // Silinen misafirin yerine yedekteki ilk oyuncu yükselir (misafirin tarafına)
+        OperationResult<bool> RemoveGuest(int guestId, int actorPlayerId, bool isAdmin);
+
         // Kapasite arttıysa yedekleri sırayla asile yükseltir
         void FillFromWaitlist(int matchId);
 

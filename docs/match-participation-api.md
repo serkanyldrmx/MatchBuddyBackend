@@ -143,3 +143,44 @@ matchesPlayed = geçmiş tarihli maçlarda Status=1 kayıt sayısı. mvpCount = 
    "avgRating": 4.2, "userScore": 84 }]
 ```
 Admin hesaplar hariç; userScore, sonra matchesPlayed'e göre azalan.
+
+---
+
+# Ek: Misafir oyuncular (uygulamayı kullanmayan kişiler)
+
+Maçı kuran kişi (canManage: kurucu ya da admin), kadrodaki boş yerlere uygulamada hesabı olmayan kişileri isimle ekleyebilir.
+
+## Veri modeli — yeni tablo **MatchGuests**
+| Alan | Tip | Not |
+|---|---|---|
+| GuestId | PK | |
+| MatchId | FK Cascade | |
+| Name | nvarchar(60) | 2–60 karakter, baştaki/sondaki boşluklar kırpılır |
+| Note | nvarchar(200) null | Ör. "Kaleci, Ahmet'in arkadaşı" |
+| Side | byte | 1 ev sahibi, 2 deplasman |
+| AddedByPlayerId | FK Players NoAction | |
+| CreatedAt | datetime | |
+
+## Kurallar
+- **Yetki:** sadece canManage. Maç geçmiş olmamalı, IsActive 3 (reddedilmiş) olmamalı. Aksi halde 400 ya da 403.
+- **Kapasite:** misafirler kadroya sayılır.
+  - Toplam: `Going + misafir < UserCount` olmalı.
+  - Taraf: `o taraftaki Going + o taraftaki misafir < ceil(UserCount/2)` olmalı.
+  - Dolu ise 400: `"Bu tarafta boş yer yok."`
+- **Join:** Kapasite kontrolü misafirleri de hesaba katar. Misafir yüzünden dolu olan maça katılan Waitlist'e düşer. Taraf atamasında misafirler o tarafın sayısına eklenir.
+- **Misafir silinince** boşalan yere Waitlist'teki ilk oyuncu yükselir ve misafirin tarafına atanır. Bildirim, mevcut yükseltme akışındaki gibi gider.
+- **SetSide (canManage):** gerçek oyuncuyu dolu bir tarafa taşırken misafirler de sayılır.
+- **Hariç tutulanlar:** Misafirler MVP oylamasına, oyuncu puanlamasına, istatistiklere ve sıralamaya dahil olmaz. SubmitResult `stats` içinde misafir yoktur.
+
+## Uç noktalar (`/api/Match/...`)
+| Metot | Yol | Gövde | Dönüş |
+|---|---|---|---|
+| POST | AddGuest | `{ matchId, side, name, note? }` | `{ success, message, guestId }` |
+| POST | UpdateGuest | `{ guestId, name, note?, side }` | `{ success, message }`. Taraf değişiminde kapasite kontrolü yapılır |
+| POST | RemoveGuest | `{ guestId }` | `{ success, message }` |
+
+## Yanıtlara eklenenler
+- `GetMatchDetail`: `"guests": [{ "guestId": 1, "name": "Ahmet", "note": "Kaleci", "side": 1, "addedBy": { /* PublicPlayerDto */ }, "createdAt": "..." }]`
+- `GetMatchFeed` öğeleri: `"guestCount": 2`. `goingCount` artık **Going + misafir** toplamını döner, böylece doluluk halkası doğru gösterilir.
+- `Owner/Reservations`, `Owner/Dashboard` ve `Owner/Calendar` öğelerindeki `goingCount`: Going + misafir.
+- `GetMyCalendar` `goingCount`: Going + misafir.

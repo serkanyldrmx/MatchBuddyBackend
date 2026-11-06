@@ -18,6 +18,8 @@ namespace MatchBuddy.Entities.Entity
         public byte IsAdmin { get; set; }
         public int UserScore { get; set; }
         public string? ProfilePictureUrl { get; set; }
+        // Profil fotoğrafı medyası (ProfilePictureUrl md URL'sini tutar). Eski /uploads kayıtlarında null.
+        public int? ProfileMediaId { get; set; }
 
         // Hesap silindi (anonimleştirildi): hiçbir listede görünmez, giriş yapamaz
         public bool IsDeleted { get; set; }

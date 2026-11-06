@@ -1,5 +1,6 @@
 ﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
+using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
@@ -15,9 +16,11 @@ namespace MatchBuddy.Api.Controllers
     {
         private readonly IMessageService _messageService;
         private readonly ISocialService _socialService;
+        private readonly IMediaService _mediaService;
 
-        public MessageController(IMessageService messageService, ISocialService socialService)
+        public MessageController(IMessageService messageService, ISocialService socialService, IMediaService mediaService)
         {
+            _mediaService = mediaService;
             _messageService = messageService;
             _socialService = socialService;
         }
@@ -58,17 +61,34 @@ namespace MatchBuddy.Api.Controllers
         [HttpPost("MessageSave")]
         public IActionResult MessageSave(MessageSaveModel mesageModel)
         {
+            // Metin ya da fotoğraf (mediaId) dolu olmalı
+            if (string.IsNullOrWhiteSpace(mesageModel.MatchMessage) && mesageModel.MediaId == null)
+            {
+                return BadRequest(new { Success = false, Message = "Mesaj boş olamaz." });
+            }
+
             // Mesaj izni (engel, alıcının MessagePermission ayarı, önceki yazışma): izin yoksa 403
             var permission = _socialService.CheckCanMessage(User.GetPlayerId(), mesageModel.RecipientPlayerId ?? 0);
             if (!permission.Success) return this.ToHttp(permission);
+
+            // Fotoğraf: gönderene ait, Pending, MessageImage olmalı -> Attached
+            string? imageUrl = null;
+            if (mesageModel.MediaId.HasValue)
+            {
+                var attach = _mediaService.Attach(mesageModel.MediaId.Value, MediaKind.MessageImage, User.GetPlayerId());
+                if (!attach.Success) return this.ToHttp(attach);
+                imageUrl = attach.Data.Url;
+            }
 
             var message = new Message()
             {
                 SendPlayerId = User.GetPlayerId(), // Gönderen her zaman token sahibidir
                 RecipientPlayerId = mesageModel.RecipientPlayerId,
-                MatchMessage = mesageModel.MatchMessage,
+                MatchMessage = mesageModel.MatchMessage ?? string.Empty,
                 SendingDate = mesageModel.SendingDate,
                 Status = mesageModel.Status,
+                MediaId = mesageModel.MediaId,
+                ImageUrl = imageUrl,
             };
             var result = _messageService.Add(message);
             if (result.Success)
