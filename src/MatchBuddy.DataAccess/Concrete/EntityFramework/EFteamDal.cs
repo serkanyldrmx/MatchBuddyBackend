@@ -2,6 +2,7 @@
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 {
@@ -27,6 +28,38 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                              };
 
                 return result.ToList();
+            }
+        }
+
+        public void AddWithActivity(Team team, int creatorPlayerId)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+            context.Teams.Add(team);
+            context.SaveChanges();
+            ParticipationCore.AddActivity(context, ActivityType.TeamCreated, creatorPlayerId, teamId: team.TeamId);
+            context.SaveChanges();
+            transaction.Commit();
+        }
+
+        public void ClearMatchReferences(int teamId)
+        {
+            using var context = new MatchBuddyContext();
+            context.Matchs.Where(m => m.HomeTeamId == teamId).ExecuteUpdate(s => s.SetProperty(m => m.HomeTeamId, (int?)null));
+            context.Matchs.Where(m => m.AwayTeamId == teamId).ExecuteUpdate(s => s.SetProperty(m => m.AwayTeamId, (int?)null));
+        }
+
+        public bool IsInAnyTournament(int teamId)
+        {
+            using var context = new MatchBuddyContext();
+            return context.TournamentTeams.Any(x => x.TeamId == teamId);
+        }
+
+        public bool IsPlayerInTeam(int teamId, int playerId)
+        {
+            using (MatchBuddyContext context = new MatchBuddyContext())
+            {
+                return context.PlayerTeam.Any(pt => pt.TeamId == teamId && pt.PlayerId == playerId);
             }
         }
 

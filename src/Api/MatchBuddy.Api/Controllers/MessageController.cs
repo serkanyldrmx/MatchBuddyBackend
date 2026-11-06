@@ -1,60 +1,74 @@
 ﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
-using MatchBuddy.Business.Concrete;
-using MatchBuddy.DataAccess.Abstract;
-using MatchBuddy.DataAccess.Concrete.EntityFramework;
+using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Numerics;
 
 namespace MatchBuddy.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MessageController : ControllerBase
     {
-        IMessageService _messageService;
-        public MessageController(IMessageService messageService)
+        private readonly IMessageService _messageService;
+        private readonly ISocialService _socialService;
+
+        public MessageController(IMessageService messageService, ISocialService socialService)
         {
             _messageService = messageService;
+            _socialService = socialService;
         }
 
+        // Kullanıcı sadece kendi gönderdiği/aldığı mesajları görebilir (admin hariç)
         [HttpGet("GetSendMessages")]
-        public List<Message> GetSendMessages([FromQuery]int playerId)
+        public ActionResult<List<Message>> GetSendMessages([FromQuery] int playerId)
         {
-            var result = _messageService.GetSendMessage(playerId);
-            return result.Data;
+            if (!User.IsSelfOrAdmin(playerId)) return Forbid();
+            return _messageService.GetSendMessage(playerId).Data;
         }
 
         [HttpGet("GetRecipientMessages")]
-        public List<Message> GetRecipientMessage([FromQuery]int playerId)
+        public ActionResult<List<Message>> GetRecipientMessage([FromQuery] int playerId)
         {
-            var result = _messageService.GetRecipientMessage(playerId);
-            return result.Data;
+            if (!User.IsSelfOrAdmin(playerId)) return Forbid();
+            return _messageService.GetRecipientMessage(playerId).Data;
         }
 
+        // İki kişi arasındaki konuşma: istek sahibi taraflardan biri olmalı
         [HttpPost("GetMessageById")]
-        public List<Message> GetMessageById(MessageModel messageModel)
+        public ActionResult<List<Message>> GetMessageById(MessageModel messageModel)
         {
-            var MessageModel = new Entities.DTOs.GetMessageModel()
+            var me = User.GetPlayerId();
+            if (!User.IsAdmin() && messageModel.SendPlayerId != me && messageModel.RecipientPlayerId != me)
+            {
+                return Forbid();
+            }
+
+            var model = new GetMessageModel()
             {
                 SendPlayerId = messageModel.SendPlayerId,
                 RecipientPlayerId = messageModel.RecipientPlayerId
             };
-            var result = _messageService.GetMessageById(MessageModel);
-            return result.Data;
+            return _messageService.GetMessageById(model).Data;
         }
 
         [HttpPost("MessageSave")]
         public IActionResult MessageSave(MessageSaveModel mesageModel)
         {
+            // Mesaj izni (engel, alıcının MessagePermission ayarı, önceki yazışma): izin yoksa 403
+            var permission = _socialService.CheckCanMessage(User.GetPlayerId(), mesageModel.RecipientPlayerId ?? 0);
+            if (!permission.Success) return this.ToHttp(permission);
+
             var message = new Message()
             {
-                SendPlayerId=mesageModel.SendPlayerId,
-                RecipientPlayerId=mesageModel.RecipientPlayerId,
+                SendPlayerId = User.GetPlayerId(), // Gönderen her zaman token sahibidir
+                RecipientPlayerId = mesageModel.RecipientPlayerId,
                 MatchMessage = mesageModel.MatchMessage,
-                SendingDate=mesageModel.SendingDate,
-                Status = mesageModel.Status,    
+                SendingDate = mesageModel.SendingDate,
+                Status = mesageModel.Status,
             };
             var result = _messageService.Add(message);
             if (result.Success)

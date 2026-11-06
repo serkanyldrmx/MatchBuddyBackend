@@ -20,7 +20,7 @@ namespace MatchBuddy.DataAccess.Configuration
             builder.HasOne(x => x.Match)
                    .WithMany(x => x.MatchComments)
                    .HasForeignKey(x => x.MatchId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade); // maç silinince yorumları da silinir
         }
     }
 }

@@ -36,6 +36,18 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         }
 
+        // Oyuncu, maça eklenmiş takımlardan birinde mi?
+        public bool IsPlayerInMatch(int matchId, int playerId)
+        {
+            using (MatchBuddyContext context = new MatchBuddyContext())
+            {
+                return (from mt in context.MatchTeam
+                        join pt in context.PlayerTeam on mt.TeamId equals pt.TeamId
+                        where mt.MatchId == matchId && pt.PlayerId == playerId
+                        select pt.PlayerId).Any();
+            }
+        }
+
         public void MatchStatusUpdate(int matchId, byte status)
         {
             using (MatchBuddyContext context = new MatchBuddyContext())
@@ -171,36 +183,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 // Bildirim mesajını oluşturuyoruz
                 var notificationText = $"Tebrikler Takımınız Yeni Bir Maça Eklendi: {matchDetails.MatchName} ({matchDetails.MatchDate}) - {matchDetails.StadiumName}, {matchDetails.StadiumAddress}. {result.FirstOrDefault()?.TeamName} takımı için yeni bir maç başlatıldı.";
 
-                // Bildirim oluşturuluyor
-                var notification = new Notification
-                {
-                    Text = notificationText,
-                    Type = NotificationType.MatchCreated, // Bildirimin türü "MatchCreated"
-                    CreatedAt = DateTime.Now,
-                    IsRead = false,
-                    MatchId = matchId,
-                    StadiumId = null, // Stadyum adı eklenebilir
-                    PlayerNotifications = new List<PlayerNotification>() // Bildirim oyunculara gönderilecek
-                };
-
-                // Bildirimi veritabanına ekliyoruz
-                context.Notification.Add(notification);
-                context.SaveChanges();
-
-                // Her oyuncu için PlayerNotification tablosuna kayıt ekliyoruz
-                foreach (var player in result)
-                {
-                    var playerNotification = new PlayerNotification
-                    {
-                        PlayerId = player.PlayerId,
-                        NotificationId = notification.NotificationId // Bildirim ID'sini ilişkilendiriyoruz
-                    };
-
-                    // PlayerNotification ekliyoruz
-                    context.PlayerNotification.Add(playerNotification);
-                }
-
-                // Değişiklikleri kaydediyoruz
+                // Bildirim (alıcı tercihleri NotificationWriter'da kontrol edilir)
+                NotificationWriter.Add(context, NotificationType.MatchCreated, notificationText, matchId, null,
+                    result.Select(p => p.PlayerId).ToList());
                 context.SaveChanges();
             }
         }
@@ -249,42 +234,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     return;
                 }
 
-                var notification = new Notification
-                {
-                    Text = notificationText,
-                    Type = notificationType,
-                    CreatedAt = DateTime.Now,
-                    IsRead = false,
-                    MatchId = matchId
-                };
+                var recipientIds = (from mt in context.MatchTeam
+                                    join pt in context.PlayerTeam on mt.TeamId equals pt.TeamId
+                                    where mt.MatchId == matchId
+                                    select pt.PlayerId).ToList();
 
-                context.Notification.Add(notification);
-                context.SaveChanges();
-
-                var matchTeams = context.MatchTeam
-                    .Where(mt => mt.MatchId == matchId)
-                    .Select(mt => mt.TeamId)
-                    .ToList();
-
-                foreach (var teamId in matchTeams)
-                {
-                    var players = context.PlayerTeam
-                        .Where(pt => pt.TeamId == teamId)
-                        .Select(pt => pt.PlayerId)
-                        .ToList();
-
-                    foreach (var playerId in players)
-                    {
-                        var playerNotification = new PlayerNotification
-                        {
-                            PlayerId = playerId,
-                            NotificationId = notification.NotificationId
-                        };
-
-                        context.PlayerNotification.Add(playerNotification);
-                    }
-                }
-
+                // Bildirim (alıcı tercihleri NotificationWriter'da kontrol edilir)
+                NotificationWriter.Add(context, notificationType, notificationText, matchId, null, recipientIds);
                 context.SaveChanges();
             }
         }

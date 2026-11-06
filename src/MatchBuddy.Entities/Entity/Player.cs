@@ -18,6 +18,16 @@ namespace MatchBuddy.Entities.Entity
         public byte IsAdmin { get; set; }
         public int UserScore { get; set; }
         public string? ProfilePictureUrl { get; set; }
+
+        // Hesap silindi (anonimleştirildi): hiçbir listede görünmez, giriş yapamaz
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        // 0 oyuncu, 1 admin, 2 işletme (PlayerRoles). IsAdmin == 1 <=> Role == 1
+        public byte Role { get; set; }
+        // Sadece işletmeler için: üyelik bitiş tarihi (null = süresiz) ve askı durumu
+        public DateTime? MembershipUntil { get; set; }
+        public bool MembershipSuspended { get; set; }
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }
         public List<GroupPlayer> GroupPlayers { get; set; }

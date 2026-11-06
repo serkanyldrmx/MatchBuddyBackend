@@ -25,7 +25,7 @@ namespace MatchBuddy.Business.Abstract
         IResult Delete(int notificationId);
         // Bildirimi sil
 
-        IResult MarkAsRead(int playerNotificationId);
+        IResult MarkAsRead(int playerNotificationId, int playerId);
         // Oyuncuya ait bildirimi okundu olarak işaretle
 
         IResult SendNotificationToPlayers(List<int> playerIds, Notification notification);

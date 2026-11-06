@@ -18,10 +18,13 @@ namespace MatchBuddy.DataAccess.Configuration
             builder.Property(s => s.Location)
               .HasMaxLength(200);
 
+            // İl / ilçe metin olarak (docs/venues-api.md)
             builder.Property(s => s.City)
+                .HasMaxLength(60)
                 .IsRequired(false);
 
             builder.Property(s => s.District)
+                .HasMaxLength(60)
                 .IsRequired(false);
 
             builder.Property(s => s.Address)
@@ -41,6 +44,19 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder.Property(s => s.Description)
                 .HasMaxLength(500);
+
+            builder.Property(s => s.Phone).HasMaxLength(30);
+            builder.Property(s => s.CleatRentalPrice).HasColumnType("decimal(10,2)");
+            builder.Property(s => s.CameraPrice).HasColumnType("decimal(10,2)");
+            builder.Property(s => s.CancellationPolicy).HasMaxLength(500);
+            builder.HasIndex(s => s.OwnerPlayerId);
+            builder.HasIndex(s => s.OsmId);
+
+            // İşletme hesabı: NoAction (çoklu cascade yolu olmasın)
+            builder.HasOne<Player>()
+                .WithMany()
+                .HasForeignKey(s => s.OwnerPlayerId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Relationships
             builder.HasMany(s => s.Matches)

@@ -38,34 +38,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 // Yeni stadyum için bildirim metni oluşturuyoruz
                 var notificationText = $"Tebrikler yeni bir stadyum ekledi: {stadium.StadiumName} - {stadium.Address}";
 
-                // Bildirim oluşturuluyor
-                var notification = new Notification
-                {
-                    Text = notificationText,
-                    Type = NotificationType.StadiumAdded, // Bildirimin türü "StadiumAdded"
-                    CreatedAt = DateTime.Now,
-                    IsRead = false,
-                    StadiumId = stadium.StadiumId,
-                    PlayerNotifications = new List<PlayerNotification>() // Bildirim tüm kullanıcılara gönderilecek
-                };
-
-                // Bildirimi veritabanına ekliyoruz
-                context.Notification.Add(notification);
-                context.SaveChanges();
-
-                // Tüm oyunculara bildirim gönderiyoruz
-                var players = context.Players.ToList(); // Tüm oyuncuları alıyoruz
-                foreach (var player in players)
-                {
-                    var playerNotification = new PlayerNotification
-                    {
-                        PlayerId = player.PlayerId,
-                        NotificationId = notification.NotificationId // Bildirimi ilişkilendiriyoruz
-                    };
-
-                    // PlayerNotification ekliyoruz
-                    context.PlayerNotification.Add(playerNotification);
-                }
+                // Tüm (silinmemiş) oyunculara bildirim; tercihler NotificationWriter'da kontrol edilir
+                var playerIds = context.Players.Where(p => !p.IsDeleted).Select(p => p.PlayerId).ToList();
+                NotificationWriter.Add(context, NotificationType.StadiumAdded, notificationText, null, stadium.StadiumId, playerIds);
 
                 // Değişiklikleri kaydediyoruz
                 context.SaveChanges();

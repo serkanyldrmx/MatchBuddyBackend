@@ -1,34 +1,39 @@
 ﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
-using MatchBuddy.Business.Concrete;
-using MatchBuddy.Core.Utilities.Results;
-using MatchBuddy.DataAccess.Concrete.EntityFramework;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MatchBuddy.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MatchCommentController : ControllerBase
     {
-        IMatchCommentsService _matchCommentsService;
-        
+        private readonly IMatchCommentsService _matchCommentsService;
+
         public MatchCommentController(IMatchCommentsService matchCommentsService)
         {
             _matchCommentsService = matchCommentsService;
         }
 
-        //Maç eklemek için 
+        // Yorum ekle: yorumu yazan her zaman token sahibidir
         [HttpPost("SaveMatchComment")]
         public IActionResult SaveMatchComment(MatchCommentModel matchCommentModel)
         {
-            var matchComment = new MatchComment() 
+            if (string.IsNullOrWhiteSpace(matchCommentModel.Comment))
             {
-               Comment= matchCommentModel.Comment,
-               MatchId=matchCommentModel.MatchId,
-               playerId =matchCommentModel.playerId,               
+                return BadRequest(new { Success = false, Message = "Yorum boş olamaz." });
+            }
+
+            var matchComment = new MatchComment()
+            {
+                Comment = matchCommentModel.Comment,
+                MatchId = matchCommentModel.MatchId,
+                playerId = User.GetPlayerId(),
             };
             var result = _matchCommentsService.Add(matchComment);
             if (result.Success)
@@ -38,16 +43,21 @@ namespace MatchBuddy.Api.Controllers
             return BadRequest(result);
         }
 
-
-        //Maç silmek için
+        // Yorum sil: sadece yorumun sahibi veya admin
         [HttpPost("DeleteMatchComment")]
         public IActionResult DeleteMatchComment(int commentId)
         {
-            var matchComment = new MatchComment()
+            var comment = _matchCommentsService.GetComment(commentId);
+            if (comment == null)
             {
-                CommentsId = commentId,
-            };
-            var result = _matchCommentsService.Delete(matchComment);
+                return NotFound(new { Success = false, Message = "Yorum bulunamadı." });
+            }
+            if (!User.IsSelfOrAdmin(comment.playerId))
+            {
+                return Forbid();
+            }
+
+            var result = _matchCommentsService.Delete(comment);
             if (result.Success)
             {
                 return Ok(result);
@@ -55,18 +65,17 @@ namespace MatchBuddy.Api.Controllers
             return BadRequest(result);
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpGet("GetMatchCommentList")]
         public List<MatchComment> GetMatchCommentList()
         {
-            var result = _matchCommentsService.GetAll();
-            return result.Data;
+            return _matchCommentsService.GetAll().Data;
         }
 
         [HttpGet("GetMatchComments")]
         public List<MatchComentsDto> GetMatchComments([FromQuery] int matchId)
         {
-            var result = _matchCommentsService.GetById(matchId);
-            return result.Data;
+            return _matchCommentsService.GetById(matchId).Data;
         }
     }
 }

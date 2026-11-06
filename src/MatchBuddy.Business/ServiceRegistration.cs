@@ -20,6 +20,11 @@ namespace Business
             services.AddScoped<IGroupPlayerService, GroupPlayerManager>();
             services.AddScoped<IMatchCommentsService, MatchCommentsManager>();
             services.AddScoped<INotificationService, NotificationManager>();
+            services.AddScoped<IMatchParticipationService, MatchParticipationManager>();
+            services.AddScoped<ISocialService, SocialManager>();
+            services.AddScoped<IInviteService, InviteManager>();
+            services.AddScoped<ITournamentService, TournamentManager>();
+            services.AddScoped<IVenueService, VenueManager>();
         }
     }
 }

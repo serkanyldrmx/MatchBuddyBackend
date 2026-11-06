@@ -1,0 +1,707 @@
+using System.Globalization;
+using MatchBuddy.Core.Utilities.Results;
+using MatchBuddy.DataAccess.Abstract;
+using MatchBuddy.Entities.DTOs;
+using MatchBuddy.Entities.Entity;
+using Microsoft.EntityFrameworkCore;
+using static MatchBuddy.DataAccess.Concrete.EntityFramework.ParticipationCore;
+
+namespace MatchBuddy.DataAccess.Concrete.EntityFramework
+{
+    /// <summary>
+    /// Anlaşmalı tesisler (docs/venues-api.md): oyuncu uç noktaları, maç kurma (rezervasyon), rakip takım,
+    /// rezervasyon durumu. İşletme paneli EFVenueDal.Owner.cs, admin EFVenueDal.Admin.cs içinde.
+    /// </summary>
+    public partial class EFVenueDal : IVenueDal
+    {
+        private static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
+
+        private static string Norm(string? s) => (s ?? string.Empty).Trim().ToLower(Tr);
+
+        private static VenueAmenitiesDto Amenities(Stadium s) => new()
+        {
+            CleatRental = s.CleatRental,
+            Camera = s.HasCamera,
+            Shower = s.HasShower,
+            LockerRoom = s.HasLockerRoom,
+            Parking = s.HasParking,
+            Cafe = s.HasCafe,
+            Shuttle = s.HasShuttle,
+            Bibs = s.ProvidesBibs,
+            Ball = s.ProvidesBall,
+        };
+
+        private static CampaignDto ToDto(Campaign c) => new()
+        {
+            CampaignId = c.CampaignId,
+            StadiumId = c.StadiumId,
+            Title = c.Title,
+            Description = c.Description,
+            StartDate = c.StartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            EndDate = c.EndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DaysMask = c.DaysMask,
+            FromHour = c.FromHour,
+            ToHour = c.ToHour,
+            DiscountPercent = c.DiscountPercent,
+            FixedPrice = c.FixedPrice,
+            PitchId = c.PitchId,
+            IsActive = c.IsActive,
+        };
+
+        private static PitchDto ToDto(Pitch p) => new()
+        {
+            PitchId = p.PitchId,
+            StadiumId = p.StadiumId,
+            Name = p.Name,
+            Surface = p.Surface,
+            IsIndoor = p.IsIndoor,
+            PlayersPerSide = p.PlayersPerSide,
+            BasePrice = p.BasePrice,
+            IsActive = p.IsActive,
+        };
+
+        private static double? RoundRating(double? v) => v.HasValue ? Math.Round(v.Value, 1) : null;
+
+        // Dilim durumu: past > booked > pending > blocked > free
+        private static string SlotStatus(DateTime start, DateTime end, int pitchId, List<VenueRules.BusyMatch> busy, List<SlotBlock> blocks, DateTime now)
+        {
+            if (start < now) return "past";
+            var overlapping = busy.Where(m => m.PitchId == pitchId && VenuePricing.Overlaps(m.Start, m.End, start, end)).ToList();
+            if (overlapping.Any(m => m.Status == MatchStatus.Approved)) return "booked";
+            if (overlapping.Count > 0) return "pending";
+            if (blocks.Any(b => b.PitchId == pitchId && VenuePricing.Overlaps(b.StartAt, b.EndAt, start, end))) return "blocked";
+            return "free";
+        }
+
+        // Görünür değilse: sadece tesisin işletmesi ve admin görebilir
+        private static bool CanView(MatchBuddyContext context, Stadium stadium, int viewerId, bool isAdmin) =>
+            isAdmin || stadium.OwnerPlayerId == viewerId || VenueRules.IsVisible(context, stadium.StadiumId);
+
+        // ------------------------------------------------------------------ List
+
+        public List<VenueListItemDto> List(string? city, string? query, DateTime date)
+        {
+            using var context = new MatchBuddyContext();
+            var visible = VenueRules.VisibleStadiumIds(context).ToList();
+            if (visible.Count == 0) return new List<VenueListItemDto>();
+
+            var stadiums = context.Stadiums.AsNoTracking().Where(s => visible.Contains(s.StadiumId)).ToList();
+            var c = Norm(city);
+            if (c.Length > 0) stadiums = stadiums.Where(s => Norm(s.City).Contains(c)).ToList();
+            var q = Norm(query);
+            if (q.Length > 0)
+            {
+                stadiums = stadiums.Where(s => Norm(s.StadiumName).Contains(q) || Norm(s.District).Contains(q)
+                                               || Norm(s.Address).Contains(q) || Norm(s.City).Contains(q)).ToList();
+            }
+            if (stadiums.Count == 0) return new List<VenueListItemDto>();
+
+            var ids = stadiums.Select(s => s.StadiumId).ToList();
+            var pitches = context.Pitches.AsNoTracking().Where(p => ids.Contains(p.StadiumId) && p.IsActive).ToList();
+            var rules = context.PriceRules.AsNoTracking().Where(r => ids.Contains(r.StadiumId)).ToList();
+            var today = DateTime.Today;
+            var campaigns = context.Campaigns.AsNoTracking().Where(x => ids.Contains(x.StadiumId) && x.IsActive && x.EndDate >= today).ToList();
+            var hours = context.OpeningHours.AsNoTracking().Where(h => ids.Contains(h.StadiumId)).ToList();
+            var covers = VenueRules.CoverUrls(context, ids);
+            var ratings = context.VenueReviews.AsNoTracking().Where(r => ids.Contains(r.StadiumId))
+                .GroupBy(r => r.StadiumId)
+                .Select(g => new { StadiumId = g.Key, Avg = g.Average(r => (double)r.Rating), Count = g.Count() })
+                .ToList().ToDictionary(x => x.StadiumId);
+
+            var day = date.Date;
+            var pitchIds = pitches.Select(p => p.PitchId).ToList();
+            var busy = VenueRules.BusyMatches(context, pitchIds, day, day.AddDays(2));
+            var blocks = VenueRules.Blocks(context, pitchIds, day, day.AddDays(2));
+            var now = DateTime.Now;
+
+            return stadiums
+                .Select(s =>
+                {
+                    var myPitches = pitches.Where(p => p.StadiumId == s.StadiumId).ToList();
+                    var week = VenuePricing.WeekHours(hours.Where(h => h.StadiumId == s.StadiumId), s.OpeningTime, s.ClosingTime);
+                    var slots = VenuePricing.DaySlots(day, week);
+                    var free = myPitches.Sum(p => slots.Count(sl => SlotStatus(sl.Start, sl.End, p.PitchId, busy, blocks, now) == "free"));
+                    ratings.TryGetValue(s.StadiumId, out var rating);
+                    return new VenueListItemDto
+                    {
+                        StadiumId = s.StadiumId,
+                        Name = s.StadiumName,
+                        City = s.City,
+                        District = s.District,
+                        Address = s.Address,
+                        Location = s.Location,
+                        CoverPhotoUrl = covers.TryGetValue(s.StadiumId, out var cover) ? cover : null,
+                        PitchCount = myPitches.Count,
+                        Amenities = Amenities(s),
+                        MinPrice = VenuePricing.MinPrice(myPitches, rules.Where(r => r.StadiumId == s.StadiumId)),
+                        HasActiveCampaign = campaigns.Any(x => x.StadiumId == s.StadiumId),
+                        Rating = RoundRating(rating?.Avg),
+                        ReviewCount = rating?.Count ?? 0,
+                        FreeSlotsToday = free,
+                    };
+                })
+                .OrderByDescending(v => v.Rating ?? 0)
+                .ThenBy(v => v.Name, StringComparer.Create(Tr, true))
+                .ToList();
+        }
+
+        // ------------------------------------------------------------------ Detail
+
+        public OperationResult<VenueDetailDto> Detail(int stadiumId, int viewerId, bool isAdmin)
+        {
+            using var context = new MatchBuddyContext();
+            var s = context.Stadiums.AsNoTracking().FirstOrDefault(x => x.StadiumId == stadiumId);
+            if (s == null || !CanView(context, s, viewerId, isAdmin))
+                return OperationResult<VenueDetailDto>.NotFound(VenueRules.VenueNotFound);
+            return OperationResult<VenueDetailDto>.Ok(BuildDetail<VenueDetailDto>(context, s, ownerView: false));
+        }
+
+        /// <summary>İşletme görünümü: oyunculara görünmese bile; pasif sahalar dahil, + isListed / missing.</summary>
+        public OperationResult<OwnerVenueDetailDto> OwnerVenue(int me, int stadiumId)
+        {
+            using var context = new MatchBuddyContext();
+            var s = context.Stadiums.AsNoTracking().FirstOrDefault(x => x.StadiumId == stadiumId);
+            var g = Guard(context, me, s, false);
+            if (g != null) return Fail<OwnerVenueDetailDto>(g.Value);
+            var dto = BuildDetail<OwnerVenueDetailDto>(context, s!, ownerView: true);
+            var owner = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
+            dto.IsListed = s!.IsListed;
+            dto.IsVisible = VenueRules.IsVisible(context, s.StadiumId);
+            dto.Missing = VenueRules.Missing(s, owner, dto.Photos.Count > 0, dto.Pitches.Any(p => p.IsActive), DateTime.Now);
+            return OperationResult<OwnerVenueDetailDto>.Ok(dto);
+        }
+
+        private static T BuildDetail<T>(MatchBuddyContext context, Stadium s, bool ownerView) where T : VenueDetailDto, new()
+        {
+            var stadiumId = s.StadiumId;
+            var today = DateTime.Today;
+            var allPitches = context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId)
+                .OrderBy(p => p.Name).ThenBy(p => p.PitchId).ToList();
+            var photos = context.StadiumPhotos.AsNoTracking().Where(p => p.StadiumId == stadiumId)
+                .OrderByDescending(p => p.IsCover).ThenBy(p => p.SortOrder).ThenBy(p => p.PhotoId).ToList();
+            var pitches = allPitches.Where(p => p.IsActive).ToList();
+            var rules = context.PriceRules.AsNoTracking().Where(r => r.StadiumId == stadiumId).ToList();
+            var campaigns = context.Campaigns.AsNoTracking()
+                .Where(x => x.StadiumId == stadiumId && x.IsActive && x.EndDate >= today)
+                .OrderBy(x => x.StartDate).ThenBy(x => x.CampaignId).ToList();
+            var hours = context.OpeningHours.AsNoTracking().Where(h => h.StadiumId == stadiumId).ToList();
+            var week = VenuePricing.WeekHours(hours, s.OpeningTime, s.ClosingTime);
+            var owner = s.OwnerPlayerId.HasValue
+                ? context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == s.OwnerPlayerId.Value && !p.IsDeleted)
+                : null;
+
+            var allReviews = context.VenueReviews.AsNoTracking().Where(r => r.StadiumId == stadiumId).ToList();
+            var last = allReviews.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.ReviewId).Take(20).ToList();
+            var reviewerIds = last.Select(r => r.PlayerId).Distinct().ToList();
+            var reviewers = context.Players.AsNoTracking().Where(p => reviewerIds.Contains(p.PlayerId)).ToList()
+                .ToDictionary(p => p.PlayerId, PlayerSummaryDto.FromPlayer);
+            var reviewMatches = ReviewMatchRefs(context, last.Select(r => r.MatchId));
+
+            var busy = VenueRules.BusyMatches(context, pitches.Select(p => p.PitchId).ToList(), today, today.AddDays(2));
+            var blocks = VenueRules.Blocks(context, pitches.Select(p => p.PitchId).ToList(), today, today.AddDays(2));
+            var slots = VenuePricing.DaySlots(today, week);
+            var now = DateTime.Now;
+
+            return new T
+            {
+                StadiumId = s.StadiumId,
+                Name = s.StadiumName,
+                City = s.City,
+                District = s.District,
+                Address = s.Address,
+                Location = s.Location,
+                CoverPhotoUrl = photos.FirstOrDefault()?.Url,
+                PitchCount = pitches.Count,
+                Amenities = Amenities(s),
+                MinPrice = VenuePricing.MinPrice(pitches, rules),
+                HasActiveCampaign = campaigns.Count > 0,
+                Rating = allReviews.Count > 0 ? RoundRating(allReviews.Average(r => (double)r.Rating)) : null,
+                ReviewCount = allReviews.Count,
+                FreeSlotsToday = pitches.Sum(p => slots.Count(sl => SlotStatus(sl.Start, sl.End, p.PitchId, busy, blocks, now) == "free")),
+                Description = s.Description,
+                Phone = s.Phone,
+                CancellationPolicy = s.CancellationPolicy,
+                Photos = photos.Select(p => new VenuePhotoDto { PhotoId = p.PhotoId, Url = p.Url, IsCover = p.IsCover, SortOrder = p.SortOrder }).ToList(),
+                Pitches = (ownerView ? allPitches : pitches).Select(ToDto).ToList(),
+                OpeningHours = VenueRules.ToDtos(week),
+                Prices = new VenuePricesDto
+                {
+                    CleatRentalPrice = s.CleatRental || ownerView ? s.CleatRentalPrice : null,
+                    CameraPrice = s.HasCamera || ownerView ? s.CameraPrice : null,
+                },
+                Campaigns = campaigns.Select(ToDto).ToList(),
+                Owner = owner == null ? null : new VenueOwnerRefDto { PlayerId = owner.PlayerId, Name = owner.PlayerName },
+                Reviews = last.Select(r => new VenueReviewDto
+                {
+                    ReviewId = r.ReviewId,
+                    MatchId = r.MatchId,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt,
+                    Player = reviewers.TryGetValue(r.PlayerId, out var pl) ? pl : null,
+                    OwnerReply = r.OwnerReply,
+                    RepliedAt = r.RepliedAt,
+                    Match = reviewMatches.TryGetValue(r.MatchId, out var rm) ? rm : null,
+                }).ToList(),
+                RatingBreakdown = Enumerable.Range(1, 5).ToDictionary(i => i.ToString(), i => allReviews.Count(r => r.Rating == i)),
+            };
+        }
+
+        private static Dictionary<int, ReviewMatchRefDto> ReviewMatchRefs(MatchBuddyContext context, IEnumerable<int> matchIds)
+        {
+            var ids = matchIds.Distinct().ToList();
+            return context.Matchs.AsNoTracking().Where(m => ids.Contains(m.MatchId))
+                .Select(m => new ReviewMatchRefDto { MatchId = m.MatchId, MatchName = m.MatchName, MatchDate = m.MatchDate })
+                .ToList().ToDictionary(m => m.MatchId);
+        }
+
+        // ------------------------------------------------------------------ Availability
+
+        public OperationResult<AvailabilityDto> Availability(int stadiumId, DateTime date, int viewerId, bool isAdmin)
+        {
+            using var context = new MatchBuddyContext();
+            var s = context.Stadiums.AsNoTracking().FirstOrDefault(x => x.StadiumId == stadiumId);
+            if (s == null || !CanView(context, s, viewerId, isAdmin))
+                return OperationResult<AvailabilityDto>.NotFound(VenueRules.VenueNotFound);
+
+            var day = date.Date;
+            var pricing = VenueRules.LoadPricing(context, s);
+            var pitches = context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId && p.IsActive)
+                .OrderBy(p => p.Name).ThenBy(p => p.PitchId).ToList();
+            var pitchIds = pitches.Select(p => p.PitchId).ToList();
+            var busy = VenueRules.BusyMatches(context, pitchIds, day, day.AddDays(2));
+            var blocks = VenueRules.Blocks(context, pitchIds, day, day.AddDays(2));
+            var slots = VenuePricing.DaySlots(day, pricing.Week);
+            var now = DateTime.Now;
+
+            return OperationResult<AvailabilityDto>.Ok(new AvailabilityDto
+            {
+                Date = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                IsClosed = pricing.Week[VenuePricing.DayIndex(day)].IsClosed,
+                Pitches = pitches.Select(p => new PitchSlotsDto
+                {
+                    PitchId = p.PitchId,
+                    Name = p.Name,
+                    Slots = slots.Select(sl =>
+                    {
+                        var hp = VenuePricing.PriceForHour(sl.Start, p, pricing.Rules, pricing.Campaigns);
+                        return new SlotDto
+                        {
+                            Start = sl.Start,
+                            End = sl.End,
+                            Status = SlotStatus(sl.Start, sl.End, p.PitchId, busy, blocks, now),
+                            Price = hp.Price,
+                            OriginalPrice = hp.OriginalPrice,
+                            CampaignTitle = hp.CampaignTitle,
+                        };
+                    }).ToList(),
+                }).ToList(),
+            });
+        }
+
+        // ------------------------------------------------------------------ Quote
+
+        public OperationResult<QuoteDto> Quote(QuoteInput input)
+        {
+            using var context = new MatchBuddyContext();
+            var pitch = context.Pitches.AsNoTracking().FirstOrDefault(p => p.PitchId == input.PitchId);
+            if (pitch == null) return OperationResult<QuoteDto>.NotFound(VenueRules.PitchNotFound);
+            if (input.Start == null)
+                return OperationResult<QuoteDto>.Ok(new QuoteDto { Available = false, Reason = VenueRules.ChooseSlot });
+
+            var stadium = context.Stadiums.AsNoTracking().First(s => s.StadiumId == pitch.StadiumId);
+            var pricing = VenueRules.LoadPricing(context, stadium);
+            var quote = VenueRules.BuildQuote(context, pricing, pitch, input.Start.Value, input.DurationMinutes,
+                input.UserCount, input.CleatCount, input.CameraRequested);
+            if (quote.Available && !VenueRules.IsVisible(context, stadium.StadiumId))
+            {
+                quote.Available = false;
+                quote.Reason = "Bu tesis şu anda rezervasyona kapalı.";
+            }
+            else if (quote.Available && !pitch.IsActive)
+            {
+                quote.Available = false;
+                quote.Reason = "Bu saha şu anda kullanılamıyor.";
+            }
+            return OperationResult<QuoteDto>.Ok(quote);
+        }
+
+        // ------------------------------------------------------------------ Review
+
+        public OperationResult<bool> Review(int me, int matchId, byte rating, string? comment)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var match = context.Matchs.AsNoTracking().FirstOrDefault(m => m.MatchId == matchId);
+            if (match == null) return OperationResult<bool>.NotFound();
+            var stadiumId = match.PitchId.HasValue
+                ? context.Pitches.AsNoTracking().Where(p => p.PitchId == match.PitchId.Value).Select(p => (int?)p.StadiumId).FirstOrDefault()
+                : null;
+            if (stadiumId == null)
+                return OperationResult<bool>.BadRequest("Bu maç anlaşmalı bir tesiste oynanmadı.");
+            if (match.IsActive == MatchStatus.Rejected)
+                return OperationResult<bool>.BadRequest("Reddedilen maç için yorum yapılamaz.");
+            if (!match.MatchDate.HasValue || match.MatchDate.Value.AddMinutes(match.DurationMinutes) > DateTime.Now)
+                return OperationResult<bool>.BadRequest("Maç henüz oynanmadı, yorum yapılamaz.");
+            var going = context.MatchParticipants.Any(p => p.MatchId == matchId && p.PlayerId == me && p.Status == ParticipantStatus.Going);
+            if (!going)
+                return OperationResult<bool>.BadRequest("Sadece maçta oynayan oyuncular tesisi değerlendirebilir.");
+
+            var existing = context.VenueReviews.FirstOrDefault(r => r.MatchId == matchId && r.PlayerId == me);
+            var created = existing == null;
+            if (existing == null)
+            {
+                context.VenueReviews.Add(new VenueReview
+                {
+                    StadiumId = stadiumId.Value,
+                    PlayerId = me,
+                    MatchId = matchId,
+                    Rating = rating,
+                    Comment = comment,
+                    CreatedAt = DateTime.Now,
+                });
+            }
+            else
+            {
+                existing.Rating = rating;
+                existing.Comment = comment;
+            }
+
+            if (created)
+            {
+                var stadium = context.Stadiums.AsNoTracking().First(s => s.StadiumId == stadiumId.Value);
+                if (stadium.OwnerPlayerId.HasValue)
+                {
+                    var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
+                    NotificationWriter.Add(context, NotificationType.VenueReview,
+                        $"{DisplayName(player)}, {stadium.StadiumName} için {rating} yıldızlı bir değerlendirme yaptı.",
+                        matchId, stadium.StadiumId, new[] { stadium.OwnerPlayerId.Value });
+                }
+            }
+
+            try
+            {
+                context.SaveChanges();
+                transaction.Commit();
+            }
+            catch (DbUpdateException)
+            {
+                return OperationResult<bool>.BadRequest("Değerlendirme kaydedilemedi, lütfen tekrar deneyin.");
+            }
+            return OperationResult<bool>.Ok(true, created ? "Değerlendirmen kaydedildi." : "Değerlendirmen güncellendi.");
+        }
+
+        // ------------------------------------------------------------------ Maç kurma (SaveMatch)
+
+        private static List<int> TeamMemberIds(MatchBuddyContext context, int teamId) =>
+            (from pt in context.PlayerTeam
+             join p in context.Players on pt.PlayerId equals p.PlayerId
+             where pt.TeamId == teamId && !p.IsDeleted && p.Role != PlayerRoles.Owner
+             select p.PlayerId).Distinct().ToList();
+
+        // Takım üyelerine taraflı maç daveti (mevcut davet satırı yeniden açılır). Davet edilen id'leri döner.
+        private static List<int> InviteTeam(MatchBuddyContext context, Match match, int inviterId, IEnumerable<int> memberIds, byte side, ISet<int> skip)
+        {
+            var ids = memberIds.Where(id => id != inviterId && !skip.Contains(id)).Distinct().ToList();
+            if (ids.Count == 0) return ids;
+            var existing = context.MatchInvites.Where(i => i.MatchId == match.MatchId && ids.Contains(i.InviteeId)).ToList()
+                .ToDictionary(i => i.InviteeId);
+            var now = DateTime.Now;
+            foreach (var id in ids)
+            {
+                if (existing.TryGetValue(id, out var row))
+                {
+                    row.InviterId = inviterId;
+                    row.Status = InviteStatus.Pending;
+                    row.CreatedAt = now;
+                    row.RespondedAt = null;
+                    row.Side = side;
+                }
+                else
+                {
+                    context.MatchInvites.Add(new MatchInvite
+                    {
+                        MatchId = match.MatchId, InviterId = inviterId, InviteeId = id,
+                        Status = InviteStatus.Pending, CreatedAt = now, Side = side,
+                    });
+                }
+                skip.Add(id);
+            }
+            return ids;
+        }
+
+        public OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input)
+        {
+            if (input.PitchId is not > 0 || input.MatchDate == null)
+                return OperationResult<int>.BadRequest(VenueRules.ChooseSlot);
+
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var creator = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == creatorId && !p.IsDeleted);
+            if (creator == null) return OperationResult<int>.NotFound("Oyuncu bulunamadı.");
+            if (creator.Role == PlayerRoles.Owner) return OperationResult<int>.Forbidden("İşletme hesapları maç kuramaz.");
+
+            // Eşzamanlı rezervasyonlar bu kilit üzerinde sıraya girer
+            var pitch = VenueRules.LockPitch(context, input.PitchId.Value);
+            if (pitch == null) return OperationResult<int>.NotFound(VenueRules.PitchNotFound);
+            var stadium = context.Stadiums.AsNoTracking().First(s => s.StadiumId == pitch.StadiumId);
+            if (!VenueRules.IsVisible(context, stadium.StadiumId))
+                return OperationResult<int>.BadRequest("Bu tesis şu anda rezervasyona kapalı.");
+            if (!pitch.IsActive)
+                return OperationResult<int>.BadRequest("Bu saha şu anda kullanılamıyor.");
+
+            var duration = input.DurationMinutes ?? 60;
+            var min = VenuePricing.MinUserCount();
+            var max = VenuePricing.MaxUserCount(pitch.PlayersPerSide);
+            if (input.UserCount < min || input.UserCount > max)
+                return OperationResult<int>.BadRequest($"Oyuncu sayısı {min} ile {max} arasında olmalıdır.");
+            if (input.CleatCount > input.UserCount)
+                return OperationResult<int>.BadRequest("Krampon sayısı oyuncu sayısından fazla olamaz.");
+            var extrasError = VenueRules.CheckExtras(stadium, input.CleatCount, input.CameraRequested);
+            if (extrasError != null) return OperationResult<int>.BadRequest(extrasError);
+
+            // Takım kuralları
+            Team? home = null, away = null;
+            if (input.HomeTeamId.HasValue)
+            {
+                home = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.HomeTeamId.Value);
+                if (home == null) return OperationResult<int>.BadRequest("Ev sahibi takım bulunamadı.");
+                if (!context.PlayerTeam.Any(pt => pt.TeamId == home.TeamId && pt.PlayerId == creatorId))
+                    return OperationResult<int>.BadRequest("Ev sahibi takımın üyesi olmalısın.");
+            }
+            if (input.AwayTeamId.HasValue)
+            {
+                if (input.AwayTeamId == input.HomeTeamId)
+                    return OperationResult<int>.BadRequest("Ev sahibi ve rakip takım aynı olamaz.");
+                away = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.AwayTeamId.Value);
+                if (away == null) return OperationResult<int>.BadRequest("Rakip takım bulunamadı.");
+            }
+            if (input.LookingForOpponent && input.AwayTeamId.HasValue)
+                return OperationResult<int>.BadRequest("Rakip takım seçiliyken 'rakip aranıyor' işaretlenemez.");
+
+            var start = input.MatchDate.Value;
+            var pricing = VenueRules.LoadPricing(context, stadium);
+            var reason = VenueRules.CheckSlot(context, pricing, pitch, start, duration);
+            if (reason != null) return OperationResult<int>.BadRequest(reason);
+
+            var quote = VenueRules.BuildQuote(context, pricing, pitch, start, duration, input.UserCount, input.CleatCount, input.CameraRequested);
+            var match = new Match
+            {
+                MatchName = input.MatchName!.Trim(),
+                Description = input.Description?.Trim() ?? string.Empty,
+                MatchDate = start,
+                UserCount = input.UserCount,
+                IsActive = MatchStatus.Pending,
+                Likes = 0,
+                StadiumId = stadium.StadiumId,
+                PitchId = pitch.PitchId,
+                DurationMinutes = duration,
+                PitchPrice = quote.PitchTotal,
+                ExtrasPrice = quote.ExtrasTotal,
+                TotalPrice = quote.Total,
+                CleatCount = input.CleatCount,
+                CameraRequested = input.CameraRequested,
+                HomeTeamId = home?.TeamId,
+                AwayTeamId = away?.TeamId,
+                LookingForOpponent = input.LookingForOpponent,
+                CreatedByPlayerId = creatorId,
+                CreatedAt = DateTime.Now,
+            };
+            context.Matchs.Add(match);
+            context.SaveChanges();
+
+            context.MatchParticipants.Add(new MatchParticipant
+            {
+                MatchId = match.MatchId,
+                PlayerId = creatorId,
+                Status = ParticipantStatus.Going,
+                Side = ParticipantSide.Home,
+                Confirmed = true,
+                JoinedAt = DateTime.Now,
+            });
+            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
+
+            // Takımlar: MatchTeam (eski ekranlar için) + üyelere taraflı davet
+            var skip = new HashSet<int> { creatorId };
+            var when = $"{start:dd.MM.yyyy HH:mm}";
+            if (home != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
+                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, home.TeamId), ParticipantSide.Home, skip);
+                if (invited.Count > 0)
+                {
+                    NotificationWriter.Add(context, NotificationType.MatchInvite,
+                        $"{DisplayName(creator)} seni '{match.MatchName}' maçına {home.TeamName} kadrosunda davet etti ({when}).",
+                        match.MatchId, null, invited);
+                }
+            }
+            if (away != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
+                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, away.TeamId), ParticipantSide.Away, skip);
+                if (invited.Count > 0)
+                {
+                    NotificationWriter.Add(context, NotificationType.MatchInvite,
+                        $"{DisplayName(creator)}, {away.TeamName} takımını '{match.MatchName}' maçına rakip olarak davet etti ({when}).",
+                        match.MatchId, null, invited);
+                }
+            }
+
+            // İşletmeye rezervasyon talebi
+            if (stadium.OwnerPlayerId.HasValue)
+            {
+                NotificationWriter.Add(context, NotificationType.ReservationRequest,
+                    $"Yeni rezervasyon talebi: {DisplayName(creator)}, {stadium.StadiumName} - {pitch.Name} için {when} ({duration} dk). Onayınızı bekliyor.",
+                    match.MatchId, stadium.StadiumId, new[] { stadium.OwnerPlayerId.Value });
+            }
+
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<int>.Ok(match.MatchId, "Rezervasyon talebin işletmeye iletildi.");
+        }
+
+        // ------------------------------------------------------------------ ClaimOpponent
+
+        public OperationResult<bool> ClaimOpponent(int me, int matchId, int teamId)
+        {
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var match = LockMatch(context, matchId);
+            if (match == null) return OperationResult<bool>.NotFound();
+            var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
+            if (player == null || player.Role == PlayerRoles.Owner) return OperationResult<bool>.Forbidden(OwnerCannotJoin);
+            if (!match.LookingForOpponent || match.AwayTeamId.HasValue)
+                return OperationResult<bool>.BadRequest("Bu maç rakip takım aramıyor.");
+            if (match.IsActive == MatchStatus.Rejected)
+                return OperationResult<bool>.BadRequest("Bu maç reddedildi, katılım kapalı.");
+            if (IsPast(match))
+                return OperationResult<bool>.BadRequest("Maç tarihi geçti, katılım kapalı.");
+
+            var team = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == teamId);
+            if (team == null) return OperationResult<bool>.NotFound("Takım bulunamadı.");
+            if (match.HomeTeamId == teamId)
+                return OperationResult<bool>.BadRequest("Ev sahibi takım rakip olarak katılamaz.");
+            if (!context.PlayerTeam.Any(pt => pt.TeamId == teamId && pt.PlayerId == me))
+                return OperationResult<bool>.Forbidden("Bu takımın üyesi değilsin.");
+
+            match.AwayTeamId = teamId;
+            match.LookingForOpponent = false;
+            context.MatchTeam.Add(new MatchTeam { MatchId = matchId, TeamId = teamId });
+
+            // Ben Going (Side 2)
+            var mine = context.MatchParticipants.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
+            if (mine?.Status == ParticipantStatus.Going)
+            {
+                mine.Side = ParticipantSide.Away;
+            }
+            else
+            {
+                if (mine?.Status == ParticipantStatus.Waitlist)
+                {
+                    // Yedekteysem önce kaydı bırakıp yeniden katılırım (kapasite varsa asile geçerim)
+                    mine.Status = ParticipantStatus.Declined;
+                    context.SaveChanges();
+                }
+                var join = Join(context, match, me, ParticipantSide.Away);
+                if (!join.Success)
+                {
+                    return join.Status == OperationStatus.Forbidden
+                        ? OperationResult<bool>.Forbidden(join.Message)
+                        : OperationResult<bool>.BadRequest(join.Message);
+                }
+                var row = context.MatchParticipants.Local.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
+                if (row != null && row.Status == ParticipantStatus.Going) row.Side = ParticipantSide.Away;
+            }
+
+            // Takımın diğer üyelerine davet (Side 2); kadroda olanlar atlanır
+            var inSquad = context.MatchParticipants
+                .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
+                .Select(p => p.PlayerId).ToHashSet();
+            inSquad.Add(me);
+            var invited = InviteTeam(context, match, me, TeamMemberIds(context, teamId), ParticipantSide.Away, inSquad);
+            if (invited.Count > 0)
+            {
+                NotificationWriter.Add(context, NotificationType.MatchInvite,
+                    $"{DisplayName(player)}, {team.TeamName} takımıyla '{match.MatchName}' maçına rakip olarak katıldı; seni de kadroya davet ediyor ({match.MatchDate:dd.MM.yyyy HH:mm}).",
+                    matchId, null, invited);
+            }
+            if (match.CreatedByPlayerId.HasValue && match.CreatedByPlayerId.Value != me)
+            {
+                AddNotification(context, NotificationType.MatchJoin,
+                    $"{team.TeamName} takımı '{match.MatchName}' maçına rakip olarak katıldı.", matchId, new[] { match.CreatedByPlayerId.Value });
+            }
+
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<bool>.Ok(true, "Takımın rakip olarak maça eklendi.");
+        }
+
+        // ------------------------------------------------------------------ Rezervasyon durumu
+
+        public OperationResult<bool> SetMatchStatus(int matchId, byte status, string? reason, int? ownerId)
+        {
+            if (status != MatchStatus.Pending && status != MatchStatus.Approved && status != MatchStatus.Rejected)
+                return OperationResult<bool>.BadRequest("Geçersiz durum.");
+
+            using var context = new MatchBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var match = LockMatch(context, matchId);
+            if (match == null) return OperationResult<bool>.NotFound();
+            var stadium = context.Stadiums.AsNoTracking().FirstOrDefault(s => s.StadiumId == match.StadiumId);
+
+            if (ownerId.HasValue)
+            {
+                if (stadium == null || stadium.OwnerPlayerId != ownerId.Value)
+                    return OperationResult<bool>.Forbidden(VenueRules.NotYourVenue);
+                var owner = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == ownerId.Value);
+                if (!VenueRules.MembershipActive(owner, DateTime.Now))
+                    return OperationResult<bool>.Forbidden(VenueRules.MembershipInactive);
+                if (match.IsActive != MatchStatus.Pending)
+                    return OperationResult<bool>.BadRequest("Sadece onay bekleyen rezervasyonlar yanıtlanabilir.");
+                if (status == MatchStatus.Pending)
+                    return OperationResult<bool>.BadRequest("Geçersiz durum.");
+            }
+            else if (match.IsActive == MatchStatus.Rejected && status != MatchStatus.Rejected && match.PitchId.HasValue && match.MatchDate.HasValue)
+            {
+                // Admin geçersiz kılma: reddedilmiş maç geri alınırken saat başkasınca dolmuşsa izin verilmez
+                var start = match.MatchDate.Value;
+                var end = start.AddMinutes(match.DurationMinutes);
+                var ids = new[] { match.PitchId.Value };
+                if (VenueRules.BusyMatches(context, ids, start, end, matchId).Count > 0)
+                    return OperationResult<bool>.BadRequest(VenueRules.SlotTaken);
+            }
+
+            reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+            if (reason != null && reason.Length > 200)
+                return OperationResult<bool>.BadRequest("Red sebebi en fazla 200 karakter olabilir.");
+
+            var previous = match.IsActive;
+            match.IsActive = status;
+            match.RejectReason = status == MatchStatus.Rejected ? reason : null;
+
+            if (previous != status && status != MatchStatus.Pending)
+            {
+                var recipients = context.MatchParticipants
+                    .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
+                    .Select(p => p.PlayerId).ToList();
+                if (match.CreatedByPlayerId.HasValue) recipients.Add(match.CreatedByPlayerId.Value);
+                var place = stadium?.StadiumName ?? "tesis";
+                var text = status == MatchStatus.Approved
+                    ? $"Rezervasyon onaylandı: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}, {place}."
+                    : $"Rezervasyon reddedildi: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}, {place}." +
+                      (reason != null ? $" Sebep: {reason}" : string.Empty);
+                AddNotification(context, status == MatchStatus.Approved ? NotificationType.MatchApproval : NotificationType.MatchRejection,
+                    text, matchId, recipients);
+            }
+
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<bool>.Ok(true, status == MatchStatus.Approved ? "Rezervasyon onaylandı."
+                : status == MatchStatus.Rejected ? "Rezervasyon reddedildi." : "Rezervasyon beklemeye alındı.");
+        }
+    }
+}

@@ -26,11 +26,23 @@ namespace MatchBuddy.Business.Concrete
             return new Result(true, Messages.Added);
         }
 
+        public IResult Add(Team team, int creatorPlayerId)
+        {
+            if (team.TeamName == null || team.TeamName.Length < 3)
+            {
+                return new ErrorResult(Messages.TeamNameInvalid);
+            }
+            _teamDal.AddWithActivity(team, creatorPlayerId);
+            return new Result(true, Messages.Added);
+        }
+
         public IResult AddPlayerById(List<int> playerIds, int teamId)
         {
             _teamDal.SaveTeamByPlayerId(playerIds,teamId);
             return new Result(true, Messages.Added);
         }
+
+        public bool IsPlayerInTeam(int teamId, int playerId) => _teamDal.IsPlayerInTeam(teamId, playerId);
 
         public IResult Delete(Team team)
         {
@@ -38,6 +50,11 @@ namespace MatchBuddy.Business.Concrete
             //{
             //    return new ErrorResult(Messages.TeamNameInvalid);
             //}
+            if (_teamDal.IsInAnyTournament(team.TeamId))
+            {
+                return new ErrorResult(Messages.TeamInTournament);
+            }
+            _teamDal.ClearMatchReferences(team.TeamId);
             _teamDal.Delete(team);
             return new Result(true, Messages.Deleted);
         }

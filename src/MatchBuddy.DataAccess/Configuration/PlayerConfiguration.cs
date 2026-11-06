@@ -27,7 +27,7 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder
                 .Property(b => b.Password)
-                .HasMaxLength(20)
+                .HasMaxLength(100) // BCrypt hash (60 karakter) için
                 .IsRequired();
 
             builder
@@ -60,6 +60,9 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder.Property(b => b.UserScore)
                 .IsRequired();
+
+            // 0 oyuncu, 1 admin, 2 işletme
+            builder.Property(b => b.Role).HasDefaultValue((byte)0);
 
         }
     }
