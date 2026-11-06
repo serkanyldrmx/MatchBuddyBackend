@@ -366,3 +366,6 @@ src/Api/MatchBuddy.Api/wwwroot/uploads/*
 !src/Api/MatchBuddy.Api/wwwroot/uploads/.gitkeep
 # Medya hattının yerel deposu (Storage:Provider = Local)
 src/Api/MatchBuddy.Api/App_Data/
+
+# Serilog dosya logları (Logging:File:Path)
+src/Api/MatchBuddy.Api/logs/

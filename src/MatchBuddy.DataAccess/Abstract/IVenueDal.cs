@@ -30,6 +30,8 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId);
         // Yazmadan önce yetki/üyelik kontrolü (dosya diske yazılmadan önce)
         OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> GetSettings(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> SaveSettings(int me, VenueSettingsInput input);
         OperationResult<VenuePhotoDto> AddPhoto(int me, int stadiumId, string url);
         // Data = silinen dosyanın url'i
         OperationResult<string> DeletePhoto(int me, int photoId);

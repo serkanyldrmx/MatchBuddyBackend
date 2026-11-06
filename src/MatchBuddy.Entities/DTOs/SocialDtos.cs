@@ -50,6 +50,10 @@ namespace MatchBuddy.Entities.DTOs
         public bool NotifyMatchReminder { get; set; }
         public bool NotifyMatchResult { get; set; }
         public bool NotifyMatchUpdates { get; set; }
+        /// <summary>"system" | "light" | "dark" (docs/platform-api.md)</summary>
+        public string Theme { get; set; } = "system";
+        /// <summary>Arayüz dili, ör. "tr" (docs/platform-api.md)</summary>
+        public string Language { get; set; } = "tr";
     }
 
     /// <summary>POST Settings gövdesi: gönderilmeyen alanlar mevcut değerini korur.</summary>
@@ -63,6 +67,8 @@ namespace MatchBuddy.Entities.DTOs
         public bool? NotifyMatchReminder { get; set; }
         public bool? NotifyMatchResult { get; set; }
         public bool? NotifyMatchUpdates { get; set; }
+        public string? Theme { get; set; }
+        public string? Language { get; set; }
     }
 
     public class LastMessageDto

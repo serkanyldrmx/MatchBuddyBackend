@@ -39,9 +39,16 @@ namespace MatchBuddy.Api.Services
             _overpassUrls = configured is { Length: > 0 } ? configured : DefaultOverpassUrls;
         }
 
+        /// <summary>Harita servisi hatası. Code = ErrorCodes.Osm.*; Message istek dilinde çözülmüş metindir.</summary>
         public class OsmUnavailableException : Exception
         {
-            public OsmUnavailableException(string message, Exception? inner = null) : base(message, inner) { }
+            public OsmUnavailableException(string code, Exception? inner = null, params object?[] args)
+                : base(Msg.Get(code, args), inner)
+            {
+                Code = code;
+            }
+
+            public string Code { get; }
         }
 
         public record BBox(double South, double West, double North, double East);
@@ -61,10 +68,10 @@ namespace MatchBuddy.Api.Services
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
             var b = string.Create(CultureInfo.InvariantCulture, $"{box.South},{box.West},{box.North},{box.East}");
-            var query = "[out:json][timeout:25];(" +
+            var query = $"[out:json][timeout:{P.Int(ParameterKeys.Osm.OverpassTimeoutSeconds)}];(" +
                         $"node[\"leisure\"=\"pitch\"][\"sport\"~\"soccer\"]({b});" +
                         $"way[\"leisure\"=\"pitch\"][\"sport\"~\"soccer\"]({b});" +
-                        ");out center tags 200;";
+                        $");out center tags {P.Int(ParameterKeys.Osm.MaxResults)};";
             using var doc = await FirstOverpassResponseAsync(client, query, ct);
 
             var result = new List<OsmCandidateDto>();
@@ -103,7 +110,7 @@ namespace MatchBuddy.Api.Services
                 result.Add(new OsmCandidateDto
                 {
                     OsmId = id,
-                    Name = Tag("name") ?? "Adsız halı saha",
+                    Name = Tag("name") ?? Msg.Get(MessageKeys.Osm.LabelUnnamedPitch),
                     Lat = Math.Round(lat, 6),
                     Lon = Math.Round(lon, 6),
                     Address = string.IsNullOrWhiteSpace(address) ? null : address,
@@ -115,17 +122,18 @@ namespace MatchBuddy.Api.Services
             return result;
         }
 
-        /// <summary>alreadyExists: aynı OsmId ya da 150 m içinde bir tesis.</summary>
+        /// <summary>alreadyExists: aynı OsmId ya da osm.duplicateRadiusMeters (varsayılan 150 m) içinde bir tesis.</summary>
         public static void MarkExisting(List<OsmCandidateDto> candidates, List<VenueGeoRefDto> venues)
         {
             var osmIds = venues.Where(v => v.OsmId.HasValue).Select(v => v.OsmId!.Value).ToHashSet();
             var points = venues
                 .Select(v => VenueGeo.TryParseLocation(v.Location, out var la, out var lo) ? (la, lo) : ((double, double)?)null)
                 .Where(p => p.HasValue).Select(p => p!.Value).ToList();
+            var radius = P.Int(ParameterKeys.Osm.DuplicateRadiusMeters);
             foreach (var c in candidates)
             {
                 c.AlreadyExists = osmIds.Contains(c.OsmId)
-                                  || points.Any(p => VenueGeo.DistanceMeters(p.Item1, p.Item2, c.Lat, c.Lon) <= 150);
+                                  || points.Any(p => VenueGeo.DistanceMeters(p.Item1, p.Item2, c.Lat, c.Lon) <= radius);
             }
         }
 
@@ -146,7 +154,7 @@ namespace MatchBuddy.Api.Services
                 }
             }
             ct.ThrowIfCancellationRequested();
-            throw new OsmUnavailableException("OpenStreetMap sunucularının hiçbiri yanıt vermedi. Biraz sonra tekrar deneyin ya da daha küçük bir alan seçin.");
+            throw new OsmUnavailableException(ErrorCodes.Osm.AllMirrorsFailed);
         }
 
         private async Task<JsonDocument?> TryOverpassAsync(HttpClient client, string url, string query, CancellationToken ct)
@@ -191,7 +199,7 @@ namespace MatchBuddy.Api.Services
                 using var resp = await client.SendAsync(req, ct);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    throw new OsmUnavailableException($"Harita servisi hata döndü ({(int)resp.StatusCode}).");
+                    throw new OsmUnavailableException(ErrorCodes.Osm.ServiceError, null, (int)resp.StatusCode);
                 }
                 await using var stream = await resp.Content.ReadAsStreamAsync(ct);
                 return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
@@ -203,7 +211,7 @@ namespace MatchBuddy.Api.Services
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException)
             {
                 _logger.LogWarning(ex, "OSM isteği başarısız");
-                throw new OsmUnavailableException("Harita servisine ulaşılamadı. Lütfen daha sonra tekrar deneyin.", ex);
+                throw new OsmUnavailableException(ErrorCodes.Osm.Unreachable, ex);
             }
         }
     }

@@ -9,12 +9,22 @@ namespace MatchBuddy.Api.Services
     /// </summary>
     public static class ImageProcessor
     {
-        public const long MaxBytes = 10 * 1024 * 1024;
-        public const long MaxPixels = 40_000_000;
+        // Sistem parametreleri: media.maxUploadMb, media.maxMegapixels (docs/platform-api.md)
+        public static long MaxBytes => P.Int(ParameterKeys.Media.MaxUploadMb) * 1024L * 1024L;
+        public static long MaxPixels => P.Int(ParameterKeys.Media.MaxMegapixels) * 1_000_000L;
 
-        public const string ErrorInvalid = "Dosya geçerli bir resim değil.";
-        public const string ErrorTooLarge = "Fotoğraf en fazla 10 MB olabilir.";
-        public const string ErrorTooManyPixels = "Fotoğraf çok büyük (en fazla 40 MP).";
+        /// <summary>Hata kodları (metinler Messages.resx'te).</summary>
+        public const string ErrorInvalid = ErrorCodes.Media.InvalidImage;
+        public const string ErrorTooLarge = ErrorCodes.Media.TooLarge;            // {0} MB
+        public const string ErrorTooManyPixels = ErrorCodes.Media.TooManyPixels;  // {0} MP
+
+        /// <summary>Mesajlarda gösterilen sınırlar.</summary>
+        public static long MaxMegabytes => MaxBytes / (1024 * 1024);
+        public static long MaxMegapixels => MaxPixels / 1_000_000;
+
+        public static AppError InvalidError() => AppError.Bad(ErrorInvalid);
+        public static AppError TooLargeError() => AppError.Bad(ErrorTooLarge, MaxMegabytes);
+        public static AppError TooManyPixelsError() => AppError.Bad(ErrorTooManyPixels, MaxMegapixels);
 
         public static readonly string[] SizeNames = { "sm", "md", "lg" };
 
@@ -30,35 +40,35 @@ namespace MatchBuddy.Api.Services
 
         public sealed class Result
         {
-            public string? Error { get; init; }
+            public AppError? Error { get; init; }
             public List<Variant> Variants { get; init; } = new();
             public bool Success => Error == null;
         }
 
         public static Result Process(byte[] input, MediaKind kind)
         {
-            if (input.Length == 0) return new Result { Error = ErrorInvalid };
-            if (input.Length > MaxBytes) return new Result { Error = ErrorTooLarge };
+            if (input.Length == 0) return new Result { Error = InvalidError() };
+            if (input.Length > MaxBytes) return new Result { Error = TooLargeError() };
 
             using var data = SKData.CreateCopy(input);
             using var codec = SKCodec.Create(data);
             if (codec == null ||
                 codec.EncodedFormat is not (SKEncodedImageFormat.Jpeg or SKEncodedImageFormat.Png or SKEncodedImageFormat.Webp))
             {
-                return new Result { Error = ErrorInvalid };
+                return new Result { Error = InvalidError() };
             }
 
             // Decompression bomb koruması: sadece başlık okunmuştur
             var info = codec.Info;
-            if (info.Width <= 0 || info.Height <= 0) return new Result { Error = ErrorInvalid };
-            if ((long)info.Width * info.Height > MaxPixels) return new Result { Error = ErrorTooManyPixels };
+            if (info.Width <= 0 || info.Height <= 0) return new Result { Error = InvalidError() };
+            if ((long)info.Width * info.Height > MaxPixels) return new Result { Error = TooManyPixelsError() };
 
             var origin = codec.EncodedOrigin;
             var sizes = SizesFor(kind);
             var largest = sizes[^1];
 
             using var decoded = Decode(codec, kind, largest);
-            if (decoded == null) return new Result { Error = ErrorInvalid };
+            if (decoded == null) return new Result { Error = InvalidError() };
 
             using var oriented = ApplyOrigin(decoded, origin);
             var source = oriented ?? decoded;

@@ -24,16 +24,16 @@ namespace MatchBuddy.Api.Controllers
             _socialService = socialService;
         }
 
-        private const string OwnerNotAllowed = "İşletme hesapları takıma eklenemez.";
+        private const string OwnerNotAllowed = ErrorCodes.Team.OwnerNotAllowed;
 
         [HttpPost("SaveTeam")]
         public IActionResult SaveTeam(TeamModel teamModel)
         {
             // İşletme hesabı takım kuramaz, takıma eklenemez (docs/venues-api.md)
             if (User.IsOwner())
-                return StatusCode(StatusCodes.Status403Forbidden, new { Success = false, Message = "İşletme hesapları takım kuramaz." });
+                return this.ForbiddenError(ErrorCodes.Team.OwnerCannotCreate);
             if (teamModel.PlayerId != null && _socialService.OwnerIds(teamModel.PlayerId).Count > 0)
-                return BadRequest(new { Success = false, Message = OwnerNotAllowed });
+                return this.BadRequestError(OwnerNotAllowed);
 
             var team = new Team
             {
@@ -54,13 +54,13 @@ namespace MatchBuddy.Api.Controllers
 
                     if (!result1.Success)
                     {
-                        return BadRequest(result1); // Eğer ekleme işlemi başarısız olursa, döngüyü sonlandırıp hata döndürüyoruz
+                        return this.ToHttp(result1); // Eğer ekleme işlemi başarısız olursa, döngüyü sonlandırıp hata döndürüyoruz
                     }
                 }
 
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         [HttpPost("SaveTeamByPlayerId")]
@@ -75,21 +75,21 @@ namespace MatchBuddy.Api.Controllers
                 }
                 if (_socialService.OwnerIds(playerIdModel.PlayerIds).Count > 0)
                 {
-                    return BadRequest(new { Success = false, Message = OwnerNotAllowed });
+                    return this.BadRequestError(OwnerNotAllowed);
                 }
 
                 var result1 = _teamService.AddPlayerById(playerIdModel.PlayerIds, playerIdModel.TeamId);
 
                 if (!result1.Success)
                 {
-                    return BadRequest(result1);
+                    return this.ToHttp(result1);
                 }
 
                 return Ok(true); // tüm kullanıcılar başarıyla eklendiyse burada dönüş yapılır
             }
             else
             {
-                return BadRequest("PlayerId veya TeamId null olamaz.");
+                return this.BadRequestError(ErrorCodes.Team.PlayerIdsOrTeamIdRequired);
             }
         }
 
@@ -113,7 +113,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         [HttpGet("GetTeamList")]

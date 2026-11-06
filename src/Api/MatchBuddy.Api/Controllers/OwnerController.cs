@@ -65,6 +65,19 @@ namespace MatchBuddy.Api.Controllers
         [HttpPost("Venue/Update")]
         public IActionResult UpdateVenue(VenueUpdateInput model) => this.ToHttp(_venueService.UpdateVenue(Me, model));
 
+        // ---- Tesis ayarları (docs/platform-api.md)
+
+        [HttpGet("Settings")]
+        public IActionResult GetSettings([FromQuery] int stadiumId) => Data(_venueService.GetSettings(Me, stadiumId));
+
+        [HttpPut("Settings")]
+        public IActionResult SaveSettings([FromQuery] int? stadiumId, [FromBody] VenueSettingsInput input)
+        {
+            if (stadiumId is > 0) input.StadiumId = stadiumId.Value;
+            var result = _venueService.SaveSettings(Me, input);
+            return this.ToHttp(result, result.Success ? new { success = true, message = result.Message, settings = result.Data } : null);
+        }
+
         // ---- Fotoğraflar
 
         [HttpGet("Photos")]
@@ -80,7 +93,7 @@ namespace MatchBuddy.Api.Controllers
             var permission = _venueService.CheckCanAddPhoto(Me, stadiumId);
             if (!permission.Success) return this.ToHttp(permission);
 
-            if (file == null) return BadRequest(new { Success = false, Message = "Fotoğraf seçilmedi." });
+            if (file == null) return this.BadRequestError(ErrorCodes.Owner.PhotoRequired);
             var upload = await _mediaService.UploadAsync(file, MediaKind.VenuePhoto, Me, ct);
             if (!upload.Success) return this.ToHttp(upload);
 

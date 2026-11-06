@@ -43,7 +43,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _participationService.GetPlayerStats(playerId);
             if (!result.Success || result.Data == null)
             {
-                return NotFound(new { Success = false, Message = result.Message });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
             return result.Data;
         }
@@ -71,7 +71,7 @@ namespace MatchBuddy.Api.Controllers
             var player = _playerService.GetPlayerInfo(playerId).Data;
             if (player == null)
             {
-                return NotFound(new { Success = false, Message = "Oyuncu bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
 
             return User.IsSelfOrAdmin(playerId) ? PlayerDto.From(player) : PublicPlayerDto.From(player);
@@ -93,11 +93,11 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz oyuncu bilgisi." });
+                return this.BadRequestError(ErrorCodes.Player.InvalidData);
             }
             if (playerData == null)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz oyuncu bilgisi." });
+                return this.BadRequestError(ErrorCodes.Player.InvalidData);
             }
 
             var player = new Player
@@ -135,7 +135,7 @@ namespace MatchBuddy.Api.Controllers
                 return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         // Profil güncelle: sadece kendi profilini (admin herkesinkini)
@@ -152,11 +152,11 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz JSON formatı." });
+                return this.BadRequestError(ErrorCodes.Common.InvalidJson);
             }
             if (playerData == null)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz JSON formatı." });
+                return this.BadRequestError(ErrorCodes.Common.InvalidJson);
             }
 
             if (!User.IsSelfOrAdmin(playerData.PlayerId))
@@ -167,13 +167,13 @@ namespace MatchBuddy.Api.Controllers
             var existingPlayer = _playerService.GetPlayerInfo(playerData.PlayerId).Data;
             if (existingPlayer == null)
             {
-                return NotFound(new { Success = false, Message = "Oyuncu bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
 
             if (!string.IsNullOrWhiteSpace(playerData.UserName) &&
                 _playerService.IsUserNameTaken(playerData.UserName, existingPlayer.PlayerId))
             {
-                return BadRequest(new { Success = false, Message = "Bu kullanıcı adı zaten kullanılıyor." });
+                return this.BadRequestError(ErrorCodes.Auth.UserNameTaken);
             }
 
             existingPlayer.PlayerName = playerData.PlayerName;
@@ -195,9 +195,9 @@ namespace MatchBuddy.Api.Controllers
             // Şifre boş gönderildiyse mevcut şifre korunur
             if (!string.IsNullOrEmpty(playerData.Password))
             {
-                if (playerData.Password.Length < 6)
+                if (playerData.Password.Length < MatchBuddy.Business.Concrete.PlayerManager.MinPasswordLength)
                 {
-                    return BadRequest(new { Success = false, Message = "Şifre en az 6 karakter olmalıdır." });
+                    return this.BadRequestError(ErrorCodes.Auth.PasswordTooShort, MatchBuddy.Business.Concrete.PlayerManager.MinPasswordLength);
                 }
                 existingPlayer.Password = PasswordHasher.Hash(playerData.Password);
             }
@@ -226,7 +226,7 @@ namespace MatchBuddy.Api.Controllers
                 return Ok(new { result.Success, result.Message, existingPlayer.ProfilePictureUrl });
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         // Giriş: başarılıysa JWT ve şifresiz profil döner, değilse 401
@@ -245,7 +245,7 @@ namespace MatchBuddy.Api.Controllers
             if (!result.Success || result.Data == null)
             {
                 _logger.LogWarning("Başarısız giriş denemesi: {UserName}", loginModel.UserName);
-                return Unauthorized(new { Success = false, Message = "Kullanıcı adı veya şifre hatalı." });
+                return this.UnauthorizedError(ErrorCodes.Auth.InvalidCredentials);
             }
 
             var (token, expiresAt) = _tokenService.CreateToken(result.Data);

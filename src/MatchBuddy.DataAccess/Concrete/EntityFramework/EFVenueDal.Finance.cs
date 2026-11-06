@@ -22,7 +22,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (pitch == null) return OperationResult<OwnerQuoteDto>.NotFound(VenueRules.PitchNotFound);
             var stadium = StadiumOf(context, pitch.StadiumId);
             var g = Guard(context, me, stadium, false);
-            if (g != null) return Fail<OwnerQuoteDto>(g.Value);
+            if (g != null) return Fail<OwnerQuoteDto>(g);
 
             var pricing = VenueRules.LoadPricing(context, stadium!);
             var lines = VenuePricing.Lines(start, durationMinutes, pitch, pricing.Rules, pricing.Campaigns);
@@ -54,7 +54,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<VenueExpenseDto>>(g.Value);
+            if (g != null) return Fail<List<VenueExpenseDto>>(g);
 
             var query = context.VenueExpenses.AsNoTracking().Where(e => e.StadiumId == stadiumId);
             if (from.HasValue)
@@ -80,14 +80,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (input.ExpenseId is > 0)
             {
                 expense = context.VenueExpenses.FirstOrDefault(e => e.ExpenseId == input.ExpenseId.Value);
-                if (expense == null) return OperationResult<int>.NotFound("Gider bulunamadı.");
+                if (expense == null) return OperationResult<int>.NotFound(ErrorCodes.Owner.ExpenseNotFound);
                 // Mevcut kaydın tesisi de işletmeye ait olmalı
                 var gOld = Guard(context, me, StadiumOf(context, expense.StadiumId), true);
-                if (gOld != null) return Fail<int>(gOld.Value);
+                if (gOld != null) return Fail<int>(gOld);
                 if (stadiumId <= 0) stadiumId = expense.StadiumId;
             }
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<int>(g.Value);
+            if (g != null) return Fail<int>(g);
 
             if (expense == null)
             {
@@ -100,19 +100,19 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             expense.Amount = input.Amount;
             expense.Description = input.Description;
             context.SaveChanges();
-            return OperationResult<int>.Ok(expense.ExpenseId, "Gider kaydedildi.");
+            return OperationResult<int>.Ok(expense.ExpenseId, Msg.Get(MessageKeys.Owner.ExpenseSaved));
         }
 
         public OperationResult<bool> DeleteExpense(int me, int expenseId)
         {
             using var context = new MatchBuddyContext();
             var expense = context.VenueExpenses.FirstOrDefault(e => e.ExpenseId == expenseId);
-            if (expense == null) return OperationResult<bool>.NotFound("Gider bulunamadı.");
+            if (expense == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.ExpenseNotFound);
             var g = Guard(context, me, StadiumOf(context, expense.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             context.VenueExpenses.Remove(expense);
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Gider silindi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.ExpenseDeleted));
         }
 
         // ------------------------------------------------------------------ Finans özeti
@@ -122,7 +122,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var (ids, error) = ScopeIds(context, me, stadiumId);
-            if (error != null) return Fail<OwnerFinanceDto>(error.Value);
+            if (error != null) return Fail<OwnerFinanceDto>(error);
 
             var monthStart = VenueFinance.MonthStart(year, month);
             var from = monthStart.AddMonths(-11); // aylık seri: son 12 ay (önceki ay da bu aralıkta)

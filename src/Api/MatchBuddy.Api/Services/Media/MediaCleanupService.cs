@@ -1,12 +1,11 @@
 namespace MatchBuddy.Api.Services
 {
     /// <summary>
-    /// Saatte bir (ayar: Media:CleanupIntervalMinutes): 24 saatten eski Pending medya (yüklenip hiçbir kayda bağlanmamış)
+    /// Saatte bir (ayar: Media:CleanupIntervalMinutes): media.pendingCleanupHours (varsayılan 24) saatten eski Pending medya (yüklenip hiçbir kayda bağlanmamış)
     /// depodan silinir, Status=Deleted. Hatalar loglanır, uygulamayı düşürmez.
     /// </summary>
     public class MediaCleanupService : BackgroundService
     {
-        private static readonly TimeSpan PendingMaxAge = TimeSpan.FromHours(24);
 
         private readonly IMediaService _mediaService;
         private readonly ILogger<MediaCleanupService> _logger;
@@ -25,7 +24,7 @@ namespace MatchBuddy.Api.Services
             {
                 try
                 {
-                    var deleted = await _mediaService.CleanupPendingAsync(PendingMaxAge, stoppingToken);
+                    var deleted = await _mediaService.CleanupPendingAsync(TimeSpan.FromHours(P.Int(ParameterKeys.Media.PendingCleanupHours)), stoppingToken);
                     if (deleted > 0) _logger.LogInformation("{Count} bekleyen (bağlanmamış) medya silindi.", deleted);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

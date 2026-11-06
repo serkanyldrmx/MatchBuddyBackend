@@ -14,7 +14,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
     {
         public const byte RejectedStatus = 3; // Match.IsActive: 3 = reddedildi
 
-        public const string OwnerCannotJoin = "İşletme hesapları maça katılamaz.";
+        public const string OwnerCannotJoin = ErrorCodes.Match.OwnerCannotJoin;
 
         // Bir tarafın kapasitesi: ceil(UserCount / 2)
         public static int SideCapacity(Match match) => (match.UserCount + 1) / 2;
@@ -44,7 +44,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         // ---- Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular") ----
         // Misafirler kadroya sayılır: toplam = Going + misafir, taraf = o taraftaki Going + misafir.
 
-        public const string SideFull = "Bu tarafta boş yer yok.";
+        public const string SideFull = ErrorCodes.Match.SideFull;
 
         public static List<MatchGuest> LoadGuests(MatchBuddyContext context, int matchId) =>
             context.MatchGuests.Where(g => g.MatchId == matchId).ToList();
@@ -93,9 +93,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         public static string DisplayName(Player? p)
         {
-            if (p == null) return "Bir oyuncu";
+            // Bildirim metinlerine (veritabanı) yazılır: varsayılan dil
+            if (p == null) return Msg.GetDefault(MessageKeys.Match.LabelSomePlayer);
             var name = $"{p.PlayerName} {p.PlayerSurname}".Trim();
-            return string.IsNullOrWhiteSpace(name) ? (p.UserName ?? "Bir oyuncu") : name;
+            return string.IsNullOrWhiteSpace(name) ? (p.UserName ?? Msg.GetDefault(MessageKeys.Match.LabelSomePlayer)) : name;
         }
 
         // Maça bağlı bildirim (tercihler NotificationWriter'da kontrol edilir)
@@ -150,7 +151,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 preferredSide = null; // boşalan taraf sadece ilk yükselen için
 
                 AddNotification(context, NotificationType.WaitlistPromoted,
-                    $"Yedek listesinden asil kadroya geçtin: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}.",
+                    Msg.GetDefault(MessageKeys.Match.NotifWaitlistPromoted, match.MatchName, match.MatchDate),
                     match.MatchId, new[] { next.PlayerId });
                 AddActivity(context, ActivityType.JoinedMatch, next.PlayerId, matchId: match.MatchId);
             }
@@ -166,17 +167,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (context.Players.Any(p => p.PlayerId == playerId && p.Role == PlayerRoles.Owner))
                 return OperationResult<byte>.Forbidden(OwnerCannotJoin);
             if (match.IsActive == RejectedStatus)
-                return OperationResult<byte>.BadRequest("Bu maç reddedildi, katılım kapalı.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.RejectedJoinClosed);
             if (IsPast(match))
-                return OperationResult<byte>.BadRequest("Maç tarihi geçti, katılım kapalı.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.PastJoinClosed);
 
             var matchId = match.MatchId;
             var participants = context.MatchParticipants.Where(p => p.MatchId == matchId).ToList();
             var mine = participants.FirstOrDefault(p => p.PlayerId == playerId);
             if (mine?.Status == ParticipantStatus.Going)
-                return OperationResult<byte>.BadRequest("Bu maça zaten katılıyorsun.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.AlreadyJoined);
             if (mine?.Status == ParticipantStatus.Waitlist)
-                return OperationResult<byte>.BadRequest("Zaten bu maçın yedek listesindesin.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.AlreadyWaitlisted);
 
             var going = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
             var guests = LoadGuests(context, matchId);
@@ -223,13 +224,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == playerId);
                 var text = status == ParticipantStatus.Going
-                    ? $"{DisplayName(player)}, '{match.MatchName}' maçına katıldı."
-                    : $"{DisplayName(player)}, '{match.MatchName}' maçının yedek listesine katıldı.";
+                    ? Msg.GetDefault(MessageKeys.Match.NotifJoined, DisplayName(player), match.MatchName)
+                    : Msg.GetDefault(MessageKeys.Match.NotifJoinedWaitlist, DisplayName(player), match.MatchName);
                 AddNotification(context, NotificationType.MatchJoin, text, matchId, new[] { match.CreatedByPlayerId.Value });
             }
 
             return OperationResult<byte>.Ok(status,
-                status == ParticipantStatus.Going ? "Maça katıldın." : "Maç dolu, yedek listesine eklendin.");
+                Msg.Get(status == ParticipantStatus.Going ? MessageKeys.Match.Joined : MessageKeys.Match.JoinedWaitlist));
         }
 
         /// <summary>
@@ -240,9 +241,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var participants = context.MatchParticipants.Where(p => p.MatchId == match.MatchId).ToList();
             var mine = participants.FirstOrDefault(p => p.PlayerId == playerId);
             if (mine == null || mine.Status == ParticipantStatus.Declined)
-                return OperationResult<bool>.BadRequest("Bu maçta kaydın bulunmuyor.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.NotParticipant);
             if (IsPast(match))
-                return OperationResult<bool>.BadRequest("Maç tarihi geçti, kadrodan ayrılamazsın.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.PastCannotLeave);
 
             var wasGoing = mine.Status == ParticipantStatus.Going;
             var vacatedSide = mine.Side;
@@ -257,7 +258,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 PromoteFromWaitlist(context, match, participants, vacatedSide);
             }
 
-            return OperationResult<bool>.Ok(true, wasGoing ? "Maçtan ayrıldın." : "Yedek listesinden çıktın.");
+            return OperationResult<bool>.Ok(true, Msg.Get(wasGoing ? MessageKeys.Match.Left : MessageKeys.Match.LeftWaitlist));
         }
     }
 }

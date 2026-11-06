@@ -1,4 +1,5 @@
 # Sosyal Paket — API Sözleşmesi
+> **Hata gövdeleri:** bu dokümandaki tüm hata yanıtları artık standart gövdeyi kullanır: `{ success:false, code, message, errors?, traceId }`. Hata kodları, yerelleştirme ve parametreler için bkz. [platform-api.md](platform-api.md). Mesaj örnekleri `message` alanının Türkçe metnidir.
 
 Takip, mesaj izni, gizlilik, engelle/şikayet, davetler, akış, takvim, ayarlar ve hesap silme.
 Tüm uç noktalar `[Authorize]`, "ben" = JWT'deki oyuncu. JSON camelCase.

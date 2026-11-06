@@ -1,6 +1,3 @@
-using MatchBuddy.Core.Utilities.Results;
-using Microsoft.AspNetCore.Mvc;
-
 namespace MatchBuddy.Api.Model
 {
     // ---- /api/Social istek gövdeleri ----
@@ -45,21 +42,5 @@ namespace MatchBuddy.Api.Model
     public class ReportIdModel
     {
         public int ReportId { get; set; }
-    }
-
-    public static class OperationResultHttp
-    {
-        /// <summary>OperationResult -> HTTP (200 / 400 / 403 / 404). Hata gövdesi: { success: false, message }.</summary>
-        public static ActionResult ToHttp<T>(this ControllerBase controller, OperationResult<T> result, object? okBody = null)
-        {
-            var body = new { Success = result.Success, Message = result.Message };
-            return result.Status switch
-            {
-                OperationStatus.Ok => controller.Ok(okBody ?? body),
-                OperationStatus.Forbidden => controller.StatusCode(StatusCodes.Status403Forbidden, body),
-                OperationStatus.NotFound => controller.NotFound(body),
-                _ => controller.BadRequest(body),
-            };
-        }
     }
 }

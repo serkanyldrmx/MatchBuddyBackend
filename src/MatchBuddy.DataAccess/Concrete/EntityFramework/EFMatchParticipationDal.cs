@@ -109,11 +109,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             var mine = context.MatchParticipants.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == playerId);
             if (mine == null || mine.Status != ParticipantStatus.Going)
-                return OperationResult<bool>.BadRequest("Sadece maça katılan (asil) oyuncular onay verebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.ConfirmOnlyGoing);
 
             mine.Confirmed = true;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Katılımın onaylandı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.Confirmed));
         }
 
         public OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side)
@@ -127,7 +127,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             var target = context.MatchParticipants.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == targetPlayerId);
             if (target == null || target.Status != ParticipantStatus.Going)
-                return OperationResult<bool>.BadRequest("Oyuncu bu maçta asil kadroda değil.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.PlayerNotInRoster);
 
             // Hedef tarafın kapasitesi: o taraftaki Going (oyuncu hariç) + misafir < ceil(UserCount / 2)
             if (target.Side != side)
@@ -142,7 +142,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             target.Side = side;
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Oyuncunun tarafı güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.SideUpdated));
         }
 
         // ------------------------------------------------------------------
@@ -154,9 +154,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             if (!CanManage(context, match, actorPlayerId, isAdmin)) return OperationResult<T>.Forbidden();
             if (match.IsActive == RejectedStatus)
-                return OperationResult<T>.BadRequest("Bu maç reddedildi, kadro değiştirilemez.");
+                return OperationResult<T>.BadRequest(ErrorCodes.Match.RejectedRosterLocked);
             if (IsPast(match))
-                return OperationResult<T>.BadRequest("Maç tarihi geçti, kadro değiştirilemez.");
+                return OperationResult<T>.BadRequest(ErrorCodes.Match.PastRosterLocked);
             return null;
         }
 
@@ -166,7 +166,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             var match = LockMatch(context, matchId);
-            if (match == null) return OperationResult<int>.NotFound("Maç bulunamadı.");
+            if (match == null) return OperationResult<int>.NotFound(ErrorCodes.Match.NotFound);
             var guard = GuestGuard<int>(context, match, actorPlayerId, isAdmin);
             if (guard != null) return guard;
 
@@ -190,7 +190,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.MatchGuests.Add(guest);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<int>.Ok(guest.GuestId, "Misafir oyuncu eklendi.");
+            return OperationResult<int>.Ok(guest.GuestId, Msg.Get(MessageKeys.Match.GuestAdded));
         }
 
         public OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string name, string? note, byte side)
@@ -199,15 +199,15 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             var matchId = context.MatchGuests.AsNoTracking().Where(g => g.GuestId == guestId).Select(g => (int?)g.MatchId).FirstOrDefault();
-            if (matchId == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            if (matchId == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.GuestNotFound);
             var match = LockMatch(context, matchId.Value);
-            if (match == null) return OperationResult<bool>.NotFound("Maç bulunamadı.");
+            if (match == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.NotFound);
             var guard = GuestGuard<bool>(context, match, actorPlayerId, isAdmin);
             if (guard != null) return guard;
 
             var guests = LoadGuests(context, match.MatchId);
             var guest = guests.FirstOrDefault(g => g.GuestId == guestId);
-            if (guest == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            if (guest == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.GuestNotFound);
 
             // Taraf değişiminde hedef tarafın kapasitesi (misafirin kendisi hariç)
             if (guest.Side != side)
@@ -224,7 +224,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             guest.Side = side;
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Misafir oyuncu güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.GuestUpdated));
         }
 
         public OperationResult<bool> RemoveGuest(int guestId, int actorPlayerId, bool isAdmin)
@@ -233,15 +233,15 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             var matchId = context.MatchGuests.AsNoTracking().Where(g => g.GuestId == guestId).Select(g => (int?)g.MatchId).FirstOrDefault();
-            if (matchId == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            if (matchId == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.GuestNotFound);
             var match = LockMatch(context, matchId.Value);
-            if (match == null) return OperationResult<bool>.NotFound("Maç bulunamadı.");
+            if (match == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.NotFound);
             var guard = GuestGuard<bool>(context, match, actorPlayerId, isAdmin);
             if (guard != null) return guard;
 
             var guests = LoadGuests(context, match.MatchId);
             var guest = guests.FirstOrDefault(g => g.GuestId == guestId);
-            if (guest == null) return OperationResult<bool>.NotFound("Misafir oyuncu bulunamadı.");
+            if (guest == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.GuestNotFound);
 
             context.MatchGuests.Remove(guest);
             guests.Remove(guest);
@@ -252,7 +252,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Misafir oyuncu kadrodan çıkarıldı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.GuestRemoved));
         }
 
         public OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput> stats)
@@ -264,7 +264,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (match == null) return OperationResult<bool>.NotFound();
             if (!CanManage(context, match, actorPlayerId, isAdmin)) return OperationResult<bool>.Forbidden();
             if (!IsPast(match))
-                return OperationResult<bool>.BadRequest("Maç henüz oynanmadı, sonuç girilemez.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.ResultNotPlayed);
 
             var isFirstEntry = match.ResultEnteredAt == null;
             match.HomeScore = homeScore;
@@ -296,13 +296,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (isFirstEntry)
             {
                 AddNotification(context, NotificationType.MatchResult,
-                    $"Maç sonucu: {homeScore}-{awayScore} ('{match.MatchName}'). MVP'ni seç ve takım arkadaşlarını puanla.",
+                    Msg.GetDefault(MessageKeys.Match.NotifResult, homeScore, awayScore, match.MatchName),
                     matchId, going.Select(p => p.PlayerId));
             }
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Maç sonucu kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.ResultSaved));
         }
 
         public OperationResult<bool> VoteMvp(int matchId, int voterPlayerId, int votedPlayerId)
@@ -313,18 +313,18 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<bool>.NotFound();
             if (!IsPast(match))
-                return OperationResult<bool>.BadRequest("MVP oylaması maç oynandıktan sonra açılır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.MvpNotOpen);
             if (voterPlayerId == votedPlayerId)
-                return OperationResult<bool>.BadRequest("Kendine oy veremezsin.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.MvpSelfVote);
 
             var goingIds = context.MatchParticipants
                 .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
                 .Select(p => p.PlayerId)
                 .ToHashSet();
             if (!goingIds.Contains(voterPlayerId))
-                return OperationResult<bool>.BadRequest("Sadece maçta oynayan oyuncular oy verebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.MvpVoterNotPlayed);
             if (!goingIds.Contains(votedPlayerId))
-                return OperationResult<bool>.BadRequest("Oy verilen oyuncu bu maçta oynamadı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.MvpVotedNotPlayed);
 
             var vote = context.MvpVotes.FirstOrDefault(v => v.MatchId == matchId && v.VoterPlayerId == voterPlayerId);
             if (vote == null)
@@ -347,7 +347,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             UpsertMvpActivity(context, matchId);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "MVP oyun kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.MvpVoted));
         }
 
         public OperationResult<bool> RatePlayers(int matchId, int raterPlayerId, List<PlayerRatingInput> ratings)
@@ -358,14 +358,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<bool>.NotFound();
             if (!IsPast(match))
-                return OperationResult<bool>.BadRequest("Puanlama maç oynandıktan sonra açılır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RatingNotOpen);
 
             var goingIds = context.MatchParticipants
                 .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
                 .Select(p => p.PlayerId)
                 .ToHashSet();
             if (!goingIds.Contains(raterPlayerId))
-                return OperationResult<bool>.BadRequest("Sadece maçta oynayan oyuncular puan verebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RaterNotPlayed);
 
             // Aynı oyuncu birden fazla gönderildiyse sonuncusu geçerli
             var distinctRatings = ratings
@@ -374,9 +374,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .ToList();
 
             if (distinctRatings.Any(r => r.PlayerId == raterPlayerId))
-                return OperationResult<bool>.BadRequest("Kendine puan veremezsin.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RatingSelf);
             if (distinctRatings.Any(r => !goingIds.Contains(r.PlayerId)))
-                return OperationResult<bool>.BadRequest("Puanlanan oyuncular bu maçta oynamış olmalı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RatedNotPlayed);
 
             var ratedIds = distinctRatings.Select(r => r.PlayerId).ToList();
             var existing = context.PlayerRatings
@@ -406,7 +406,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             context.SaveChanges();
 
-            // UserScore = round(ortalama(Score) * 20)  (0–100)
+            // UserScore = round(ortalama(Score) * 100 / match.ratingMax)  (0–100; varsayılan ratingMax 5 → × 20)
             var averages = context.PlayerRatings
                 .Where(r => ratedIds.Contains(r.RatedPlayerId))
                 .GroupBy(r => r.RatedPlayerId)
@@ -418,13 +418,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 var avg = averages.FirstOrDefault(a => a.PlayerId == player.PlayerId)?.Avg;
                 if (avg.HasValue)
                 {
-                    player.UserScore = (int)Math.Round(avg.Value * 20, MidpointRounding.AwayFromZero);
+                    player.UserScore = (int)Math.Round(avg.Value * 100.0 / P.Int(ParameterKeys.Match.RatingMax), MidpointRounding.AwayFromZero);
                 }
             }
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Puanların kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.RatingsSaved));
         }
 
         public OperationResult<ToggleLikeResultDto> ToggleLike(int matchId, int playerId, bool likeOnly)
@@ -443,7 +443,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 {
                     // Eski MatchLiked: zaten beğenilmişse değişiklik yok
                     transaction.Commit();
-                    return OperationResult<ToggleLikeResultDto>.Ok(new ToggleLikeResultDto { Liked = true, Likes = match.Likes }, "Maç zaten beğenildi.");
+                    return OperationResult<ToggleLikeResultDto>.Ok(new ToggleLikeResultDto { Liked = true, Likes = match.Likes }, Msg.Get(MessageKeys.Match.AlreadyLiked));
                 }
                 context.MatchLikes.Remove(like);
                 match.Likes = Math.Max(0, match.Likes - 1);
@@ -459,7 +459,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<ToggleLikeResultDto>.Ok(new ToggleLikeResultDto { Liked = liked, Likes = match.Likes },
-                liked ? "Maç beğenildi." : "Beğeni geri alındı.");
+                Msg.Get(liked ? MessageKeys.Match.Liked : MessageKeys.Match.Unliked));
         }
 
         public void FillFromWaitlist(int matchId)
@@ -1010,7 +1010,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var now = DateTime.Now;
-            var until = now.AddHours(24);
+            var until = now.AddHours(P.Int(ParameterKeys.Match.ReminderLeadHours));
 
             var due = (from p in context.MatchParticipants
                        join m in context.Matchs on p.MatchId equals m.MatchId
@@ -1035,7 +1035,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 if (match == null) continue;
 
                 AddNotification(context, NotificationType.MatchReminder,
-                    $"Hatırlatma: '{match.MatchName}' maçı {match.MatchDate:dd.MM.yyyy HH:mm} tarihinde {match.StadiumName} stadyumunda. Geleceğini onaylamayı unutma!",
+                    Msg.GetDefault(MessageKeys.Match.NotifReminder, match.MatchName, match.MatchDate, match.StadiumName),
                     group.Key, group.Select(p => p.PlayerId));
 
                 foreach (var participant in group)

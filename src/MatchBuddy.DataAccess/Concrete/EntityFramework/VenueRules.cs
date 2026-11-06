@@ -10,12 +10,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
     /// </summary>
     public static class VenueRules
     {
-        public const string SlotTaken = "Bu saat dolu.";
-        public const string MembershipInactive = "Üyeliğiniz aktif değil.";
-        public const string ChooseSlot = "Lütfen bir saha ve saat seçin.";
-        public const string VenueNotFound = "Tesis bulunamadı.";
-        public const string PitchNotFound = "Saha bulunamadı.";
-        public const string NotYourVenue = "Bu tesis size ait değil.";
+        public const string SlotTaken = ErrorCodes.Venue.SlotTaken;
+        public const string MembershipInactive = ErrorCodes.Venue.MembershipInactive;
+        public const string ChooseSlot = ErrorCodes.Venue.ChooseSlot;
+        public const string VenueNotFound = ErrorCodes.Venue.NotFound;
+        public const string PitchNotFound = ErrorCodes.Venue.PitchNotFound;
+        public const string NotYourVenue = ErrorCodes.Venue.NotYourVenue;
 
         public static bool MembershipActive(Player? owner, DateTime now) =>
             owner != null && owner.Role == PlayerRoles.Owner && !owner.IsDeleted && !owner.MembershipSuspended
@@ -127,24 +127,54 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .ToList();
 
         /// <summary>
-        /// [start, start + duration) için müsaitlik kontrolü. null = müsait, aksi halde sebep.
+        /// [start, start + duration) için müsaitlik kontrolü. null = müsait, aksi halde sebep (hata kodu).
         /// (dakika, süre, geçmiş, açılış saatleri, aynı sahada bekleyen/onaylı maç ya da blok)
         /// </summary>
-        public static string? CheckSlot(MatchBuddyContext context, PricingContext pricing, Pitch pitch, DateTime start, int durationMinutes)
+        public static AppError? CheckSlot(MatchBuddyContext context, PricingContext pricing, Pitch pitch, DateTime start, int durationMinutes)
         {
-            if (start.Second != 0 || start.Millisecond != 0 || (start.Minute != 0 && start.Minute != 30))
-                return "Başlangıç saati :00 ya da :30 olmalıdır.";
+            var step = P.Int(ParameterKeys.Venue.SlotStepMinutes);
+            if (start.Second != 0 || start.Millisecond != 0 || (start.Hour * 60 + start.Minute) % step != 0)
+                return AppError.Bad(ErrorCodes.Venue.InvalidStartMinute, step);
             if (!VenuePricing.AllowedDurations.Contains(durationMinutes))
-                return "Maç süresi 60, 90 veya 120 dakika olmalıdır.";
-            if (start <= DateTime.Now)
-                return "Geçmiş bir saat seçilemez.";
+                return AppError.Bad(ErrorCodes.Venue.InvalidDuration, Msg.JoinOr(VenuePricing.AllowedDurations));
+            var now = DateTime.Now;
+            if (start <= now)
+                return AppError.Bad(ErrorCodes.Venue.PastSlot);
+            // Tesis ayarları (VenueSettings; boşsa booking.* parametreleri)
+            var settings = EffectiveSettings(context, pitch.StadiumId);
+            if (start < now.AddHours(settings.MinBookingNoticeHours))
+                return AppError.Bad(ErrorCodes.VenueSettings.BookingTooSoon, settings.MinBookingNoticeHours);
+            if (start.Date > now.Date.AddDays(settings.MaxAdvanceBookingDays))
+                return AppError.Bad(ErrorCodes.VenueSettings.BookingTooFarAhead, settings.MaxAdvanceBookingDays);
             var end = start.AddMinutes(durationMinutes);
             if (!VenuePricing.IsWithinOpening(start, end, pricing.Week))
-                return "Tesis bu saatte kapalı.";
+                return AppError.Bad(ErrorCodes.Venue.ClosedAtTime);
             var ids = new[] { pitch.PitchId };
             if (BusyMatches(context, ids, start, end).Count > 0 || Blocks(context, ids, start, end).Count > 0)
-                return SlotTaken;
+                return AppError.Bad(SlotTaken);
             return null;
+        }
+
+        /// <summary>Sistem varsayılanları (booking.* parametreleri).</summary>
+        public static VenueSettingsValuesDto DefaultSettings() => new()
+        {
+            MinBookingNoticeHours = P.Int(ParameterKeys.Booking.DefaultMinNoticeHours),
+            FreeCancellationHours = P.Int(ParameterKeys.Booking.DefaultFreeCancellationHours),
+            MaxAdvanceBookingDays = P.Int(ParameterKeys.Booking.DefaultMaxAdvanceDays),
+        };
+
+        /// <summary>Tesis için geçerli ayarlar: tesis değeri, yoksa sistem varsayılanı.</summary>
+        public static VenueSettingsValuesDto EffectiveSettings(MatchBuddyContext context, int stadiumId)
+        {
+            var d = DefaultSettings();
+            var s = context.VenueSettings.AsNoTracking().FirstOrDefault(x => x.StadiumId == stadiumId);
+            if (s == null) return d;
+            return new VenueSettingsValuesDto
+            {
+                MinBookingNoticeHours = s.MinBookingNoticeHours ?? d.MinBookingNoticeHours,
+                FreeCancellationHours = s.FreeCancellationHours ?? d.FreeCancellationHours,
+                MaxAdvanceBookingDays = s.MaxAdvanceBookingDays ?? d.MaxAdvanceBookingDays,
+            };
         }
 
         /// <summary>Teklif (müsaitlik + satırlar + ekstralar + kişi başı).</summary>
@@ -153,7 +183,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             var reason = CheckSlot(context, pricing, pitch, start, durationMinutes);
             reason ??= CheckExtras(pricing.Stadium, cleatCount, cameraRequested);
-            var quote = new QuoteDto { Available = reason == null, Reason = reason };
+            var quote = new QuoteDto { Available = reason == null, Reason = reason?.Message };
             if (!VenuePricing.AllowedDurations.Contains(durationMinutes)) return quote;
 
             var lines = VenuePricing.Lines(start, durationMinutes, pitch, pricing.Rules, pricing.Campaigns);
@@ -168,11 +198,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             return quote;
         }
 
-        public static string? CheckExtras(Stadium stadium, int cleatCount, bool cameraRequested)
+        public static AppError? CheckExtras(Stadium stadium, int cleatCount, bool cameraRequested)
         {
-            if (cleatCount < 0) return "Krampon sayısı negatif olamaz.";
-            if (cleatCount > 0 && !stadium.CleatRental) return "Bu tesiste krampon kiralama yok.";
-            if (cameraRequested && !stadium.HasCamera) return "Bu tesiste maç kaydı (kamera) hizmeti yok.";
+            if (cleatCount < 0) return AppError.Bad(ErrorCodes.Validation.NegativeNotAllowed, Msg.Get(MessageKeys.Venue.LabelCleatCount));
+            if (cleatCount > 0 && !stadium.CleatRental) return AppError.Bad(ErrorCodes.Venue.NoCleatRental);
+            if (cameraRequested && !stadium.HasCamera) return AppError.Bad(ErrorCodes.Venue.NoCamera);
             return null;
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Security.Claims;
+using System.Text;
 using System.Threading.RateLimiting;
 using Business;
 using MatchBuddy.Api.Controllers;
@@ -6,10 +7,14 @@ using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Core;
 using MatchBuddy.DataAccess;
+using MatchBuddy.DataAccess.Concrete.EntityFramework;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
+using Serilog;
 
 namespace MatchBuddy.Api
 {
@@ -38,6 +43,9 @@ namespace MatchBuddy.Api
                 builder.Configuration.AddUserSecrets<Program>(optional: true);
             }
 
+            // Loglama: Serilog (konsol + günlük dönen dosya, Logging:File:Path)
+            builder.ConfigureSerilog();
+
             var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
             if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
             {
@@ -61,43 +69,70 @@ namespace MatchBuddy.Api
             }
 
             // ---- Servisler ----
-            builder.Services.AddControllers();
+            builder.Services.AddLocalization();
+            builder.Services.AddSingleton<IMessageCatalog, ResxMessageCatalog>();
+            var localizationOptions = PlatformSetup.LocalizationOptions(builder.Configuration);
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
+            builder.Services
+                .AddControllers(o =>
+                {
+                    o.Filters.Add<StandardErrorResultFilter>();
+                    ModelValidation.LocalizeModelBindingMessages(o.ModelBindingMessageProvider);
+                    o.ModelMetadataDetailsProviders.Add(new LocalizedValidationMetadataProvider());
+                })
+                .ConfigureApiBehaviorOptions(o =>
+                {
+                    // Model doğrulaması → VALIDATION_FAILED; gövdesiz 4xx'ler filtrede standart gövdeye çevrilir
+                    o.InvalidModelStateResponseFactory = ModelValidation.InvalidModelStateResponse;
+                    o.SuppressMapClientErrors = true;
+                })
+                .AddJsonOptions(o => o.AllowInputFormatterExceptionMessages = false);
+
+            builder.Services.AddExceptionHandler<StandardExceptionHandler>();
+            builder.Services.AddProblemDetails();
+            builder.Services.ConfigureForwardedHeaders(builder.Configuration);
+            builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
+
+            // Swagger: Swagger:Enabled (varsayılan: Development'ta açık, diğer ortamlarda kapalı)
+            var swaggerEnabled = builder.Configuration.GetValue("Swagger:Enabled", builder.Environment.IsDevelopment());
+            if (swaggerEnabled)
             {
-                // Swagger'da "Authorize" butonu ile token girilebilsin
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen(c =>
                 {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "PlayerLogin'den aldığınız token'ı girin."
-                });
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
+                    // Swagger'da "Authorize" butonu ile token girilebilsin
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                     {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                        },
-                        Array.Empty<string>()
-                    }
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        In = ParameterLocation.Header,
+                        Description = "PlayerLogin'den aldığınız token'ı girin."
+                    });
+                    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+                    });
                 });
-            });
+            }
 
             builder.Services.AddBussinesRegistration();
             builder.Services.AddCoreRegistration();
             builder.Services.AddDataAccessRegistration();
 
+            // Sistem parametreleri (docs/platform-api.md): önbellekli okuyucu + yönetim
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<EFParameterService>();
+            builder.Services.AddSingleton<IParameterService>(sp => sp.GetRequiredService<EFParameterService>());
+            builder.Services.AddSingleton<IParameterStore>(sp => sp.GetRequiredService<EFParameterService>());
+
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
-            // OpenStreetMap (Nominatim / Overpass): 25 sn zaman aşımı, kimlik belirten User-Agent
+            // OpenStreetMap (Nominatim / Overpass): 40 sn zaman aşımı, kimlik belirten User-Agent
             builder.Services.AddHttpClient(OsmService.HttpClientName, c =>
             {
-                // Overpass sorgusu 25 sn sunucu süresi alabilir; aynalar paralel denendiği için toplam bekleme bunu aşmaz
+                // Overpass sorgusu sunucuda osm.overpassTimeoutSeconds sürebilir; aynalar paralel denendiği için toplam bekleme bunu aşmaz
                 c.Timeout = TimeSpan.FromSeconds(40);
                 c.DefaultRequestHeaders.UserAgent.ParseAdd("MatchBuddy/1.0 (+https://github.com/serkanyldrmx/MatchBuddy)");
             });
@@ -120,6 +155,7 @@ namespace MatchBuddy.Api
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    options.MapInboundClaims = true; // ClaimTypes.NameIdentifier / Role (önceki sürümlerle aynı)
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -130,6 +166,19 @@ namespace MatchBuddy.Api
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
                         ValidateLifetime = true,
                         ClockSkew = TimeSpan.FromMinutes(1),
+                    };
+                    // 401 / 403 → standart hata gövdesi (AUTH_UNAUTHORIZED / AUTH_FORBIDDEN)
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnChallenge = async ctx =>
+                        {
+                            ctx.HandleResponse();
+                            if (ctx.Response.HasStarted) return;
+                            ctx.Response.Headers.WWWAuthenticate = "Bearer";
+                            await ApiErrors.WriteAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, ErrorCodes.Auth.Unauthorized);
+                        },
+                        OnForbidden = ctx =>
+                            ApiErrors.WriteAsync(ctx.HttpContext, StatusCodes.Status403Forbidden, ErrorCodes.Auth.Forbidden),
                     };
                 });
             builder.Services.AddAuthorization();
@@ -142,77 +191,85 @@ namespace MatchBuddy.Api
                 options.AddPolicy(CorsPolicy, policy =>
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader()
+                          .WithExposedHeaders(ApiErrors.TraceHeader, "Retry-After"));
             });
 
-            // Giriş / kayıt uç noktaları için kaba kuvvet koruması: IP başına dakikada N istek (varsayılan 10)
-            var authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+            // İstek sınırları: dakika başına izin sayısı sistem parametresinden (rateLimit.*) okunur.
+            // Sınır değeri bölüm anahtarına eklenir: parametre değişince yeni sınır hemen geçerli olur.
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.AddPolicy("auth", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = authPermitLimit,
-                            Window = TimeSpan.FromMinutes(1),
-                            QueueLimit = 0,
-                        }));
+                {
+                    var limit = P.Int(ParameterKeys.RateLimit.AuthPerMinute);
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}:{limit}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = limit,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    });
+                });
 
-                // Fotoğraf yükleme: kullanıcı başına dakikada N (varsayılan 20). UseAuthentication'dan sonra çalışır.
-                var uploadPermitLimit = builder.Configuration.GetValue("RateLimiting:UploadPermitLimit", 20);
+                // Fotoğraf yükleme: kullanıcı başına (UseAuthentication'dan sonra çalışır)
                 options.AddPolicy(MediaUploadLimits.Policy, httpContext =>
                 {
-                    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    var limit = P.Int(ParameterKeys.RateLimit.UploadPerMinute);
+                    var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     var key = !string.IsNullOrEmpty(userId)
                         ? "user:" + userId
                         : "ip:" + (httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
-                    return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                    return RateLimitPartition.GetFixedWindowLimiter($"upload:{key}:{limit}", _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = uploadPermitLimit,
+                        PermitLimit = limit,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0,
                     });
                 });
                 options.OnRejected = async (context, ct) =>
                 {
-                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    await context.HttpContext.Response.WriteAsJsonAsync(new
-                    {
-                        Success = false,
-                        Message = "Çok fazla istek. Lütfen biraz sonra tekrar deneyin."
-                    }, ct);
+                    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                        context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+                    else
+                        context.HttpContext.Response.Headers.RetryAfter = "60";
+                    await ApiErrors.WriteAsync(context.HttpContext, StatusCodes.Status429TooManyRequests, ErrorCodes.Common.RateLimited);
                 };
             });
 
             var app = builder.Build();
 
-            // ---- Pipeline ----
-            // Beklenmeyen hatalarda iç detayları (exception mesajı, stack trace) istemciye sızdırma
-            app.UseExceptionHandler(errorApp =>
+            // Parametreler: statik yardımcılar DI'daki önbellekli servisi kullanır; tanımlar tabloya senkronlanır
+            Parameters.Current = app.Services.GetRequiredService<IParameterService>();
+            try
             {
-                errorApp.Run(async context =>
-                {
-                    var feature = context.Features.Get<IExceptionHandlerFeature>();
-                    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(feature?.Error, "İşlenmeyen hata: {Path}", context.Request.Path);
+                var added = app.Services.GetRequiredService<IParameterStore>().SyncDefinitions();
+                if (added > 0) app.Logger.LogInformation("{Count} sistem parametresi varsayılan değerle eklendi.", added);
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "Sistem parametreleri senkronlanamadı; kod varsayılanları kullanılacak.");
+            }
 
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    await context.Response.WriteAsJsonAsync(new
-                    {
-                        Success = false,
-                        Message = "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-                    });
-                });
-            });
+            // ---- Pipeline ----
+            // Ters vekil arkasında gerçek istemci IP'si / şema (Proxy:KnownProxies / KnownNetworks)
+            app.UseForwardedHeaders();
+            app.UseSecurityHeaders();
+            app.UseStructuredRequestLogging();
 
-            if (app.Environment.IsDevelopment())
+            // Beklenmeyen hatalar → COMMON_INTERNAL_ERROR (iç ayrıntı yalnızca Development'ta)
+            app.UseExceptionHandler();
+            // Gövdesiz 4xx/5xx (bilinmeyen rota, 405 …) → standart hata gövdesi
+            app.UseStatusCodePages(StatusCodeBodies.WriteAsync);
+
+            app.UseRequestLocalization(localizationOptions);
+
+            if (swaggerEnabled)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            else
+            if (!app.Environment.IsDevelopment())
             {
                 app.UseHsts();
             }
@@ -249,9 +306,41 @@ namespace MatchBuddy.Api
             app.UseRateLimiter();
             app.UseAuthorization();
 
+            // Sağlık kontrolü: anonim, istek sınırı yok
+            app.MapHealthChecks("/health", new HealthCheckOptions
+            {
+                ResponseWriter = async (ctx, report) =>
+                {
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.WriteAsJsonAsync(new
+                    {
+                        status = report.Status.ToString(),
+                        totalDurationMs = Math.Round(report.TotalDuration.TotalMilliseconds, 1),
+                        checks = report.Entries.ToDictionary(e => e.Key, e => new
+                        {
+                            status = e.Value.Status.ToString(),
+                            durationMs = Math.Round(e.Value.Duration.TotalMilliseconds, 1),
+                        }),
+                    });
+                },
+                ResultStatusCodes =
+                {
+                    [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                    [HealthStatus.Degraded] = StatusCodes.Status200OK,
+                    [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+                },
+            }).AllowAnonymous().DisableRateLimiting();
+
             app.MapControllers();
 
-            app.Run();
+            try
+            {
+                app.Run();
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }

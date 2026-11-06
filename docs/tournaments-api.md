@@ -1,4 +1,5 @@
 # Turnuvalar / Ligler — API Sözleşmesi
+> **Hata gövdeleri:** bu dokümandaki tüm hata yanıtları artık standart gövdeyi kullanır: `{ success:false, code, message, errors?, traceId }`. Hata kodları, yerelleştirme ve parametreler için bkz. [platform-api.md](platform-api.md). Mesaj örnekleri `message` alanının Türkçe metnidir.
 
 Kalıcı takımlar (`Teams` + `PlayerTeam`) turnuvaya katılır. İki format desteklenir:
 - **Lig:** tek devreli, herkes herkesle; puan tablosu.

@@ -9,7 +9,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 {
     public class EFInviteDal : IInviteDal
     {
-        private const string InviteNotFound = "Davet bulunamadı.";
+        private const string InviteNotFound = ErrorCodes.Invite.NotFound;
 
         public OperationResult<InviteResultDto> InviteToMatch(int me, bool isAdmin, int matchId, List<int> playerIds)
         {
@@ -19,14 +19,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<InviteResultDto>.NotFound();
             if (match.IsActive == RejectedStatus)
-                return OperationResult<InviteResultDto>.BadRequest("Bu maç reddedildi, davet gönderilemez.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.MatchRejected);
             if (IsPast(match))
-                return OperationResult<InviteResultDto>.BadRequest("Maç tarihi geçti, davet gönderilemez.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.MatchPast);
 
             var participants = context.MatchParticipants.Where(p => p.MatchId == matchId).ToList();
             var amGoing = participants.Any(p => p.PlayerId == me && p.Status == ParticipantStatus.Going);
             if (!amGoing && !CanManage(context, match, me, isAdmin))
-                return OperationResult<InviteResultDto>.Forbidden("Davet göndermek için maçta oynuyor olmalısın.");
+                return OperationResult<InviteResultDto>.Forbidden(ErrorCodes.Invite.NotPlayingInMatch);
 
             var requested = (playerIds ?? new List<int>()).Distinct().ToList();
             var graph = SocialGraph.Load(context, me);
@@ -81,14 +81,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 var inviter = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
                 NotificationWriter.Add(context, NotificationType.MatchInvite,
-                    $"{DisplayName(inviter)} seni '{match.MatchName}' maçına davet etti ({match.MatchDate:dd.MM.yyyy HH:mm}).",
+                    Msg.GetDefault(MessageKeys.Invite.NotifMatch, DisplayName(inviter), match.MatchName, match.MatchDate),
                     matchId, null, invited);
             }
 
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<InviteResultDto>.Ok(new InviteResultDto { Invited = invited.Count, Skipped = skipped },
-                invited.Count > 0 ? "Davetler gönderildi." : "Davet gönderilecek oyuncu yok.");
+                Msg.Get(invited.Count > 0 ? MessageKeys.Invite.Sent : MessageKeys.Invite.NoneToSend));
         }
 
         public OperationResult<InviteResultDto> InviteToTeam(int me, int teamId, List<int> playerIds)
@@ -97,11 +97,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             var team = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == teamId);
-            if (team == null) return OperationResult<InviteResultDto>.NotFound("Takım bulunamadı.");
+            if (team == null) return OperationResult<InviteResultDto>.NotFound(ErrorCodes.Team.NotFound);
 
             var members = context.PlayerTeam.Where(pt => pt.TeamId == teamId).Select(pt => pt.PlayerId).ToHashSet();
             if (!members.Contains(me))
-                return OperationResult<InviteResultDto>.Forbidden("Davet göndermek için takımın üyesi olmalısın.");
+                return OperationResult<InviteResultDto>.Forbidden(ErrorCodes.Invite.NotTeamMember);
 
             var requested = (playerIds ?? new List<int>()).Distinct().ToList();
             var graph = SocialGraph.Load(context, me);
@@ -149,14 +149,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 var inviter = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
                 NotificationWriter.Add(context, NotificationType.TeamInvite,
-                    $"{DisplayName(inviter)} seni '{team.TeamName}' takımına davet etti.",
+                    Msg.GetDefault(MessageKeys.Invite.NotifTeam, DisplayName(inviter), team.TeamName),
                     null, null, invited);
             }
 
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<InviteResultDto>.Ok(new InviteResultDto { Invited = invited.Count, Skipped = skipped },
-                invited.Count > 0 ? "Davetler gönderildi." : "Davet gönderilecek oyuncu yok.");
+                Msg.Get(invited.Count > 0 ? MessageKeys.Invite.Sent : MessageKeys.Invite.NoneToSend));
         }
 
         public MyInvitesDto GetMyInvites(int me)
@@ -254,8 +254,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             var invite = context.MatchInvites.FirstOrDefault(i => i.InviteId == inviteId);
             if (invite == null) return OperationResult<byte?>.NotFound(InviteNotFound);
-            if (invite.InviteeId != me) return OperationResult<byte?>.Forbidden("Bu davet sana gönderilmedi.");
-            if (invite.Status != InviteStatus.Pending) return OperationResult<byte?>.BadRequest("Bu davet zaten yanıtlandı.");
+            if (invite.InviteeId != me) return OperationResult<byte?>.Forbidden(ErrorCodes.Invite.NotYours);
+            if (invite.Status != InviteStatus.Pending) return OperationResult<byte?>.BadRequest(ErrorCodes.Invite.AlreadyResponded);
 
             if (!accept)
             {
@@ -263,12 +263,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 invite.RespondedAt = DateTime.Now;
                 context.SaveChanges();
                 transaction.Commit();
-                return OperationResult<byte?>.Ok(null, "Davet reddedildi.");
+                return OperationResult<byte?>.Ok(null, Msg.Get(MessageKeys.Invite.Declined));
             }
 
             var match = LockMatch(context, invite.MatchId);
             if (match == null) return OperationResult<byte?>.NotFound();
-            if (IsPast(match)) return OperationResult<byte?>.BadRequest("Geçmiş maçın daveti kabul edilemez.");
+            if (IsPast(match)) return OperationResult<byte?>.BadRequest(ErrorCodes.Invite.PastMatchAccept);
 
             // Zaten kadrodaysa (davetten sonra kendisi katıldıysa) mevcut durum korunur
             var current = context.MatchParticipants
@@ -279,7 +279,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (current != null)
             {
                 status = current.Status;
-                message = status == ParticipantStatus.Going ? "Bu maça zaten katılıyorsun." : "Zaten bu maçın yedek listesindesin.";
+                message = Msg.Get(status == ParticipantStatus.Going ? MessageKeys.Invite.AlreadyGoing : MessageKeys.Invite.AlreadyWaitlist);
             }
             else
             {
@@ -288,12 +288,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 var joinResult = Join(context, match, me, invite.Side);
                 if (!joinResult.Success)
                 {
-                    return joinResult.Status switch
-                    {
-                        OperationStatus.NotFound => OperationResult<byte?>.NotFound(joinResult.Message),
-                        OperationStatus.Forbidden => OperationResult<byte?>.Forbidden(joinResult.Message),
-                        _ => OperationResult<byte?>.BadRequest(joinResult.Message),
-                    };
+                    // Kod ve argümanlar korunur; durum eskisi gibi 404 / 403 / diğerleri 400
+                    var failStatus = joinResult.Status is OperationStatus.NotFound or OperationStatus.Forbidden
+                        ? joinResult.Status : OperationStatus.BadRequest;
+                    return OperationResult<byte?>.Fail(failStatus, joinResult.Code ?? ErrorCodes.Common.OperationFailed, joinResult.Args);
                 }
                 status = joinResult.Data;
                 message = joinResult.Message;
@@ -313,8 +311,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             var invite = context.TeamInvites.FirstOrDefault(i => i.InviteId == inviteId);
             if (invite == null) return OperationResult<byte?>.NotFound(InviteNotFound);
-            if (invite.InviteeId != me) return OperationResult<byte?>.Forbidden("Bu davet sana gönderilmedi.");
-            if (invite.Status != InviteStatus.Pending) return OperationResult<byte?>.BadRequest("Bu davet zaten yanıtlandı.");
+            if (invite.InviteeId != me) return OperationResult<byte?>.Forbidden(ErrorCodes.Invite.NotYours);
+            if (invite.Status != InviteStatus.Pending) return OperationResult<byte?>.BadRequest(ErrorCodes.Invite.AlreadyResponded);
 
             invite.Status = accept ? InviteStatus.Accepted : InviteStatus.Declined;
             invite.RespondedAt = DateTime.Now;
@@ -326,7 +324,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<byte?>.Ok(null, accept ? "Takıma katıldın." : "Davet reddedildi.");
+            return OperationResult<byte?>.Ok(null, Msg.Get(accept ? MessageKeys.Invite.TeamJoined : MessageKeys.Invite.Declined));
         }
     }
 }

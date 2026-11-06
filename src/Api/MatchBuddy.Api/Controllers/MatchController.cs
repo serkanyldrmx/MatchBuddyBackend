@@ -28,18 +28,9 @@ namespace MatchBuddy.Api.Controllers
             _venueService = venueService;
         }
 
-        // OperationResult -> HTTP cevabı (200 / 400 / 403 / 404), gövde: { success, message }
-        private IActionResult FromOperation<T>(OperationResult<T> result, object? okBody = null)
-        {
-            var body = new { Success = result.Success, Message = result.Message };
-            return result.Status switch
-            {
-                OperationStatus.Ok => Ok(okBody ?? body),
-                OperationStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, body),
-                OperationStatus.NotFound => NotFound(body),
-                _ => BadRequest(body),
-            };
-        }
+        // OperationResult -> HTTP cevabı (200 / 400 / 403 / 404); hata gövdesi standart (code, message)
+        private IActionResult FromOperation<T>(OperationResult<T> result, object? okBody = null) =>
+            this.ToHttp(result, okBody);
 
         //Maç kurma = anlaşmalı tesiste rezervasyon talebi (docs/venues-api.md); işletme onayı ile aktifleşir.
         //Kurucu = giriş yapan oyuncu; otomatik olarak kadroya Going (Home, onaylı) eklenir.
@@ -48,7 +39,7 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult SaveMatch(MatchModel matchModel)
         {
             if (User.IsOwner())
-                return StatusCode(StatusCodes.Status403Forbidden, new { Success = false, Message = "İşletme hesapları maç kuramaz." });
+                return this.ForbiddenError(ErrorCodes.Match.OwnerCannotCreate);
 
             var result = _venueService.CreateReservation(User.GetPlayerId(), new SaveMatchInput
             {
@@ -84,7 +75,7 @@ namespace MatchBuddy.Api.Controllers
             if (!permission.Success) return FromOperation(permission);
 
             var existing = _matchService.GetById(matchModel.MatchId).Data;
-            if (existing == null) return NotFound();
+            if (existing == null) return this.NotFoundError(ErrorCodes.Match.NotFound);
 
             // Ad / açıklama / kapasite düzenlenir. Rezervasyon alanları (saha, tarih, süre, fiyat, takımlar)
             // ve onay durumu korunur: saat değişikliği yeni rezervasyon gerektirir, onay işletmenindir.
@@ -106,7 +97,7 @@ namespace MatchBuddy.Api.Controllers
                 _participationService.FillFromWaitlist(match.MatchId);
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         //Maç silmek için (yetki: canManage)
@@ -122,7 +113,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return NotFound(result);
+            return this.ToHttp(result, StatusCodes.Status404NotFound);
         }
 
         //Tek bir maçı getirmek için
@@ -169,7 +160,7 @@ namespace MatchBuddy.Api.Controllers
                 .Select(t => t.TeamId).Distinct().ToList();
             if (existingTeamIds.Contains(matchTeamModel.TeamId))
             {
-                return BadRequest(new { Success = false, Message = "Bu takım zaten maça ekli." });
+                return this.BadRequestError(ErrorCodes.Match.TeamAlreadyAdded);
             }
             if (!User.IsAdmin() && existingTeamIds.Count >= 2)
             {
@@ -186,7 +177,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         //Maçın durumunu günceller (onay/red): sadece admin
@@ -215,7 +206,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _participationService.GetMatchDetail(matchId, User.GetPlayerId(), User.IsAdmin());
             if (!result.Success || result.Data == null)
             {
-                return NotFound(new { Success = false, Message = result.Message });
+                return this.NotFoundError(result.Code ?? ErrorCodes.Match.NotFound);
             }
             return result.Data;
         }
@@ -224,7 +215,7 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult Join(MatchIdModel model)
         {
             if (User.IsOwner())
-                return StatusCode(StatusCodes.Status403Forbidden, new { Success = false, Message = "İşletme hesapları maça katılamaz." });
+                return this.ForbiddenError(ErrorCodes.Match.OwnerCannotJoin);
             var result = _participationService.Join(model.MatchId, User.GetPlayerId());
             if (!result.Success) return FromOperation(result);
             return Ok(new JoinResponse { Success = true, Message = result.Message, Status = result.Data });
@@ -298,7 +289,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _participationService.GetMyCalendar(User.GetPlayerId(), from, to);
             if (!result.Success)
             {
-                return BadRequest(new { Success = false, Message = result.Message });
+                return this.ToHttp(result);
             }
             return result.Data;
         }

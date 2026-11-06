@@ -1,4 +1,5 @@
 # Medya (fotoğraf) altyapısı — sözleşme
+> **Hata gövdeleri:** bu dokümandaki tüm hata yanıtları artık standart gövdeyi kullanır: `{ success:false, code, message, errors?, traceId }`. Hata kodları, yerelleştirme ve parametreler için bkz. [platform-api.md](platform-api.md). Mesaj örnekleri `message` alanının Türkçe metnidir.
 
 Amaç: tüm fotoğraflar (profil, tesis, mesaj) tek bir boru hattından geçer:
 doğrula → EXIF/GPS temizle + yönü düzelt → WebP'ye çevir → 3 boy üret → depoya yaz → `Media` tablosuna kaydet.

@@ -79,12 +79,12 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz işletme bilgisi (model JSON).", Field = "model" });
+                return this.FieldError("model", ErrorCodes.Admin.InvalidOwnerModel);
             }
 
             photos ??= new List<IFormFile>();
             var invalid = _venueService.ValidateCreateOwner(input, photos.Count);
-            if (invalid != null) return BadRequest(new { Success = false, Message = invalid.Value.Message, Field = invalid.Value.Field });
+            if (invalid != null) return this.FieldError(invalid.Value.Field, invalid.Value.Error.Code, invalid.Value.Error.Args);
 
             // Medya hattı (kind venues); yükleyen admin. Hata olursa yüklenenler geri silinir.
             var uploaded = new List<MediaDto>();
@@ -94,7 +94,7 @@ namespace MatchBuddy.Api.Controllers
                 if (!upload.Success)
                 {
                     foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
-                    return BadRequest(new { Success = false, Message = $"{photo.FileName}: {upload.Message}", Field = "photos" });
+                    return this.FieldError("photos", ErrorCodes.Admin.PhotoUploadFailed, photo.FileName, upload.Message);
                 }
                 uploaded.Add(upload.Data);
             }
@@ -103,7 +103,8 @@ namespace MatchBuddy.Api.Controllers
             if (!result.Success)
             {
                 foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
-                return BadRequest(new { Success = false, result.Message, Field = "owner.userName" });
+                return this.Error(StatusCodes.Status400BadRequest, result.Code ?? ErrorCodes.Common.OperationFailed, result.Message,
+                    new Dictionary<string, string[]> { ["owner.userName"] = new[] { result.Message } });
             }
             _mediaService.LinkStadiumPhotos(result.Data.StadiumId, uploaded);
             return Ok(new { Success = true, result.Message, result.Data.OwnerId, result.Data.StadiumId });
@@ -137,18 +138,19 @@ namespace MatchBuddy.Api.Controllers
             {
                 if (south.HasValue && west.HasValue && north.HasValue && east.HasValue)
                 {
-                    if (south >= north || west >= east || north - south > 2 || east - west > 2)
-                        return BadRequest(new { Success = false, Message = "Geçersiz alan (en fazla 2° x 2°, south < north, west < east)." });
+                    var maxDeg = (double)P.Dec(ParameterKeys.Osm.MaxBoxDegrees);
+                    if (south >= north || west >= east || north - south > maxDeg || east - west > maxDeg)
+                        return this.BadRequestError(ErrorCodes.Osm.InvalidBounds, maxDeg);
                     box = new OsmService.BBox(south.Value, west.Value, north.Value, east.Value);
                 }
                 else if (!string.IsNullOrWhiteSpace(city))
                 {
                     box = await _osmService.CityBoundsAsync(city, ct);
-                    if (box == null) return NotFound(new { Success = false, Message = "Şehir bulunamadı." });
+                    if (box == null) return this.NotFoundError(ErrorCodes.Osm.CityNotFound);
                 }
                 else
                 {
-                    return BadRequest(new { Success = false, Message = "city ya da south/west/north/east verilmelidir." });
+                    return this.BadRequestError(ErrorCodes.Osm.AreaRequired);
                 }
 
                 var candidates = await _osmService.PitchesAsync(box, ct);
@@ -157,11 +159,9 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (Exception ex) when (ex is OsmService.OsmUnavailableException or FormatException or KeyNotFoundException or InvalidOperationException)
             {
-                return StatusCode(StatusCodes.Status502BadGateway, new
-                {
-                    Success = false,
-                    Message = ex is OsmService.OsmUnavailableException ? ex.Message : "Harita servisinden geçersiz yanıt alındı.",
-                });
+                return ex is OsmService.OsmUnavailableException osm
+                    ? this.Error(StatusCodes.Status502BadGateway, osm.Code, osm.Message)
+                    : this.Error(StatusCodes.Status502BadGateway, ErrorCodes.Osm.InvalidResponse, Msg.Get(ErrorCodes.Osm.InvalidResponse));
             }
         }
 

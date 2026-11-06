@@ -26,7 +26,7 @@ namespace MatchBuddy.Api.Controllers
         {
             if (string.IsNullOrWhiteSpace(matchCommentModel.Comment))
             {
-                return BadRequest(new { Success = false, Message = "Yorum boş olamaz." });
+                return this.BadRequestError(ErrorCodes.Comment.Empty);
             }
 
             var matchComment = new MatchComment()
@@ -40,7 +40,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         // Yorum sil: sadece yorumun sahibi veya admin
@@ -50,7 +50,7 @@ namespace MatchBuddy.Api.Controllers
             var comment = _matchCommentsService.GetComment(commentId);
             if (comment == null)
             {
-                return NotFound(new { Success = false, Message = "Yorum bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Comment.NotFound);
             }
             if (!User.IsSelfOrAdmin(comment.playerId))
             {
@@ -62,7 +62,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         [Authorize(Roles = Roles.Admin)]

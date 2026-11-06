@@ -31,7 +31,7 @@ namespace MatchBuddy.Api.Controllers
             var k = kind?.Trim().ToLowerInvariant();
             if (k is not ("message" or "messages"))
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz medya türü (kind: message)." });
+                return this.BadRequestError(ErrorCodes.Media.InvalidKind);
             }
 
             var result = await _mediaService.UploadAsync(file, MediaKind.MessageImage, User.GetPlayerId(), ct);
@@ -45,6 +45,8 @@ namespace MatchBuddy.Api.Controllers
     {
         public const string Policy = "upload";
         /// <summary>10 MB dosya + multipart ek yükü. Sınırın üstü 413; 10 MB–12 MB arası uygulama tarafından 400.</summary>
-        public const int SingleRequestBytes = 12 * 1024 * 1024;
+        // İstek gövdesi üst sınırı: media.maxUploadMb parametresinin en büyük değeri (20 MB) + form payı.
+        // Asıl dosya sınırı MediaService/ImageProcessor içinde parametreden okunur.
+        public const int SingleRequestBytes = 22 * 1024 * 1024;
     }
 }

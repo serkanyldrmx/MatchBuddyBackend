@@ -55,7 +55,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _groupService.Add(group);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return this.ToHttp(result);
             }
 
             // Grubu oluşturan kişi de her zaman grubun üyesidir
@@ -73,7 +73,7 @@ namespace MatchBuddy.Api.Controllers
 
                 if (!result1.Success)
                 {
-                    return BadRequest(result1);
+                    return this.ToHttp(result1);
                 }
             }
 
@@ -98,7 +98,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
     }
 }

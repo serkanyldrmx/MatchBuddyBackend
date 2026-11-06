@@ -1,23 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Autofac" Version="7.0.0" />
-		<PackageReference Include="Autofac.Extras.DynamicProxy" Version="7.0.0" />
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\MatchBuddy.DataAccess\MatchBuddy.DataAccess.csproj" />
 		<ProjectReference Include="..\MatchBuddy.Entities\MatchBuddy.Entities.csproj" />
 	</ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MatchBuddy.Core.Errors" />
+    <Using Include="MatchBuddy.Core.Localization" />
+    <Using Include="MatchBuddy.Core.Parameters" />
+  </ItemGroup>
 
 </Project>

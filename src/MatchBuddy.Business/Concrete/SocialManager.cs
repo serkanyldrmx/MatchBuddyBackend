@@ -34,7 +34,7 @@ namespace MatchBuddy.Business.Concrete
             _socialDal.GetFollowing(me, playerId ?? me);
 
         public List<SocialPlayerDto> Discover(int me, string? query, int take) =>
-            _socialDal.Discover(me, query, Math.Clamp(take, 1, 100));
+            _socialDal.Discover(me, query, Math.Clamp(take, 1, P.Int(ParameterKeys.Social.FeedMaxTake)));
 
         public List<SocialPlayerDto> Suggestions(int me, int take) =>
             _socialDal.Suggestions(me, Math.Clamp(take, 1, 50));
@@ -58,12 +58,12 @@ namespace MatchBuddy.Business.Concrete
             reason = reason?.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(reason) || !ReportReasons.Contains(reason))
             {
-                return OperationResult<bool>.BadRequest("Geçersiz şikayet nedeni. Geçerli değerler: " + string.Join(", ", ReportReasons) + ".");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidReportReason, string.Join(", ", ReportReasons));
             }
             details = string.IsNullOrWhiteSpace(details) ? null : details.Trim();
             if (details != null && details.Length > MaxDetailsLength)
             {
-                return OperationResult<bool>.BadRequest($"Açıklama en fazla {MaxDetailsLength} karakter olabilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Validation.TooLong, Msg.Get(MessageKeys.Social.LabelReportDetails), MaxDetailsLength);
             }
             return _socialDal.Report(me, targetPlayerId, reason, details);
         }
@@ -72,11 +72,17 @@ namespace MatchBuddy.Business.Concrete
 
         public OperationResult<bool> SaveSettings(int me, PlayerSettingsInput input)
         {
-            if (input == null) return OperationResult<bool>.BadRequest("Ayarlar boş olamaz.");
+            if (input == null) return OperationResult<bool>.BadRequest(ErrorCodes.Social.SettingsRequired);
             if (input.MessagePermission.HasValue && (input.MessagePermission < 0 || input.MessagePermission > 2))
-                return OperationResult<bool>.BadRequest("messagePermission 0, 1 veya 2 olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidSettingChoice, "messagePermission");
             if (input.ProfileVisibility.HasValue && (input.ProfileVisibility < 0 || input.ProfileVisibility > 2))
-                return OperationResult<bool>.BadRequest("profileVisibility 0, 1 veya 2 olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidSettingChoice, "profileVisibility");
+            var theme = input.Theme?.Trim().ToLowerInvariant();
+            if (theme != null && !PlayerThemes.All.Contains(theme))
+                return OperationResult<bool>.FieldError("theme", ErrorCodes.Social.InvalidTheme, string.Join(", ", PlayerThemes.All));
+            var language = input.Language?.Trim().ToLowerInvariant();
+            if (language != null && !Msg.SupportedLanguages.Contains(language))
+                return OperationResult<bool>.FieldError("language", ErrorCodes.Social.InvalidLanguage, string.Join(", ", Msg.SupportedLanguages));
 
             // Gönderilmeyen alanlar mevcut değerini korur
             var s = _socialDal.GetSettings(me);
@@ -89,9 +95,11 @@ namespace MatchBuddy.Business.Concrete
             if (input.NotifyMatchReminder.HasValue) s.NotifyMatchReminder = input.NotifyMatchReminder.Value;
             if (input.NotifyMatchResult.HasValue) s.NotifyMatchResult = input.NotifyMatchResult.Value;
             if (input.NotifyMatchUpdates.HasValue) s.NotifyMatchUpdates = input.NotifyMatchUpdates.Value;
+            if (theme != null) s.Theme = theme;
+            if (language != null) s.Language = language;
 
             _socialDal.SaveSettings(s);
-            return OperationResult<bool>.Ok(true, "Ayarlar kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.SettingsSaved));
         }
 
         private static PlayerSettingsDto ToDto(PlayerSettings s) => new()
@@ -104,24 +112,26 @@ namespace MatchBuddy.Business.Concrete
             NotifyMatchReminder = s.NotifyMatchReminder,
             NotifyMatchResult = s.NotifyMatchResult,
             NotifyMatchUpdates = s.NotifyMatchUpdates,
+            Theme = s.Theme,
+            Language = s.Language,
         };
 
         public OperationResult<bool> DeleteAccount(int me, string? password)
         {
             if (string.IsNullOrEmpty(password))
-                return OperationResult<bool>.BadRequest("Şifre gerekli.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordRequired);
 
             var player = _playerDal.Get(p => p.PlayerId == me);
             if (player == null || player.IsDeleted)
-                return OperationResult<bool>.NotFound("Oyuncu bulunamadı.");
+                return OperationResult<bool>.NotFound(ErrorCodes.Player.NotFound);
             if (!PasswordHasher.Verify(password, player.Password, out _))
-                return OperationResult<bool>.BadRequest("Şifre hatalı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordWrong);
 
             // Eski şifre ile giriş yapılamasın: rastgele bir değerin hash'i
             var randomHash = PasswordHasher.Hash(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
             return _socialDal.DeleteAccount(me, randomHash)
-                ? OperationResult<bool>.Ok(true, "Hesabın silindi.")
-                : OperationResult<bool>.NotFound("Oyuncu bulunamadı.");
+                ? OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.AccountDeleted))
+                : OperationResult<bool>.NotFound(ErrorCodes.Player.NotFound);
         }
 
         public OperationResult<bool> CheckCanMessage(int senderId, int recipientId) =>
@@ -130,7 +140,7 @@ namespace MatchBuddy.Business.Concrete
         public List<MessageContactDto> GetMessageContacts(int me) => _socialDal.GetMessageContacts(me);
 
         public List<ActivityDto> GetFeed(int me, int take, DateTime? before) =>
-            _socialDal.GetFeed(me, Math.Clamp(take, 1, 100), before);
+            _socialDal.GetFeed(me, Math.Clamp(take, 1, P.Int(ParameterKeys.Social.FeedMaxTake)), before);
 
         public List<Player> GetVisiblePlayers(int viewerPlayerId) => _socialDal.GetVisiblePlayers(viewerPlayerId);
         public HashSet<int> OwnerIds(IEnumerable<int> playerIds) => _socialDal.OwnerIds(playerIds);
@@ -141,7 +151,7 @@ namespace MatchBuddy.Business.Concrete
 
     public class InviteManager : IInviteService
     {
-        private const int MaxInviteBatch = 50;
+        private static int MaxInviteBatch => P.Int(ParameterKeys.Social.MaxInviteBatch);
         private readonly IInviteDal _inviteDal;
 
         public InviteManager(IInviteDal inviteDal)
@@ -152,18 +162,18 @@ namespace MatchBuddy.Business.Concrete
         public OperationResult<InviteResultDto> InviteToMatch(int me, bool isAdmin, int matchId, List<int>? playerIds)
         {
             if (playerIds == null || playerIds.Count == 0)
-                return OperationResult<InviteResultDto>.BadRequest("Davet edilecek en az bir oyuncu seçmelisin.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.NoPlayers);
             if (playerIds.Count > MaxInviteBatch)
-                return OperationResult<InviteResultDto>.BadRequest($"Tek seferde en fazla {MaxInviteBatch} oyuncu davet edilebilir.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.BatchLimit, MaxInviteBatch);
             return _inviteDal.InviteToMatch(me, isAdmin, matchId, playerIds);
         }
 
         public OperationResult<InviteResultDto> InviteToTeam(int me, int teamId, List<int>? playerIds)
         {
             if (playerIds == null || playerIds.Count == 0)
-                return OperationResult<InviteResultDto>.BadRequest("Davet edilecek en az bir oyuncu seçmelisin.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.NoPlayers);
             if (playerIds.Count > MaxInviteBatch)
-                return OperationResult<InviteResultDto>.BadRequest($"Tek seferde en fazla {MaxInviteBatch} oyuncu davet edilebilir.");
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.BatchLimit, MaxInviteBatch);
             return _inviteDal.InviteToTeam(me, teamId, playerIds);
         }
 
@@ -176,7 +186,7 @@ namespace MatchBuddy.Business.Concrete
             {
                 "match" => _inviteDal.RespondMatch(me, inviteId, accept),
                 "team" => _inviteDal.RespondTeam(me, inviteId, accept),
-                _ => OperationResult<byte?>.BadRequest("kind 'match' veya 'team' olmalıdır."),
+                _ => OperationResult<byte?>.BadRequest(ErrorCodes.Invite.InvalidKind),
             };
         }
     }

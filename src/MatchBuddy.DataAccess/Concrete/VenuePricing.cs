@@ -10,9 +10,10 @@ namespace MatchBuddy.DataAccess.Concrete
     /// </summary>
     public static class VenuePricing
     {
-        public static readonly int[] AllowedDurations = { 60, 90, 120 };
-        public const int MinPlayersPerSide = 4;   // userCount en az 2 × 4
-        public const int ExtraPlayers = 4;        // userCount en çok PlayersPerSide * 2 + 4
+        // Sistem parametreleri (docs/platform-api.md): venue.allowedDurations, venue.bookingMinPlayersPerSide, venue.extraPlayersAllowed
+        public static IReadOnlyList<int> AllowedDurations => P.Ints(ParameterKeys.Venue.AllowedDurations);
+        public static int MinPlayersPerSide => P.Int(ParameterKeys.Venue.BookingMinPlayersPerSide); // userCount en az 2 × bu
+        public static int ExtraPlayers => P.Int(ParameterKeys.Venue.ExtraPlayersAllowed);           // userCount en çok PlayersPerSide * 2 + bu
 
         // Varsayılan açılış saatleri (kayıt ve Stadiums.OpeningTime/ClosingTime yoksa): 09:00–00:00
         public static readonly TimeSpan DefaultOpen = new(9, 0, 0);

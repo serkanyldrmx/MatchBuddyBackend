@@ -8,23 +8,22 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
     /// <summary>İşletme paneli (/api/Owner). Her işlem tesis sahipliği (403) ve yazmalarda üyelik (403) kontrolünden geçer.</summary>
     public partial class EFVenueDal
     {
-        public const int MaxPhotosPerVenue = 20;
+        public static int MaxPhotosPerVenue => P.Int(ParameterKeys.Venue.MaxPhotos);
 
-        // Sahiplik (+ yazma ise üyelik) kontrolü. null = geçti, aksi halde hata sonucu (mesaj + durum).
-        private static (OperationStatus Status, string Message)? Guard(MatchBuddyContext context, int me, Stadium? stadium, bool write)
+        // Sahiplik (+ yazma ise üyelik) kontrolü. null = geçti, aksi halde hata (kod + durum).
+        private static AppError? Guard(MatchBuddyContext context, int me, Stadium? stadium, bool write)
         {
-            if (stadium == null) return (OperationStatus.NotFound, VenueRules.VenueNotFound);
-            if (stadium.OwnerPlayerId != me) return (OperationStatus.Forbidden, VenueRules.NotYourVenue);
+            if (stadium == null) return AppError.NotFound(VenueRules.VenueNotFound);
+            if (stadium.OwnerPlayerId != me) return AppError.Forbidden(VenueRules.NotYourVenue);
             if (write)
             {
                 var owner = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
-                if (!VenueRules.MembershipActive(owner, DateTime.Now)) return (OperationStatus.Forbidden, VenueRules.MembershipInactive);
+                if (!VenueRules.MembershipActive(owner, DateTime.Now)) return AppError.Forbidden(VenueRules.MembershipInactive);
             }
             return null;
         }
 
-        private static OperationResult<T> Fail<T>((OperationStatus Status, string Message) g) =>
-            new(default!, false, g.Message, g.Status);
+        private static OperationResult<T> Fail<T>(AppError error) => OperationResult<T>.Fail(error);
 
         private static Stadium? StadiumOf(MatchBuddyContext context, int stadiumId, bool track = false) =>
             track ? context.Stadiums.FirstOrDefault(s => s.StadiumId == stadiumId)
@@ -126,7 +125,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         }
 
         // stadiumId verilmişse sahiplik kontrolü; yoksa işletmenin tüm tesisleri
-        private static (List<int>? Ids, (OperationStatus, string)? Error) ScopeIds(MatchBuddyContext context, int me, int? stadiumId)
+        private static (List<int>? Ids, AppError? Error) ScopeIds(MatchBuddyContext context, int me, int? stadiumId)
         {
             if (stadiumId is > 0)
             {
@@ -140,7 +139,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var (ids, error) = ScopeIds(context, me, stadiumId);
-            if (error != null) return Fail<List<ReservationDto>>(error.Value);
+            if (error != null) return Fail<List<ReservationDto>>(error);
 
             var query = context.Matchs.AsNoTracking().Where(m => ids!.Contains(m.StadiumId));
             if (status.HasValue) query = query.Where(m => m.IsActive == status.Value);
@@ -154,7 +153,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var (ids, error) = ScopeIds(context, me, stadiumId);
-            if (error != null) return Fail<OwnerDashboardDto>(error.Value);
+            if (error != null) return Fail<OwnerDashboardDto>(error);
 
             var now = DateTime.Now;
             var today = DateTime.Today;
@@ -210,7 +209,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             var stadium = StadiumOf(context, stadiumId);
             var g = Guard(context, me, stadium, false);
-            if (g != null) return Fail<OwnerCalendarDto>(g.Value);
+            if (g != null) return Fail<OwnerCalendarDto>(g);
 
             var pricing = VenueRules.LoadPricing(context, stadium!);
             var pitches = context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId)
@@ -275,7 +274,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             var stadium = StadiumOf(context, input.StadiumId, track: true);
             var g = Guard(context, me, stadium, true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
 
             stadium!.StadiumName = input.Name!;
             stadium.Description = input.Description;
@@ -297,7 +296,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             stadium.ProvidesBibs = input.ProvidesBibs;
             stadium.ProvidesBall = input.ProvidesBall;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Tesis bilgileri güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.VenueUpdated));
         }
 
         // ------------------------------------------------------------------ Fotoğraflar
@@ -306,7 +305,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<VenuePhotoDto>>(g.Value);
+            if (g != null) return Fail<List<VenuePhotoDto>>(g);
             return OperationResult<List<VenuePhotoDto>>.Ok(context.StadiumPhotos.AsNoTracking()
                 .Where(p => p.StadiumId == stadiumId)
                 .OrderByDescending(p => p.IsCover).ThenBy(p => p.SortOrder).ThenBy(p => p.PhotoId)
@@ -318,9 +317,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             if (context.StadiumPhotos.Count(p => p.StadiumId == stadiumId) >= MaxPhotosPerVenue)
-                return OperationResult<bool>.BadRequest($"Bir tesise en fazla {MaxPhotosPerVenue} fotoğraf eklenebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Owner.PhotoLimitReached, MaxPhotosPerVenue);
             return OperationResult<bool>.Ok(true);
         }
 
@@ -329,11 +328,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<VenuePhotoDto>(g.Value);
+            if (g != null) return Fail<VenuePhotoDto>(g);
 
             var existing = context.StadiumPhotos.Where(p => p.StadiumId == stadiumId).ToList();
             if (existing.Count >= MaxPhotosPerVenue)
-                return OperationResult<VenuePhotoDto>.BadRequest($"Bir tesise en fazla {MaxPhotosPerVenue} fotoğraf eklenebilir.");
+                return OperationResult<VenuePhotoDto>.BadRequest(ErrorCodes.Owner.PhotoLimitReached, MaxPhotosPerVenue);
             var photo = new StadiumPhoto
             {
                 StadiumId = stadiumId,
@@ -345,7 +344,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<VenuePhotoDto>.Ok(new VenuePhotoDto { PhotoId = photo.PhotoId, Url = photo.Url, IsCover = photo.IsCover, SortOrder = photo.SortOrder },
-                "Fotoğraf yüklendi.");
+                Msg.Get(MessageKeys.Owner.PhotoUploaded));
         }
 
         public OperationResult<string> DeletePhoto(int me, int photoId)
@@ -353,35 +352,35 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
             var photo = context.StadiumPhotos.FirstOrDefault(p => p.PhotoId == photoId);
-            if (photo == null) return OperationResult<string>.NotFound("Fotoğraf bulunamadı.");
+            if (photo == null) return OperationResult<string>.NotFound(ErrorCodes.Owner.PhotoNotFound);
             var g = Guard(context, me, StadiumOf(context, photo.StadiumId), true);
-            if (g != null) return Fail<string>(g.Value);
+            if (g != null) return Fail<string>(g);
 
             var others = context.StadiumPhotos.Where(p => p.StadiumId == photo.StadiumId && p.PhotoId != photoId)
                 .OrderBy(p => p.SortOrder).ThenBy(p => p.PhotoId).ToList();
             if (others.Count == 0)
-                return OperationResult<string>.BadRequest("Tesisin son fotoğrafı silinemez.");
+                return OperationResult<string>.BadRequest(ErrorCodes.Owner.LastPhotoCannotDelete);
             if (photo.IsCover && !others.Any(p => p.IsCover)) others[0].IsCover = true;
             context.StadiumPhotos.Remove(photo);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<string>.Ok(photo.Url, "Fotoğraf silindi.");
+            return OperationResult<string>.Ok(photo.Url, Msg.Get(MessageKeys.Owner.PhotoDeleted));
         }
 
         public OperationResult<bool> SetCover(int me, int photoId)
         {
             using var context = new MatchBuddyContext();
             var photo = context.StadiumPhotos.AsNoTracking().FirstOrDefault(p => p.PhotoId == photoId);
-            if (photo == null) return OperationResult<bool>.NotFound("Fotoğraf bulunamadı.");
+            if (photo == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.PhotoNotFound);
             var g = Guard(context, me, StadiumOf(context, photo.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
 
             foreach (var p in context.StadiumPhotos.Where(p => p.StadiumId == photo.StadiumId).ToList())
             {
                 p.IsCover = p.PhotoId == photoId;
             }
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Kapak fotoğrafı güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.CoverUpdated));
         }
 
         // ------------------------------------------------------------------ Sahalar
@@ -390,7 +389,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<PitchDto>>(g.Value);
+            if (g != null) return Fail<List<PitchDto>>(g);
             return OperationResult<List<PitchDto>>.Ok(context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId)
                 .OrderBy(p => p.Name).ThenBy(p => p.PitchId).ToList().Select(ToDto).ToList());
         }
@@ -407,7 +406,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 stadiumId = pitch.StadiumId;
             }
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<int>(g.Value);
+            if (g != null) return Fail<int>(g);
 
             if (pitch == null)
             {
@@ -421,7 +420,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             pitch.BasePrice = input.BasePrice;
             pitch.IsActive = input.IsActive;
             context.SaveChanges();
-            return OperationResult<int>.Ok(pitch.PitchId, "Saha kaydedildi.");
+            return OperationResult<int>.Ok(pitch.PitchId, Msg.Get(MessageKeys.Owner.PitchSaved));
         }
 
         public OperationResult<bool> DeletePitch(int me, int pitchId)
@@ -431,12 +430,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var pitch = context.Pitches.FirstOrDefault(p => p.PitchId == pitchId);
             if (pitch == null) return OperationResult<bool>.NotFound(VenueRules.PitchNotFound);
             var g = Guard(context, me, StadiumOf(context, pitch.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
 
             var now = DateTime.Now;
             if (context.Matchs.Any(m => m.PitchId == pitchId && m.MatchDate >= now
                                         && (m.IsActive == MatchStatus.Pending || m.IsActive == MatchStatus.Approved)))
-                return OperationResult<bool>.BadRequest("Bu sahada gelecekte bekleyen ya da onaylı rezervasyon var. Sahayı silmek yerine pasife alabilirsiniz.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Owner.PitchHasReservations);
 
             // Geçmiş maçlar tesiste kalır, saha bağlantısı kaldırılır; sahaya özel kural/kampanyalar silinir
             context.Matchs.Where(m => m.PitchId == pitchId).ExecuteUpdate(s => s.SetProperty(m => m.PitchId, (int?)null));
@@ -445,7 +444,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.Pitches.Remove(pitch);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Saha silindi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.PitchDeleted));
         }
 
         // ------------------------------------------------------------------ Açılış saatleri
@@ -455,7 +454,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             var stadium = StadiumOf(context, stadiumId);
             var g = Guard(context, me, stadium, false);
-            if (g != null) return Fail<List<OpeningHourDto>>(g.Value);
+            if (g != null) return Fail<List<OpeningHourDto>>(g);
             return OperationResult<List<OpeningHourDto>>.Ok(VenueRules.ToDtos(VenueRules.LoadPricing(context, stadium!).Week));
         }
 
@@ -464,7 +463,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
 
             var existing = context.OpeningHours.Where(h => h.StadiumId == stadiumId).ToList().ToDictionary(h => (int)h.DayOfWeek);
             foreach (var d in days)
@@ -480,7 +479,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Açılış saatleri kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.OpeningHoursSaved));
         }
 
         // ------------------------------------------------------------------ Fiyat kuralları
@@ -489,7 +488,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<PriceRuleDto>>(g.Value);
+            if (g != null) return Fail<List<PriceRuleDto>>(g);
             return OperationResult<List<PriceRuleDto>>.Ok(context.PriceRules.AsNoTracking().Where(r => r.StadiumId == stadiumId)
                 .OrderBy(r => r.PitchId).ThenBy(r => r.FromHour).ThenBy(r => r.PriceRuleId)
                 .Select(r => new PriceRuleDto
@@ -499,9 +498,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 }).ToList());
         }
 
-        private static string? CheckPitchBelongs(MatchBuddyContext context, int? pitchId, int stadiumId) =>
+        private static AppError? CheckPitchBelongs(MatchBuddyContext context, int? pitchId, int stadiumId) =>
             pitchId.HasValue && !context.Pitches.Any(p => p.PitchId == pitchId.Value && p.StadiumId == stadiumId)
-                ? "Saha bu tesise ait değil." : null;
+                ? AppError.Bad(ErrorCodes.Owner.PitchNotInVenue) : null;
 
         public OperationResult<int> SavePriceRule(int me, PriceRuleDto input)
         {
@@ -511,11 +510,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (input.PriceRuleId is > 0)
             {
                 rule = context.PriceRules.FirstOrDefault(r => r.PriceRuleId == input.PriceRuleId.Value);
-                if (rule == null) return OperationResult<int>.NotFound("Fiyat kuralı bulunamadı.");
+                if (rule == null) return OperationResult<int>.NotFound(ErrorCodes.Owner.PriceRuleNotFound);
                 stadiumId = rule.StadiumId;
             }
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<int>(g.Value);
+            if (g != null) return Fail<int>(g);
             var pitchError = CheckPitchBelongs(context, input.PitchId, stadiumId);
             if (pitchError != null) return OperationResult<int>.BadRequest(pitchError);
 
@@ -530,19 +529,19 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             rule.ToHour = input.ToHour;
             rule.PricePerHour = input.PricePerHour;
             context.SaveChanges();
-            return OperationResult<int>.Ok(rule.PriceRuleId, "Fiyat kuralı kaydedildi.");
+            return OperationResult<int>.Ok(rule.PriceRuleId, Msg.Get(MessageKeys.Owner.PriceRuleSaved));
         }
 
         public OperationResult<bool> DeletePriceRule(int me, int priceRuleId)
         {
             using var context = new MatchBuddyContext();
             var rule = context.PriceRules.FirstOrDefault(r => r.PriceRuleId == priceRuleId);
-            if (rule == null) return OperationResult<bool>.NotFound("Fiyat kuralı bulunamadı.");
+            if (rule == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.PriceRuleNotFound);
             var g = Guard(context, me, StadiumOf(context, rule.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             context.PriceRules.Remove(rule);
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Fiyat kuralı silindi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.PriceRuleDeleted));
         }
 
         // ------------------------------------------------------------------ Kampanyalar
@@ -551,7 +550,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<CampaignDto>>(g.Value);
+            if (g != null) return Fail<List<CampaignDto>>(g);
             return OperationResult<List<CampaignDto>>.Ok(context.Campaigns.AsNoTracking().Where(c => c.StadiumId == stadiumId)
                 .OrderByDescending(c => c.EndDate).ThenBy(c => c.CampaignId).ToList().Select(ToDto).ToList());
         }
@@ -564,11 +563,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (input.CampaignId is > 0)
             {
                 campaign = context.Campaigns.FirstOrDefault(c => c.CampaignId == input.CampaignId.Value);
-                if (campaign == null) return OperationResult<int>.NotFound("Kampanya bulunamadı.");
+                if (campaign == null) return OperationResult<int>.NotFound(ErrorCodes.Owner.CampaignNotFound);
                 stadiumId = campaign.StadiumId;
             }
             var g = Guard(context, me, StadiumOf(context, stadiumId), true);
-            if (g != null) return Fail<int>(g.Value);
+            if (g != null) return Fail<int>(g);
             var pitchError = CheckPitchBelongs(context, input.PitchId, stadiumId);
             if (pitchError != null) return OperationResult<int>.BadRequest(pitchError);
 
@@ -589,19 +588,19 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             campaign.FixedPrice = input.FixedPrice;
             campaign.IsActive = input.IsActive;
             context.SaveChanges();
-            return OperationResult<int>.Ok(campaign.CampaignId, "Kampanya kaydedildi.");
+            return OperationResult<int>.Ok(campaign.CampaignId, Msg.Get(MessageKeys.Owner.CampaignSaved));
         }
 
         public OperationResult<bool> DeleteCampaign(int me, int campaignId)
         {
             using var context = new MatchBuddyContext();
             var campaign = context.Campaigns.FirstOrDefault(c => c.CampaignId == campaignId);
-            if (campaign == null) return OperationResult<bool>.NotFound("Kampanya bulunamadı.");
+            if (campaign == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.CampaignNotFound);
             var g = Guard(context, me, StadiumOf(context, campaign.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             context.Campaigns.Remove(campaign);
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Kampanya silindi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.CampaignDeleted));
         }
 
         // ------------------------------------------------------------------ Bloklar
@@ -610,7 +609,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<SlotBlockDto>>(g.Value);
+            if (g != null) return Fail<List<SlotBlockDto>>(g);
             var pitches = context.Pitches.AsNoTracking().Where(p => p.StadiumId == stadiumId).ToList().ToDictionary(p => p.PitchId);
             return OperationResult<List<SlotBlockDto>>.Ok(VenueRules.Blocks(context, pitches.Keys.ToList(), from, to)
                 .OrderBy(b => b.StartAt).ThenBy(b => b.SlotBlockId)
@@ -647,29 +646,29 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (input.SlotBlockId is > 0)
             {
                 block = context.SlotBlocks.FirstOrDefault(b => b.SlotBlockId == input.SlotBlockId.Value);
-                if (block == null) return OperationResult<int>.NotFound("Blok bulunamadı.");
+                if (block == null) return OperationResult<int>.NotFound(ErrorCodes.Owner.BlockNotFound);
                 var gOld = Guard(context, me, StadiumOfPitch(context, block.PitchId), true);
-                if (gOld != null) return Fail<int>(gOld.Value);
+                if (gOld != null) return Fail<int>(gOld);
             }
             var pitch = VenueRules.LockPitch(context, input.PitchId);
             if (pitch == null) return OperationResult<int>.NotFound(VenueRules.PitchNotFound);
             var g = Guard(context, me, StadiumOf(context, pitch.StadiumId), true);
-            if (g != null) return Fail<int>(g.Value);
+            if (g != null) return Fail<int>(g);
 
             var kind = (byte)input.Kind;
             var start = input.StartAt!.Value;
             var end = input.EndAt!.Value;
             var ids = new[] { pitch.PitchId };
             if (VenueRules.BusyMatches(context, ids, start, end).Count > 0)
-                return OperationResult<int>.BadRequest("Bu aralıkta bekleyen ya da onaylı bir rezervasyon var.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Owner.BlockReservationConflict);
             var selfId = block?.SlotBlockId ?? 0;
             var others = VenueRules.Blocks(context, ids, start, end).Where(b => b.SlotBlockId != selfId).ToList();
             if (kind == SlotBlockKind.Manual && others.Count > 0)
                 return OperationResult<int>.BadRequest(others.Any(b => b.Kind == SlotBlockKind.Manual)
-                    ? "Bu aralıkta başka bir harici rezervasyon var."
-                    : "Bu aralık kapalı (bakım/blok) olarak işaretli.");
+                    ? ErrorCodes.Owner.BlockManualConflict
+                    : ErrorCodes.Owner.BlockClosedConflict);
             if (kind == SlotBlockKind.Closed && others.Any(b => b.Kind == SlotBlockKind.Manual))
-                return OperationResult<int>.BadRequest("Bu aralıkta bir harici rezervasyon var.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Owner.BlockHasManual);
 
             if (block == null)
             {
@@ -691,7 +690,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             else
             {
-                block.Reason = input.Reason ?? "Kapalı";
+                block.Reason = input.Reason ?? Msg.GetDefault(MessageKeys.Owner.LabelClosedBlockReason);
                 block.CustomerName = null;
                 block.CustomerPhone = null;
                 block.Price = null;
@@ -700,33 +699,33 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<int>.Ok(block.SlotBlockId, kind == SlotBlockKind.Manual ? "Rezervasyon kaydedildi." : "Saat kapatıldı.");
+            return OperationResult<int>.Ok(block.SlotBlockId, Msg.Get(kind == SlotBlockKind.Manual ? MessageKeys.Owner.ManualReservationSaved : MessageKeys.Owner.SlotClosed));
         }
 
         public OperationResult<bool> SetBlockPaid(int me, int slotBlockId, bool isPaid)
         {
             using var context = new MatchBuddyContext();
             var block = context.SlotBlocks.FirstOrDefault(b => b.SlotBlockId == slotBlockId);
-            if (block == null) return OperationResult<bool>.NotFound("Blok bulunamadı.");
+            if (block == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.BlockNotFound);
             var g = Guard(context, me, StadiumOfPitch(context, block.PitchId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             if (block.Kind != SlotBlockKind.Manual)
-                return OperationResult<bool>.BadRequest("Ödeme durumu sadece harici rezervasyonlar için değiştirilebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Owner.BlockPaymentOnlyManual);
             block.IsPaid = isPaid;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, isPaid ? "Ödeme alındı olarak işaretlendi." : "Ödeme bekleniyor olarak işaretlendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(isPaid ? MessageKeys.Owner.PaymentReceived : MessageKeys.Owner.PaymentPending));
         }
 
         public OperationResult<bool> DeleteBlock(int me, int slotBlockId)
         {
             using var context = new MatchBuddyContext();
             var block = context.SlotBlocks.FirstOrDefault(b => b.SlotBlockId == slotBlockId);
-            if (block == null) return OperationResult<bool>.NotFound("Blok bulunamadı.");
+            if (block == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.BlockNotFound);
             var g = Guard(context, me, StadiumOfPitch(context, block.PitchId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             context.SlotBlocks.Remove(block);
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Blok kaldırıldı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.BlockRemoved));
         }
 
         // ------------------------------------------------------------------ Yorumlar
@@ -735,7 +734,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<VenueReviewDto>>(g.Value);
+            if (g != null) return Fail<List<VenueReviewDto>>(g);
             var reviews = context.VenueReviews.AsNoTracking().Where(r => r.StadiumId == stadiumId)
                 .OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.ReviewId).ToList();
             var ids = reviews.Select(r => r.PlayerId).Distinct().ToList();
@@ -754,13 +753,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var review = context.VenueReviews.FirstOrDefault(r => r.ReviewId == reviewId);
-            if (review == null) return OperationResult<bool>.NotFound("Yorum bulunamadı.");
+            if (review == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.ReviewNotFound);
             var g = Guard(context, me, StadiumOf(context, review.StadiumId), true);
-            if (g != null) return Fail<bool>(g.Value);
+            if (g != null) return Fail<bool>(g);
             review.OwnerReply = reply;
             review.RepliedAt = DateTime.Now;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Yanıtınız kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.ReviewReplySaved));
         }
     }
 }

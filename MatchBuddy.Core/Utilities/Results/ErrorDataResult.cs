@@ -1,26 +1,18 @@
-﻿namespace MatchBuddy.Core.Utilities.Results
+using MatchBuddy.Core.Errors;
+using MatchBuddy.Core.Localization;
+
+namespace MatchBuddy.Core.Utilities.Results
 {
     public class ErrorDataResult<T> : DataResult<T>
     {
-        public ErrorDataResult(T data, string message) : base(data, false, message)
+        /// <summary>Hata kodu (ErrorCodes) + mesaj yer tutucu değerleri.</summary>
+        public ErrorDataResult(string code, params object?[] args) : base(default!, false, Msg.Get(code, args))
         {
-
+            Code = code;
+            Args = args;
         }
-
-        public ErrorDataResult(T data) : base(data, false)
+        public ErrorDataResult() : this(ErrorCodes.Common.OperationFailed)
         {
-
-        }
-
-        //Aşşağıdaki iki constructor çok kullanılmaz
-        public ErrorDataResult(string message) : base(default, false, message)
-        {
-
-        }
-
-        public ErrorDataResult() : base(default, false)
-        {
-
         }
     }
 }

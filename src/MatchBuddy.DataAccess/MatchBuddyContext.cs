@@ -60,6 +60,9 @@ namespace MatchBuddy.DataAccess
         public DbSet<VenueReview> VenueReviews { get; set; }
         public DbSet<VenueExpense> VenueExpenses { get; set; }
         public DbSet<Media> Media { get; set; }
+        public DbSet<SystemParameter> SystemParameters { get; set; }
+        public DbSet<ParameterAudit> ParameterAudits { get; set; }
+        public DbSet<VenueSettings> VenueSettings { get; set; }
 
     }
 }

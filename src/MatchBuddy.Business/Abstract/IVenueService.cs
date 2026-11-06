@@ -28,6 +28,8 @@ namespace MatchBuddy.Business.Abstract
         OperationResult<bool> UpdateVenue(int me, VenueUpdateInput input);
         OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId);
         OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> GetSettings(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> SaveSettings(int me, VenueSettingsInput input);
         OperationResult<VenuePhotoDto> AddPhoto(int me, int stadiumId, string url);
         OperationResult<string> DeletePhoto(int me, int photoId);
         OperationResult<bool> SetCover(int me, int photoId);
@@ -59,7 +61,7 @@ namespace MatchBuddy.Business.Abstract
         OperationResult<AdminOwnerDetailDto> OwnerDetail(int ownerId);
         OperationResult<ResetOwnerPasswordResultDto> ResetOwnerPassword(int ownerId);
         // Alan bazlı doğrulama: (field, message) ya da null
-        (string Field, string Message)? ValidateCreateOwner(CreateOwnerInput? input, int photoCount);
+        (string Field, AppError Error)? ValidateCreateOwner(CreateOwnerInput? input, int photoCount);
         OperationResult<CreateOwnerResultDto> CreateOwner(CreateOwnerInput input, List<string> photoUrls);
         OperationResult<bool> UpdateMembership(UpdateMembershipInput input);
         OperationResult<bool> AssignVenue(AssignVenueInput input);

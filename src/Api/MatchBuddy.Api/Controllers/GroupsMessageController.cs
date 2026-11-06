@@ -34,7 +34,7 @@ namespace MatchBuddy.Api.Controllers
             // Metin ya da fotoğraf (mediaId) dolu olmalı
             if (string.IsNullOrWhiteSpace(groupMessageModel.MatchMessage) && groupMessageModel.MediaId == null)
             {
-                return BadRequest(new { Success = false, Message = "Mesaj boş olamaz." });
+                return this.BadRequestError(ErrorCodes.Message.Empty);
             }
 
             if (!CanAccessGroup(groupMessageModel.GroupId))
@@ -67,7 +67,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         [HttpPost("GetGroupMessageById")]

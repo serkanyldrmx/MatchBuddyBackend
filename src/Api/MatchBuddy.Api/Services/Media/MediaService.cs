@@ -61,7 +61,7 @@ namespace MatchBuddy.Api.Services
 
     public class MediaService : IMediaService
     {
-        public const string NotFoundMessage = "Fotoğraf bulunamadı.";
+        public const string NotFoundMessage = ErrorCodes.Media.NotFound;
 
         private readonly IFileStorage _storage;
         private readonly IWebHostEnvironment _env;
@@ -98,8 +98,8 @@ namespace MatchBuddy.Api.Services
 
         public async Task<OperationResult<MediaDto>> UploadAsync(IFormFile? file, MediaKind kind, int? uploaderId, CancellationToken ct = default)
         {
-            if (file == null || file.Length == 0) return OperationResult<MediaDto>.BadRequest("Fotoğraf seçilmedi.");
-            if (file.Length > ImageProcessor.MaxBytes) return OperationResult<MediaDto>.BadRequest(ImageProcessor.ErrorTooLarge);
+            if (file == null || file.Length == 0) return OperationResult<MediaDto>.BadRequest(ErrorCodes.Media.NoFile);
+            if (file.Length > ImageProcessor.MaxBytes) return OperationResult<MediaDto>.BadRequest(ImageProcessor.TooLargeError());
 
             byte[] bytes;
             await using (var stream = file.OpenReadStream())
@@ -121,7 +121,7 @@ namespace MatchBuddy.Api.Services
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Resim işlenemedi");
-                return OperationResult<MediaDto>.BadRequest(ImageProcessor.ErrorInvalid);
+                return OperationResult<MediaDto>.BadRequest(ImageProcessor.InvalidError());
             }
             if (!processed.Success) return OperationResult<MediaDto>.BadRequest(processed.Error!);
 
@@ -285,7 +285,7 @@ namespace MatchBuddy.Api.Services
             var threshold = DateTime.Now - olderThan;
             using var context = new MatchBuddyContext();
             var stale = context.Media.Where(m => m.Status == MediaStatus.Pending && m.CreatedAt < threshold)
-                .OrderBy(m => m.MediaId).Take(500).ToList();
+                .OrderBy(m => m.MediaId).Take(P.Int(ParameterKeys.Media.CleanupBatchSize)).ToList();
             var count = 0;
             foreach (var media in stale)
             {
@@ -302,8 +302,8 @@ namespace MatchBuddy.Api.Services
                 }
             }
 
-            // Opsiyonel: 7 günden eski Deleted satırlar kaldırılır (bağlı kayıtlarda kullanılmıyorsa)
-            var deletedThreshold = DateTime.Now.AddDays(-7);
+            // Opsiyonel: media.deletedPurgeDays (varsayılan 7) günden eski Deleted satırlar kaldırılır (bağlı kayıtlarda kullanılmıyorsa)
+            var deletedThreshold = DateTime.Now.AddDays(-P.Int(ParameterKeys.Media.DeletedPurgeDays));
             await context.Media
                 .Where(m => m.Status == MediaStatus.Deleted && m.CreatedAt < deletedThreshold
                             && !context.Players.Any(p => p.ProfileMediaId == m.MediaId)

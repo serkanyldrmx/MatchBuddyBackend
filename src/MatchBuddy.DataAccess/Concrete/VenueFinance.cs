@@ -48,7 +48,7 @@ namespace MatchBuddy.DataAccess.Concrete
             var r = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
             var c = string.IsNullOrWhiteSpace(customerName) ? null : customerName.Trim();
             if (r != null && c != null) return $"{r} – {c}";
-            return r ?? c ?? "Harici rezervasyon";
+            return r ?? c ?? Msg.Get(MessageKeys.Venue.LabelExternalBooking);
         }
 
         public static OwnerFinanceDto Build(int year, int month, DateTime now,

@@ -8,8 +8,8 @@ namespace MatchBuddy.Business.Concrete
 {
     public class MatchParticipationManager : IMatchParticipationService
     {
-        private const int MaxScore = 50;
-        private const int MaxPlayerStat = 30;
+        private static int MaxScore => P.Int(ParameterKeys.Match.MaxScore);
+        private static int MaxPlayerStat => P.Int(ParameterKeys.Match.MaxPlayerStat);
 
         private readonly IMatchParticipationDal _participationDal;
 
@@ -34,38 +34,38 @@ namespace MatchBuddy.Business.Concrete
         {
             if (side != ParticipantSide.Home && side != ParticipantSide.Away)
             {
-                return OperationResult<bool>.BadRequest("Taraf 1 (ev sahibi) veya 2 (deplasman) olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.InvalidSide);
             }
             return _participationDal.SetSide(matchId, actorPlayerId, isAdmin, targetPlayerId, side);
         }
 
         // ---- Misafir oyuncular ----
 
-        private static string? ValidateGuest(byte side, ref string? name, ref string? note)
+        private static AppError? ValidateGuest(byte side, ref string? name, ref string? note)
         {
             if (side != ParticipantSide.Home && side != ParticipantSide.Away)
-                return "Taraf 1 (ev sahibi) veya 2 (deplasman) olmalıdır.";
+                return AppError.Bad(ErrorCodes.Match.InvalidSide);
             name = name?.Trim();
             if (string.IsNullOrEmpty(name) || name.Length < MatchGuestRules.NameMinLength || name.Length > MatchGuestRules.NameMaxLength)
-                return $"Misafir adı {MatchGuestRules.NameMinLength}–{MatchGuestRules.NameMaxLength} karakter olmalıdır.";
+                return AppError.Bad(ErrorCodes.Match.GuestNameLength, MatchGuestRules.NameMinLength, MatchGuestRules.NameMaxLength);
             note = note?.Trim();
             if (string.IsNullOrEmpty(note)) note = null;
             else if (note.Length > MatchGuestRules.NoteMaxLength)
-                return $"Not en fazla {MatchGuestRules.NoteMaxLength} karakter olabilir.";
+                return AppError.Bad(ErrorCodes.Validation.TooLong, Msg.Get(MessageKeys.Match.LabelGuestNote), MatchGuestRules.NoteMaxLength);
             return null;
         }
 
         public OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string? name, string? note)
         {
             var error = ValidateGuest(side, ref name, ref note);
-            if (error != null) return OperationResult<int>.BadRequest(error);
+            if (error != null) return OperationResult<int>.Fail(error);
             return _participationDal.AddGuest(matchId, actorPlayerId, isAdmin, side, name!, note);
         }
 
         public OperationResult<bool> UpdateGuest(int guestId, int actorPlayerId, bool isAdmin, string? name, string? note, byte side)
         {
             var error = ValidateGuest(side, ref name, ref note);
-            if (error != null) return OperationResult<bool>.BadRequest(error);
+            if (error != null) return OperationResult<bool>.Fail(error);
             return _participationDal.UpdateGuest(guestId, actorPlayerId, isAdmin, name!, note, side);
         }
 
@@ -76,12 +76,12 @@ namespace MatchBuddy.Business.Concrete
         {
             if (homeScore < 0 || homeScore > MaxScore || awayScore < 0 || awayScore > MaxScore)
             {
-                return OperationResult<bool>.BadRequest($"Skorlar 0 ile {MaxScore} arasında olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Validation.OutOfRange, Msg.Get(MessageKeys.Match.LabelScores), 0, MaxScore);
             }
             stats ??= new List<PlayerStatInput>();
             if (stats.Any(s => s.Goals < 0 || s.Goals > MaxPlayerStat || s.Assists < 0 || s.Assists > MaxPlayerStat))
             {
-                return OperationResult<bool>.BadRequest($"Gol ve asist sayıları 0 ile {MaxPlayerStat} arasında olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Validation.OutOfRange, Msg.Get(MessageKeys.Match.LabelGoalsAssists), 0, MaxPlayerStat);
             }
             return _participationDal.SubmitResult(matchId, actorPlayerId, isAdmin, homeScore, awayScore, stats);
         }
@@ -93,11 +93,12 @@ namespace MatchBuddy.Business.Concrete
         {
             if (ratings == null || ratings.Count == 0)
             {
-                return OperationResult<bool>.BadRequest("En az bir oyuncuya puan vermelisin.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RatingsRequired);
             }
-            if (ratings.Any(r => r.Score < 1 || r.Score > 5))
+            var ratingMax = P.Int(ParameterKeys.Match.RatingMax);
+            if (ratings.Any(r => r.Score < 1 || r.Score > ratingMax))
             {
-                return OperationResult<bool>.BadRequest("Puan 1 ile 5 arasında olmalıdır.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Validation.OutOfRange, Msg.Get(MessageKeys.Match.LabelRatingScore), 1, ratingMax);
             }
             return _participationDal.RatePlayers(matchId, raterPlayerId, ratings);
         }
@@ -117,7 +118,7 @@ namespace MatchBuddy.Business.Concrete
         {
             var detail = _participationDal.GetMatchDetail(matchId, playerId, isAdmin);
             return detail == null
-                ? new ErrorDataResult<MatchDetailDto?>("Maç bulunamadı.")
+                ? new ErrorDataResult<MatchDetailDto?>(ErrorCodes.Match.NotFound)
                 : new SuccessDataResult<MatchDetailDto?>(detail);
         }
 
@@ -125,13 +126,13 @@ namespace MatchBuddy.Business.Concrete
         {
             var stats = _participationDal.GetPlayerStats(playerId);
             return stats == null
-                ? new ErrorDataResult<PlayerStatsDto?>("Oyuncu bulunamadı.")
+                ? new ErrorDataResult<PlayerStatsDto?>(ErrorCodes.Player.NotFound)
                 : new SuccessDataResult<PlayerStatsDto?>(stats);
         }
 
         public IDataResult<List<LeaderboardRowDto>> GetLeaderboard(int top, int viewerPlayerId)
         {
-            top = Math.Clamp(top, 1, 100);
+            top = Math.Clamp(top, 1, P.Int(ParameterKeys.Match.LeaderboardMax));
             return new SuccessDataResult<List<LeaderboardRowDto>>(_participationDal.GetLeaderboard(top, viewerPlayerId));
         }
 
@@ -142,7 +143,7 @@ namespace MatchBuddy.Business.Concrete
             var end = to ?? start.AddMonths(2);
             if (end < start)
             {
-                return new ErrorDataResult<List<CalendarItemDto>>("Bitiş tarihi başlangıçtan önce olamaz.");
+                return new ErrorDataResult<List<CalendarItemDto>>(ErrorCodes.Match.CalendarInvalidRange);
             }
             return new SuccessDataResult<List<CalendarItemDto>>(_participationDal.GetMyCalendar(playerId, start, end));
         }
@@ -150,8 +151,8 @@ namespace MatchBuddy.Business.Concrete
         public IResult DeleteMatch(int matchId)
         {
             return _participationDal.DeleteMatch(matchId)
-                ? new SuccessResult("Maç silindi.")
-                : new ErrorResult("Maç bulunamadı.");
+                ? new SuccessResult(Msg.Get(MessageKeys.Match.Deleted))
+                : new ErrorResult(ErrorCodes.Match.NotFound);
         }
 
         public int SendDueReminders() => _participationDal.SendDueReminders();

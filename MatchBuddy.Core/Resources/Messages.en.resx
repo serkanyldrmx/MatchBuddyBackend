@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AUTH_ADMIN_ONLY" xml:space="preserve">
+    <value>This operation is for administrators only.</value>
+  </data>
+  <data name="AUTH_FORBIDDEN" xml:space="preserve">
+    <value>You are not allowed to perform this operation.</value>
+  </data>
+  <data name="AUTH_INVALID_CREDENTIALS" xml:space="preserve">
+    <value>Invalid user name or password.</value>
+  </data>
+  <data name="AUTH_UNAUTHORIZED" xml:space="preserve">
+    <value>Your session has expired or you are not signed in. Please sign in again.</value>
+  </data>
+  <data name="COMMON_BAD_REQUEST" xml:space="preserve">
+    <value>The request is invalid.</value>
+  </data>
+  <data name="COMMON_CONFLICT" xml:space="preserve">
+    <value>The record was changed by another operation. Please refresh and try again.</value>
+  </data>
+  <data name="COMMON_INTERNAL_ERROR" xml:space="preserve">
+    <value>An unexpected error occurred. Please try again later.</value>
+  </data>
+  <data name="COMMON_INVALID_DATE_RANGE" xml:space="preserve">
+    <value>The end date must be after the start date.</value>
+  </data>
+  <data name="COMMON_INVALID_JSON" xml:space="preserve">
+    <value>Invalid JSON format.</value>
+  </data>
+  <data name="COMMON_LIST_OR" xml:space="preserve">
+    <value>or</value>
+  </data>
+  <data name="COMMON_MAINTENANCE" xml:space="preserve">
+    <value>The system is under maintenance.</value>
+  </data>
+  <data name="COMMON_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>This operation is not supported for this address.</value>
+  </data>
+  <data name="COMMON_NOT_FOUND" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="COMMON_OPERATION_FAILED" xml:space="preserve">
+    <value>The operation could not be completed.</value>
+  </data>
+  <data name="COMMON_PAYLOAD_TOO_LARGE" xml:space="preserve">
+    <value>The request body is too large.</value>
+  </data>
+  <data name="COMMON_RATE_LIMITED" xml:space="preserve">
+    <value>Too many requests. Please try again shortly.</value>
+  </data>
+  <data name="COMMON_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The service is currently unavailable. Please try again later.</value>
+  </data>
+  <data name="COMMON_UNSUPPORTED_MEDIA_TYPE" xml:space="preserve">
+    <value>The content type is not supported.</value>
+  </data>
+  <data name="COMMON_UPSTREAM_ERROR" xml:space="preserve">
+    <value>An external service could not be reached. Please try again later.</value>
+  </data>
+  <data name="GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Group not found.</value>
+  </data>
+  <data name="LABEL_COMMON_VALUE" xml:space="preserve">
+    <value>value</value>
+  </data>
+  <data name="MATCH_NOT_FOUND" xml:space="preserve">
+    <value>Match not found.</value>
+  </data>
+  <data name="MSG_COMMON_SAVED" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="MSG_PARAM_UPDATED" xml:space="preserve">
+    <value>Parameter updated.</value>
+  </data>
+  <data name="PARAM_INVALID_JSON" xml:space="preserve">
+    <value>The parameter value must be valid JSON.</value>
+  </data>
+  <data name="PARAM_INVALID_LIST" xml:space="preserve">
+    <value>'{0}' must be a JSON array of positive integers (e.g. [60,90]).</value>
+  </data>
+  <data name="PARAM_INVALID_TYPE" xml:space="preserve">
+    <value>The value of '{0}' must be of type {1}.</value>
+  </data>
+  <data name="PARAM_NOT_FOUND" xml:space="preserve">
+    <value>Parameter not found.</value>
+  </data>
+  <data name="PARAM_OUT_OF_RANGE" xml:space="preserve">
+    <value>'{0}' must be between {1} and {2}.</value>
+  </data>
+  <data name="PARAM_VALUE_REQUIRED" xml:space="preserve">
+    <value>The parameter value cannot be empty.</value>
+  </data>
+  <data name="PLAYER_NOT_FOUND" xml:space="preserve">
+    <value>Player not found.</value>
+  </data>
+  <data name="TEAM_NOT_FOUND" xml:space="preserve">
+    <value>Team not found.</value>
+  </data>
+  <data name="TOURNAMENT_NOT_FOUND" xml:space="preserve">
+    <value>Tournament not found.</value>
+  </data>
+  <data name="VALIDATION_BODY_REQUIRED" xml:space="preserve">
+    <value>The request body cannot be empty.</value>
+  </data>
+  <data name="VALIDATION_FAILED" xml:space="preserve">
+    <value>The submitted data is invalid. Please check the highlighted fields.</value>
+  </data>
+  <data name="VALIDATION_INVALID_EMAIL" xml:space="preserve">
+    <value>Enter a valid e-mail address.</value>
+  </data>
+  <data name="VALIDATION_INVALID_FORMAT" xml:space="preserve">
+    <value>The submitted value could not be read (invalid format).</value>
+  </data>
+  <data name="VALIDATION_INVALID_VALUE" xml:space="preserve">
+    <value>The value '{0}' is not valid for {1}.</value>
+  </data>
+  <data name="VALIDATION_MUST_BE_NUMBER" xml:space="preserve">
+    <value>The {0} field must be a number.</value>
+  </data>
+  <data name="VALIDATION_NEGATIVE_NOT_ALLOWED" xml:space="preserve">
+    <value>{0} cannot be negative.</value>
+  </data>
+  <data name="VALIDATION_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} must be between {1} and {2}.</value>
+  </data>
+  <data name="VALIDATION_REQUIRED" xml:space="preserve">
+    <value>The {0} field is required.</value>
+  </data>
+  <data name="VALIDATION_TOO_LONG" xml:space="preserve">
+    <value>{0} can be at most {1} characters.</value>
+  </data>
+  <data name="VALIDATION_TOO_SHORT" xml:space="preserve">
+    <value>{0} must be at least {1} characters.</value>
+  </data>
+  <data name="VALIDATION_UNKNOWN_VALUE_INVALID" xml:space="preserve">
+    <value>The value is invalid.</value>
+  </data>
+  <data name="VALIDATION_VALUE_INVALID" xml:space="preserve">
+    <value>The value '{0}' is invalid.</value>
+  </data>
+  <data name="VALIDATION_VALUE_MISSING" xml:space="preserve">
+    <value>A value is required.</value>
+  </data>
+  <data name="VENUE_BOOKING_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>Bookings at this venue can be made at most {0} days ahead.</value>
+  </data>
+  <data name="VENUE_BOOKING_TOO_SOON" xml:space="preserve">
+    <value>Bookings at this venue must be made at least {0} hours in advance.</value>
+  </data>
+  <data name="VENUE_NOT_FOUND" xml:space="preserve">
+    <value>Venue not found.</value>
+  </data>
+  <data name="VENUE_NOT_YOURS" xml:space="preserve">
+    <value>This venue does not belong to you.</value>
+  </data>
+  <data name="VENUE_PITCH_NOT_FOUND" xml:space="preserve">
+    <value>Pitch not found.</value>
+  </data>
+  <data name="VENUE_SETTINGS_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} must be between {1} and {2}.</value>
+  </data>
+</root>
