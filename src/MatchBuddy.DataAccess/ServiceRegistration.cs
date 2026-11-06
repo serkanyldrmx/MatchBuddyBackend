@@ -21,6 +21,11 @@ namespace MatchBuddy.DataAccess
             services.AddScoped<IMatchCommentsDal, EFMatchCommentsDal>();
             services.AddScoped<INotificationDal, EFNotificationDal>();
             services.AddScoped<IPlayerNotificationDal, EFPlayerNotificationDal>();
+            services.AddScoped<IMatchParticipationDal, EFMatchParticipationDal>();
+            services.AddScoped<ISocialDal, EFSocialDal>();
+            services.AddScoped<IInviteDal, EFInviteDal>();
+            services.AddScoped<ITournamentDal, EFTournamentDal>();
+            services.AddScoped<IVenueDal, EFVenueDal>();
         }
     }
 }

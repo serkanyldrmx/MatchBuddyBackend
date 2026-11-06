@@ -10,8 +10,8 @@ namespace MatchBuddy.Business.Abstract
         //Tüm maçları getir       
         IDataResult<Match> GetById(int matchId);
         //seçili maç bilgilerini getir
-        IResult Add(Match match);
-        //Maç ekle - oluştur
+        IResult Add(Match match, int creatorPlayerId);
+        //Maç ekle - oluştur (kurucu otomatik Going olarak eklenir)
         IResult Delete(Match match);
         //Maç silme
         IResult Update(Match match);

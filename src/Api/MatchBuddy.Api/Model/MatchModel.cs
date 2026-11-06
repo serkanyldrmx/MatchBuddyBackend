@@ -11,6 +11,15 @@ namespace MatchBuddy.Api.Model
         public string? Description { get; set; }
         public byte IsActive { get; set; }
         public int StadiumId { get; set; }
+
+        // Anlaşmalı tesis rezervasyonu (docs/venues-api.md). StadiumId / IsActive artık SaveMatch'te kullanılmaz.
+        public int? PitchId { get; set; }
+        public int? DurationMinutes { get; set; }
+        public int CleatCount { get; set; }
+        public bool CameraRequested { get; set; }
+        public int? HomeTeamId { get; set; }
+        public int? AwayTeamId { get; set; }
+        public bool LookingForOpponent { get; set; }
         //public Stadium Stadium { get; set; }
     }
 }

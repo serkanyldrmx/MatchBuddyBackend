@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Kullanıcı yüklemeleri (profil resimleri) repoya girmemeli
+src/Api/MatchBuddy.Api/wwwroot/uploads/*
+!src/Api/MatchBuddy.Api/wwwroot/uploads/.gitkeep

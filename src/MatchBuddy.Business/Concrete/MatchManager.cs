@@ -12,23 +12,19 @@ namespace MatchBuddy.Business.Concrete
     {
         IMatchDal _matchDal;
         IMatchTeamDal _matchTeamDal;
+        IMatchParticipationDal _participationDal;
 
-        public MatchManager(IMatchDal matchDal, IMatchTeamDal matchTeamDal)
+        public MatchManager(IMatchDal matchDal, IMatchTeamDal matchTeamDal, IMatchParticipationDal participationDal)
         {
             _matchDal = matchDal;
             _matchTeamDal = matchTeamDal;
+            _participationDal = participationDal;
         }
 
-        public IResult Add(Match match)
+        public IResult Add(Match match, int creatorPlayerId)
         {
-            // Aynı gün içerisindeki maçları getir
-            var matchList = _matchDal.GetMatchToDate(match);
-
-            // Listedeki maçların saatlerini kontrol et
-            if (matchList.Any(m => m.MatchDate.HasValue && m.MatchDate.Value.Hour == match.MatchDate.Value.Hour))
-            {
-                return new ErrorResult(Messages.MatchTimeConflict); // Aynı saatte maç varsa hata döndür
-            }
+            // Not: maç kurma artık IVenueService.CreateReservation üzerinden (saha bazlı müsaitlik, docs/venues-api.md).
+            // Eski "aynı saatte başka maç var" kontrolü kaldırıldı.
 
             // Maç ismi geçerli mi kontrol et
             if (match.MatchName.Length < 5)
@@ -36,8 +32,8 @@ namespace MatchBuddy.Business.Concrete
                 return new ErrorResult(Messages.MatchNameInvalid);
             }
 
-            // Maçı ekle
-            _matchDal.Add(match);
+            // Maçı ekle; kurucu otomatik olarak kadroya (Going, Home, onaylı) yazılır
+            _participationDal.AddMatchWithCreator(match, creatorPlayerId);
             return new Result(true, Messages.Added);
         }
 

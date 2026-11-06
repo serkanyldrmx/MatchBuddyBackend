@@ -1,6 +1,7 @@
 ﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Business.Constants;
+using MatchBuddy.Business.Security;
 using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
@@ -19,10 +20,26 @@ namespace MatchBuddy.Business.Concrete
         public IResult Add(Player player)
         {
             //business codes
-            if (player.PlayerName.Length < 3)
+            if (player.PlayerName == null || player.PlayerName.Length < 3)
             {
                 return new ErrorResult(Messages.PlayerNameInvalid);
             }
+            if (string.IsNullOrWhiteSpace(player.UserName))
+            {
+                return new ErrorResult("Kullanıcı adı zorunludur.");
+            }
+            if (string.IsNullOrEmpty(player.Password) || player.Password.Length < 6)
+            {
+                return new ErrorResult("Şifre en az 6 karakter olmalıdır.");
+            }
+            if (IsUserNameTaken(player.UserName))
+            {
+                return new ErrorResult("Bu kullanıcı adı zaten kullanılıyor.");
+            }
+            // Yeni kayıtlar asla admin olarak oluşturulamaz, şifre hash'lenerek saklanır
+            player.IsAdmin = 0;
+            player.Role = PlayerRoles.Player;
+            player.Password = PasswordHasher.Hash(player.Password);
             _playerDal.Add(player);
             return new Result(true, Messages.Added);
         }
@@ -52,7 +69,7 @@ namespace MatchBuddy.Business.Concrete
 
         public IResult Update(Player player)
         {
-            if (player.PlayerName.Length < 2)
+            if (player.PlayerName == null || player.PlayerName.Length < 2)
             {
                 return new ErrorResult(Messages.PlayerNameInvalid);
             }
@@ -62,7 +79,32 @@ namespace MatchBuddy.Business.Concrete
 
         public IDataResult<Player> LoginToGetPlayer(PlayerLogin playerLogin)
         {
-            return new SuccessDataResult<Player>(_playerDal.Get(p => p.UserName == playerLogin.UserName && p.Password==playerLogin.Password));
+            if (string.IsNullOrWhiteSpace(playerLogin.UserName) || string.IsNullOrEmpty(playerLogin.Password))
+            {
+                return new ErrorDataResult<Player>("Kullanıcı adı veya şifre hatalı.");
+            }
+
+            var player = _playerDal.Get(p => p.UserName == playerLogin.UserName);
+            // Silinmiş hesap giriş yapamaz
+            if (player == null || player.IsDeleted || !PasswordHasher.Verify(playerLogin.Password, player.Password, out var needsRehash))
+            {
+                return new ErrorDataResult<Player>("Kullanıcı adı veya şifre hatalı.");
+            }
+
+            // Eski düz metin şifreyi ilk başarılı girişte hash'li hale getir
+            if (needsRehash)
+            {
+                player.Password = PasswordHasher.Hash(playerLogin.Password);
+                _playerDal.Update(player);
+            }
+
+            return new SuccessDataResult<Player>(player);
+        }
+
+        public bool IsUserNameTaken(string userName, int? exceptPlayerId = null)
+        {
+            var existing = _playerDal.Get(p => p.UserName == userName);
+            return existing != null && existing.PlayerId != exceptPlayerId;
         }
 
         public IDataResult<List<AIPLayerModel>> AISortByPlayer(int playerId)

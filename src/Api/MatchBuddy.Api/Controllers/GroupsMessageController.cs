@@ -1,86 +1,63 @@
 ﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
-using MatchBuddy.Business.Concrete;
-using MatchBuddy.DataAccess.Concrete.EntityFramework;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MatchBuddy.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class GroupsMessageController : ControllerBase
     {
-        //Loosely coupled
-        //nameing convention 
-        //IoC Container -- Inversion of Controler
-
         private readonly IGroupMessageService _groupMessageService;
+        private readonly IGroupPlayerService _groupPlayerService;
 
-        public GroupsMessageController(IGroupMessageService groupMessageService)
+        public GroupsMessageController(IGroupMessageService groupMessageService, IGroupPlayerService groupPlayerService)
         {
             _groupMessageService = groupMessageService;
+            _groupPlayerService = groupPlayerService;
         }
 
-        //[HttpGet("GetGroupList")] //alyans (isim) verdik
-        //public List<Group> GetPlayerList()
-        //{
-        //    IGroupService groupService = new GroupManager(new EFGroupDal());
-        //    var result = groupService.GetGroups();
-        //    return result.Data;
-        //}
+        private bool CanAccessGroup(int groupId) =>
+            User.IsAdmin() || _groupPlayerService.IsPlayerInGroup(groupId, User.GetPlayerId());
 
-        //[HttpGet("GetGroupById")] 
-        //public Group GetGroupById([FromQuery]int groupId)
-        //{
-        //    IGroupService groupService = new GroupManager(new EFGroupDal());
-        //    var result = groupService.GetGroupInfo(groupId);
-        //    return result.Data;
-        //}
         [HttpPost("SaveGroupMessage")]
         public IActionResult SaveGroupMessage(GroupMessageModel groupMessageModel)
         {
+            if (!CanAccessGroup(groupMessageModel.GroupId))
+            {
+                return Forbid();
+            }
+
             var groupMessage = new GroupMessage()
             {
                 GroupId = groupMessageModel.GroupId,
                 MatchMessage = groupMessageModel.MatchMessage,
                 SendingDate = groupMessageModel.SendingDate,
-                SendPlayerId = groupMessageModel.SendPlayerId,
+                SendPlayerId = User.GetPlayerId(), // Gönderen her zaman token sahibidir
                 Status = groupMessageModel.Status
             };
 
             var result = _groupMessageService.Add(groupMessage);
-
             if (result.Success)
-            {         
+            {
                 return Ok(result);
             }
-
             return BadRequest(result);
         }
 
         [HttpPost("GetGroupMessageById")]
-        public List<GroupMessageModelDto> GetGroupMessageById(GroupMessageModel groupMessageModel)
-        { 
-            IGroupMessageService groupMessageService = new GroupMessageManager(new EFGroupMessageDal());
-            var result = groupMessageService.GetGroupMessageById(groupMessageModel.GroupId);
-            return result.Data;
+        public ActionResult<List<GroupMessageModelDto>> GetGroupMessageById(GroupMessageModel groupMessageModel)
+        {
+            if (!CanAccessGroup(groupMessageModel.GroupId))
+            {
+                return Forbid();
+            }
+            return _groupMessageService.GetGroupMessageById(groupMessageModel.GroupId).Data;
         }
-
-        //[HttpPost("UpdateGroup")]
-        //public IActionResult UpdateGroup(GroupModel groupModel)
-        //{
-        //    var group = new Group()
-        //    {
-        //        GroupName = groupModel.GroupName,
-        //    };
-        //    var result = _groupService.Update(group);
-        //    if (result.Success)
-        //    {
-        //        return Ok(result);
-        //    } 
-        //    return BadRequest(result);
-        //}
     }
 }

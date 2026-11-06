@@ -1,7 +1,7 @@
 ﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Business.Abstract;
-using MatchBuddy.Business.Concrete;
-using MatchBuddy.DataAccess.Concrete.EntityFramework;
+using MatchBuddy.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +12,7 @@ namespace MatchBuddy.Api.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StadiumController : ControllerBase
     {
         IStadiumService _stadiumService;
@@ -21,7 +22,8 @@ namespace MatchBuddy.Api.Controllers
             _stadiumService = stadiumService;
         }
 
-        //oyuncu eklemek için 
+        // Stadyum ekleme: sadece admin
+        [Authorize(Roles = Roles.Admin)]
         [HttpPost("SaveStadium")]
         public IActionResult SaveStadium(StadiumModel stadiumModel)
         {
@@ -34,7 +36,8 @@ namespace MatchBuddy.Api.Controllers
                 Address = stadiumModel.Address,
                 OpeningTime = stadiumModel.OpeningTime,
                 ClosingTime = stadiumModel.ClosingTime,
-                Description = stadiumModel.Description
+                Description = stadiumModel.Description,
+                CreatedAt = DateTime.Now,
             };
             var result = _stadiumService.Add(stadium);
             if (result.Success)
@@ -47,7 +50,6 @@ namespace MatchBuddy.Api.Controllers
         [HttpGet("GetStadiumMatchList")]
         public List<GetStadiumMatchModel> GetStadiumMatchList()
         {
-            IStadiumService stadiumService = new StadiumManager(new EFStadiumDal());
             var result = _stadiumService.GetStadiumMatch();
             return result.Data;
         }
@@ -55,7 +57,6 @@ namespace MatchBuddy.Api.Controllers
         [HttpGet("GetStadiumList")]
         public List<Stadium> GetStadiumList()
         {
-            IStadiumService stadiumService = new StadiumManager(new EFStadiumDal());
             var result = _stadiumService.GetAll();
             return result.Data;
         }

@@ -21,6 +21,12 @@ namespace MatchBuddy.Business.Concrete
             _groupPlayerDal = groupPlayerDal;
         }
 
+        public bool IsPlayerInGroup(int groupId, int playerId) =>
+            _groupPlayerDal.Get(gp => gp.GroupId == groupId && gp.PlayerId == playerId) != null;
+
+        public List<int> GetGroupIdsForPlayer(int playerId) =>
+            _groupPlayerDal.GetAll(gp => gp.PlayerId == playerId).Select(gp => gp.GroupId).Distinct().ToList();
+
         public IResult Add(GroupPlayer groupPlayer)
         {
             _groupPlayerDal.Add(groupPlayer);

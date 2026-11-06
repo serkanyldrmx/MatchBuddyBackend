@@ -11,5 +11,7 @@ namespace MatchBuddy.Business.Abstract
     public interface IGroupPlayerService
     {
         IResult Add(GroupPlayer groupPlayer);
+        bool IsPlayerInGroup(int groupId, int playerId);
+        List<int> GetGroupIdsForPlayer(int playerId);
     }
 }

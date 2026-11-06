@@ -1,0 +1,31 @@
+using MatchBuddy.Core.Utilities.Results;
+using MatchBuddy.Entities.DTOs;
+
+namespace MatchBuddy.Business.Abstract
+{
+    /// <summary>Maç katılımı, sonuç, MVP oyu, puanlama ve beğeni işlemleri.</summary>
+    public interface IMatchParticipationService
+    {
+        OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
+        OperationResult<byte> Join(int matchId, int playerId);
+        OperationResult<bool> Leave(int matchId, int playerId);
+        OperationResult<bool> Confirm(int matchId, int playerId);
+        OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);
+        OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput>? stats);
+        OperationResult<bool> VoteMvp(int matchId, int voterPlayerId, int votedPlayerId);
+        OperationResult<bool> RatePlayers(int matchId, int raterPlayerId, List<PlayerRatingInput>? ratings);
+        OperationResult<ToggleLikeResultDto> ToggleLike(int matchId, int playerId);
+        // Eski MatchLiked uç noktası: sadece beğenir (geri uyumluluk)
+        OperationResult<ToggleLikeResultDto> Like(int matchId, int playerId);
+        void FillFromWaitlist(int matchId);
+
+        IDataResult<List<MatchFeedItemDto>> GetMatchFeed(int playerId);
+        IDataResult<MatchDetailDto?> GetMatchDetail(int matchId, int playerId, bool isAdmin);
+        IDataResult<PlayerStatsDto?> GetPlayerStats(int playerId);
+        IDataResult<List<LeaderboardRowDto>> GetLeaderboard(int top, int viewerPlayerId);
+        IDataResult<List<CalendarItemDto>> GetMyCalendar(int playerId, DateTime? from, DateTime? to);
+        IResult DeleteMatch(int matchId);
+
+        int SendDueReminders();
+    }
+}

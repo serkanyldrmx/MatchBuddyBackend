@@ -30,6 +30,9 @@ namespace MatchBuddy.Business.Concrete
             return new Result(true, Messages.Added);
         }
 
+        public MatchComment? GetComment(int commentId) =>
+            _matchCommentsDal.Get(c => c.CommentsId == commentId);
+
         public IResult Delete(MatchComment matchComment)
         {
             _matchCommentsDal.Delete(matchComment);

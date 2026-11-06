@@ -77,9 +77,10 @@ namespace MatchBuddy.Business.Concrete
             return new SuccessResult("Bildirim güncellendi.");
         }
 
-        public IResult MarkAsRead(int playerNotificationId)
+        public IResult MarkAsRead(int playerNotificationId, int playerId)
         {
-            var pn = _playerNotificationDal.Get(p => p.PlayerNotificationId == playerNotificationId);
+            // Sadece bildirimin sahibi okundu olarak işaretleyebilir
+            var pn = _playerNotificationDal.Get(p => p.PlayerNotificationId == playerNotificationId && p.PlayerId == playerId);
             if (pn == null)
             {
                 return new ErrorResult("Bildirim bulunamadı.");
@@ -92,19 +93,9 @@ namespace MatchBuddy.Business.Concrete
 
         public IResult SendNotificationToPlayers(List<int> playerIds, Notification notification)
         {
-            notification.CreatedAt = DateTime.Now;
-            _notificationDal.Add(notification);
-
-            foreach (var playerId in playerIds)
-            {
-                _playerNotificationDal.Add(new PlayerNotification
-                {
-                    NotificationId = notification.NotificationId,
-                    PlayerId = playerId,
-                    IsRead = false,
-                    SentAt = DateTime.Now
-                });
-            }
+            // Alıcı tercihleri (PlayerSettings) ve silinmiş hesaplar NotificationWriter'da süzülür
+            _notificationDal.SendToPlayers(notification.Type, notification.Text, notification.MatchId,
+                notification.StadiumId, playerIds ?? new List<int>());
 
             return new SuccessResult("Bildirim oyunculara gönderildi.");
         }

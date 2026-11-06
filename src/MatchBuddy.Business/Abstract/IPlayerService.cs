@@ -19,6 +19,7 @@ namespace MatchBuddy.Business.Abstract
         IResult Add(Player player);
         //Oyuncu ekleme
         IDataResult<List<AIPLayerModel>> AISortByPlayer(int playerId);
+        bool IsUserNameTaken(string userName, int? exceptPlayerId = null);
         //Yapay zekaya göre sıralama
     }
 }
