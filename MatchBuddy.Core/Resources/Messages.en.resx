@@ -361,4 +361,19 @@
   <data name="LABEL_EXCUSE_OTHER" xml:space="preserve">
     <value>Other</value>
   </data>
+  <data name="INVITE_NO_OPEN_SPOT" xml:space="preserve">
+    <value>The match has no open spot; no need to call substitutes.</value>
+  </data>
+  <data name="NOTIF_INVITE_SUBSTITUTE" xml:space="preserve">
+    <value>{0}: a spot opened in '{1}' ({2:dd.MM.yyyy HH:mm}). First to join gets it!</value>
+  </data>
+  <data name="MSG_INVITE_SUBSTITUTE_SENT" xml:space="preserve">
+    <value>{0} players notified. The first to join gets the spot.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTECANDIDATELIMIT" xml:space="preserve">
+    <value>Maximum candidates shown in the find-a-substitute list.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
+    <value>How many days back to look for past teammates when suggesting substitutes.</value>
+  </data>
 </root>

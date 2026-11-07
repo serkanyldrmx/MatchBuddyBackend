@@ -94,6 +94,8 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult LogoutAll()
         {
             var count = _auth.LogoutAll(User.GetPlayerId());
+            // Tüm cihazlardan çıkış: telefona bildirim abonelikleri de kaldırılır
+            MatchBuddy.Api.Services.Push.PushSubscriptionStore.RemoveAll(User.GetPlayerId());
             _cookie.Clear(HttpContext);
             return Ok(new { success = true, message = Msg.Get(MessageKeys.Auth.LoggedOutAll), revokedSessions = count });
         }

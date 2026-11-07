@@ -52,6 +52,10 @@ namespace MatchBuddy.Api.Hubs
         public Task MatchCommentAsync(int matchId) => Safe(() =>
             _hub.Clients.Group(ChatHub.MatchGroup(matchId)).SendAsync("matchComment", new { matchId }));
 
+        /// <summary>Yeni bildirim(ler): zil anında güncellensin.</summary>
+        public Task NotificationAsync(IEnumerable<int> playerIds) => Safe(() =>
+            _hub.Clients.Users(playerIds.Select(id => id.ToString()).ToList()).SendAsync("notification", new { }));
+
         private async Task Safe(Func<Task> send)
         {
             try { await send(); }

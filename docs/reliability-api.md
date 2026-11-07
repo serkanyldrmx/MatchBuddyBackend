@@ -67,3 +67,20 @@ oyunculara `Attended` yazılır (maç saatine tarihlenir), maç `ReliabilitySett
 Hata kodları: `RELIABILITY_INVALID_REASON`, `RELIABILITY_NOTE_TOO_LONG`, `RELIABILITY_TOO_LOW`, `RELIABILITY_NOSHOW_NOT_STARTED`,
 `RELIABILITY_NOSHOW_WINDOW_CLOSED`, `RELIABILITY_NOSHOW_NOT_PARTICIPANT`, `RELIABILITY_NO_PENALTY`, `RELIABILITY_CANNOT_EXCUSE_SELF`,
 `MATCH_ORGANIZER_ONLY`.
+
+## Yedek bul (son dakika boşalan yer)
+Biri asil kadrodan çekildiğinde yedek listesindeki ilk oyuncu bugünkü gibi **otomatik** asile geçer. Yedek listesi boşsa ve maçta
+boş yer kalmışsa kurucu "Yedek bul" der: adaylar listelenir, **kimlere haber verileceğini kurucu seçer**. Seçilenlere maç daveti gider
+("yer açıldı" bildirimi, telefona bildirim açıksa telefona da). Daveti ilk kabul eden kadroya girer; sonra kabul edenler yedeğe düşer.
+Davetle katılım minimum güvenilirlik sınırına takılmaz (kurucu kendisi seçti).
+
+Adaylar: kurucunun son `reliability.substituteLookbackDays` (180) gün içinde birlikte oynadığı oyuncular + takip ettikleri.
+Kadrodakiler (asil/yedek), işletmeler, silinmiş ve engelli hesaplar çıkarılır. Sıra: güvenilirlik puanı (yeni oyuncular sonda),
+sonra birlikte oynanan maç sayısı. En fazla `reliability.substituteCandidateLimit` (30) aday.
+
+| Yöntem | Yol | Kim | Gövde / yanıt |
+|---|---|---|---|
+| GET | `/api/Invites/SubstituteCandidates?matchId=` | kurucu/admin | `{ openSpots, candidates: [{ playerId, playerName, playerSurname, userName, profilePictureUrl, reliability, matchesTogether, invited }] }` |
+| POST | `/api/Invites/CallSubstitutes` | kurucu/admin | `{ matchId, playerIds[] }` → `{ success, message, invited, skipped }`. Kabul: mevcut `POST /api/Invites/Respond` |
+
+Hata kodları: `MATCH_ORGANIZER_ONLY` (403), `INVITE_NO_OPEN_SPOT` (maç dolu), `INVITE_NO_PLAYERS`, `INVITE_BATCH_LIMIT`.

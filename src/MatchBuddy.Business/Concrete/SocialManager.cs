@@ -171,6 +171,18 @@ namespace MatchBuddy.Business.Concrete
             return _inviteDal.InviteToMatch(me, isAdmin, matchId, playerIds);
         }
 
+        public OperationResult<InviteResultDto> CallSubstitutes(int me, bool isAdmin, int matchId, List<int>? playerIds)
+        {
+            if (playerIds == null || playerIds.Count == 0)
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.NoPlayers);
+            if (playerIds.Count > MaxInviteBatch)
+                return OperationResult<InviteResultDto>.BadRequest(ErrorCodes.Invite.BatchLimit, MaxInviteBatch);
+            return _inviteDal.InviteToMatch(me, isAdmin, matchId, playerIds, substitute: true);
+        }
+
+        public OperationResult<SubstituteCandidatesDto> GetSubstituteCandidates(int me, bool isAdmin, int matchId) =>
+            _inviteDal.GetSubstituteCandidates(me, isAdmin, matchId);
+
         public OperationResult<InviteResultDto> InviteToTeam(int me, int teamId, List<int>? playerIds)
         {
             if (playerIds == null || playerIds.Count == 0)

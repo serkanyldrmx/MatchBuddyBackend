@@ -119,6 +119,8 @@ namespace MatchBuddy.Core.Parameters
             public const string NoShowPenalty = "reliability.noShowPenalty";
             public const string NoShowMarkWindowHours = "reliability.noShowMarkWindowHours";
             public const string OrganizerLateCancelPenalty = "reliability.organizerLateCancelPenalty";
+            public const string SubstituteCandidateLimit = "reliability.substituteCandidateLimit";
+            public const string SubstituteLookbackDays = "reliability.substituteLookbackDays";
         }
 
         /// <summary>KVKK / kullanım koşulları.</summary>

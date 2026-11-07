@@ -166,6 +166,27 @@ namespace MatchBuddy.Entities.DTOs
         public int Skipped { get; set; }
     }
 
+    /// <summary>"Yedek bul": maçta boş yer ve kurucunun haber verebileceği adaylar (docs/reliability-api.md).</summary>
+    public class SubstituteCandidatesDto
+    {
+        public int OpenSpots { get; set; }
+        public List<SubstituteCandidateDto> Candidates { get; set; } = new();
+    }
+
+    public class SubstituteCandidateDto
+    {
+        public int PlayerId { get; set; }
+        public string? PlayerName { get; set; }
+        public string? PlayerSurname { get; set; }
+        public string? UserName { get; set; }
+        public string? ProfilePictureUrl { get; set; }
+        public ReliabilityBadgeDto Reliability { get; set; } = new();
+        /// <summary>Kurucuyla son dönemde birlikte oynadığı maç sayısı.</summary>
+        public int MatchesTogether { get; set; }
+        /// <summary>Bu maç için bekleyen daveti / yedek çağrısı var mı.</summary>
+        public bool Invited { get; set; }
+    }
+
     // ---- Takvim ----
     public class CalendarItemDto
     {

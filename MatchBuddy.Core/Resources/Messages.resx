@@ -1818,4 +1818,19 @@
   <data name="PARAMDESC_RELIABILITY_ORGANIZERLATECANCELPENALTY" xml:space="preserve">
     <value>Başkalarının katıldığı maçı son dakika iptal eden kurucudan düşülen puan.</value>
   </data>
+  <data name="INVITE_NO_OPEN_SPOT" xml:space="preserve">
+    <value>Maçta boş yer yok; yedek çağırmaya gerek yok.</value>
+  </data>
+  <data name="NOTIF_INVITE_SUBSTITUTE" xml:space="preserve">
+    <value>{0}: '{1}' maçında ({2:dd.MM.yyyy HH:mm}) yer açıldı. İlk katılan yeri alır!</value>
+  </data>
+  <data name="MSG_INVITE_SUBSTITUTE_SENT" xml:space="preserve">
+    <value>{0} oyuncuya haber verildi. İlk katılan yeri alır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTECANDIDATELIMIT" xml:space="preserve">
+    <value>Yedek bul listesinde gösterilecek en fazla aday.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
+    <value>Yedek adayları için kaç gün geriye kadar birlikte oynanan maçlara bakılır.</value>
+  </data>
 </root>

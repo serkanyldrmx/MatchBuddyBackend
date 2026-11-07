@@ -40,6 +40,8 @@ namespace MatchBuddy.Business.Abstract
     public interface IInviteService
     {
         OperationResult<InviteResultDto> InviteToMatch(int me, bool isAdmin, int matchId, List<int>? playerIds);
+        OperationResult<InviteResultDto> CallSubstitutes(int me, bool isAdmin, int matchId, List<int>? playerIds);
+        OperationResult<SubstituteCandidatesDto> GetSubstituteCandidates(int me, bool isAdmin, int matchId);
         OperationResult<InviteResultDto> InviteToTeam(int me, int teamId, List<int>? playerIds);
         MyInvitesDto GetMyInvites(int me);
         int GetPendingCount(int me);

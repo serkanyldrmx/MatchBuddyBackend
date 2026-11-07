@@ -1059,6 +1059,9 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<int>("PlayerId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("PushedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
@@ -1067,6 +1070,9 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("NotificationId");
 
                     b.HasIndex("PlayerId");
+
+                    b.HasIndex("PushedAt")
+                        .HasFilter("[PushedAt] IS NULL");
 
                     b.ToTable("PlayerNotification");
                 });
@@ -1210,6 +1216,52 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("StadiumId");
 
                     b.ToTable("PriceRules", (string)null);
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.PushSubscription", b =>
+                {
+                    b.Property<int>("PushSubscriptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PushSubscriptionId"));
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(800)");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("PushSubscriptionId");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("PushSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.RefreshToken", b =>
@@ -2343,6 +2395,15 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasOne("MatchBuddy.Entities.Entity.Stadium", null)
                         .WithMany()
                         .HasForeignKey("StadiumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.PushSubscription", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

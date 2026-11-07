@@ -144,6 +144,8 @@ namespace MatchBuddy.Core.Parameters
             Int(ParameterKeys.Reliability.NoShowPenalty, 20, GroupReliability, 0, 100, isPublic: true),
             Int(ParameterKeys.Reliability.NoShowMarkWindowHours, 48, GroupReliability, 1, 336, isPublic: true),
             Int(ParameterKeys.Reliability.OrganizerLateCancelPenalty, 10, GroupReliability, 0, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.SubstituteCandidateLimit, 30, GroupReliability, 5, 200),
+            Int(ParameterKeys.Reliability.SubstituteLookbackDays, 180, GroupReliability, 7, 730),
 
             // KVKK: kayıt / sosyal girişte kabul edilmesi gereken kullanım koşulları + aydınlatma metni sürümü
             new(ParameterKeys.Legal.TermsVersion, ParameterDataType.String, "2026-11-06", GroupLegal, true),

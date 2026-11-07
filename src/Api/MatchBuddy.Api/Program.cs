@@ -179,6 +179,9 @@ namespace MatchBuddy.Api
 
             // Maç hatırlatmaları (Reminders:IntervalSeconds, varsayılan 600 sn)
             builder.Services.AddHostedService<MatchReminderService>();
+            // Telefona bildirim (Web Push) + anlık zil sinyali (docs/push-api.md)
+            builder.Services.AddSingleton<MatchBuddy.Api.Services.Push.VapidKeys>();
+            builder.Services.AddHostedService<MatchBuddy.Api.Services.Push.PushDispatchService>();
 
             // Medya hattı (docs/media-api.md): Storage:Provider = Local (varsayılan) | S3
             builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.SectionName));

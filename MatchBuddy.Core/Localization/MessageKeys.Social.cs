@@ -29,6 +29,8 @@ namespace MatchBuddy.Core.Localization
             public const string TeamJoined = "MSG_INVITE_TEAM_JOINED";
             public const string NotifMatch = "NOTIF_INVITE_MATCH";                  // {0} ad, {1} maç, {2} tarih
             public const string NotifTeam = "NOTIF_INVITE_TEAM";                    // {0} ad, {1} takım
+            public const string NotifSubstitute = "NOTIF_INVITE_SUBSTITUTE";        // {0} ad, {1} maç, {2} tarih
+            public const string SubstituteSent = "MSG_INVITE_SUBSTITUTE_SENT";      // {0} kişi
         }
 
         public static partial class Message

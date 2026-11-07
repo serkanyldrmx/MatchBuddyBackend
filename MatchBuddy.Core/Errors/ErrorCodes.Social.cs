@@ -51,6 +51,7 @@ namespace MatchBuddy.Core.Errors
             public const string NotYours = "INVITE_NOT_YOURS";
             public const string AlreadyResponded = "INVITE_ALREADY_RESPONDED";
             public const string PastMatchAccept = "INVITE_PAST_MATCH_ACCEPT";
+            public const string NoOpenSpot = "INVITE_NO_OPEN_SPOT";                // yedek çağrısı: maçta boş yer yok
         }
     }
 }
