@@ -49,7 +49,10 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<bool> DeleteCampaign(int me, int campaignId);
         OperationResult<List<SlotBlockDto>> Blocks(int me, int stadiumId, DateTime from, DateTime to);
         OperationResult<int> SaveBlock(int me, BlockSaveInput input);
-        OperationResult<bool> DeleteBlock(int me, int slotBlockId);
+        OperationResult<bool> DeleteBlock(int me, int slotBlockId, bool allFollowing = false);
+        OperationResult<SlotDealAudienceDto> SlotDealAudience(int me, int stadiumId);
+        OperationResult<SlotDealResultDto> CreateSlotDeal(int me, SlotDealInput input);
+        OperationResult<List<OwnerCustomerDto>> Customers(int me, int stadiumId, string? q);
         OperationResult<bool> SetBlockPaid(int me, int slotBlockId, bool isPaid);
         OperationResult<OwnerQuoteDto> OwnerQuote(int me, int pitchId, DateTime start, int durationMinutes);
         OperationResult<List<VenueExpenseDto>> Expenses(int me, int stadiumId, DateTime? from, DateTime? to);

@@ -18,6 +18,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             NotificationType.TeamInvite => s => s.NotifyTeamInvite,
             NotificationType.MatchReminder => s => s.NotifyMatchReminder,
             NotificationType.MatchResult => s => s.NotifyMatchResult,
+            NotificationType.SlotDeal => s => s.NotifyDeals,
             NotificationType.MatchJoin
                 or NotificationType.MatchApproval
                 or NotificationType.MatchRejection

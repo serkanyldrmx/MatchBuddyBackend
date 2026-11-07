@@ -170,7 +170,27 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult SaveBlock(BlockSaveInput model) => Saved(_venueService.SaveBlock(Me, model), "slotBlockId");
 
         [HttpPost("Blocks/Delete")]
-        public IActionResult DeleteBlock(BlockIdInput model) => this.ToHttp(_venueService.DeleteBlock(Me, model.SlotBlockId));
+        public IActionResult DeleteBlock(BlockIdInput model) => this.ToHttp(_venueService.DeleteBlock(Me, model.SlotBlockId, model.AllFollowing));
+
+        // ---- Büyüme araçları (docs/venue-growth-api.md)
+
+        /// <summary>Boş saat fırsatı bildirimi kaç kişiye gider + bugün kaç ilan verildi.</summary>
+        [HttpGet("SlotDeal/Audience")]
+        public IActionResult SlotDealAudience([FromQuery] int stadiumId) => Data(_venueService.SlotDealAudience(Me, stadiumId));
+
+        /// <summary>Boş saate indirim ilanı: tek saatlik kampanya + oyunculara bildirim.</summary>
+        [HttpPost("SlotDeal")]
+        public IActionResult SlotDeal(SlotDealInput model)
+        {
+            var result = _venueService.CreateSlotDeal(Me, model);
+            return this.ToHttp(result, result.Success
+                ? new { Success = true, result.Message, result.Data.CampaignId, result.Data.Notified }
+                : null);
+        }
+
+        /// <summary>Önceki telefon müşterileri (harici rezervasyon hızlı girişi).</summary>
+        [HttpGet("Customers")]
+        public IActionResult Customers([FromQuery] int stadiumId, [FromQuery] string? q) => Data(_venueService.Customers(Me, stadiumId, q));
 
         // Harici rezervasyonun ödeme durumu
         [HttpPost("Blocks/SetPaid")]

@@ -86,6 +86,8 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? FixedPrice { get; set; }
         public int? PitchId { get; set; }
         public bool IsActive { get; set; }
+        /// <summary>Boş saat fırsatı (tek saat, bildirimli).</summary>
+        public bool IsDeal { get; set; }
     }
 
     public class VenueOwnerRefDto
@@ -219,6 +221,8 @@ namespace MatchBuddy.Entities.DTOs
         public bool LookingForOpponent { get; set; }
         /// <summary>En düşük güvenilirlik puanı (null = sınır yok) — docs/reliability-api.md</summary>
         public int? MinReliability { get; set; }
+        /// <summary>Her hafta aynı gün ve saatte tekrar et (docs/venue-growth-api.md).</summary>
+        public bool RepeatWeekly { get; set; }
     }
 
     public class MatchVenueDto
@@ -300,6 +304,56 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? TotalPrice { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? RejectReason { get; set; }
+        /// <summary>Haftalık sabit maç serisi aktif mi.</summary>
+        public bool RepeatWeekly { get; set; }
+        /// <summary>Kurucunun güvenilirliği: işletme onaylamadan önce görür.</summary>
+        public OrganizerReliabilityDto? CreatorReliability { get; set; }
+    }
+
+    public class OrganizerReliabilityDto
+    {
+        public int Score { get; set; }
+        public string Level { get; set; } = "new";
+        public int CompletedMatches { get; set; }
+        /// <summary>Son 10 maçında son dakika çekilme / gelmeme.</summary>
+        public int LateCancels { get; set; }
+        public int NoShows { get; set; }
+        /// <summary>Kurucu olarak son 180 günde: geçmiş (onaylı) rezervasyonları ve son dakika iptal ettikleri.</summary>
+        public int PastReservations { get; set; }
+        public int OrganizerLateCancels { get; set; }
+    }
+
+    // ------------------------------------------------------------------ Büyüme araçları (docs/venue-growth-api.md)
+
+    public class SlotDealInput
+    {
+        public int PitchId { get; set; }
+        public DateTime? Start { get; set; }
+        public int DurationMinutes { get; set; }
+        public int DiscountPercent { get; set; }
+    }
+
+    public class SlotDealResultDto
+    {
+        public int CampaignId { get; set; }
+        public int Notified { get; set; }
+    }
+
+    public class SlotDealAudienceDto
+    {
+        public int Count { get; set; }
+        public int SentToday { get; set; }
+        public int DailyLimit { get; set; }
+    }
+
+    public class OwnerCustomerDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public int Bookings { get; set; }
+        public DateTime LastAt { get; set; }
+        public decimal? LastPrice { get; set; }
+        public string? LastTitle { get; set; }
     }
 
     public class OwnerDashboardDto
@@ -345,6 +399,7 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? Price { get; set; }
         public bool IsPaid { get; set; }
         public string? Note { get; set; }
+        public Guid? SeriesId { get; set; }
     }
 
     public class OwnerCalendarDto
@@ -468,6 +523,7 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? Price { get; set; }
         public bool IsPaid { get; set; }
         public string? Note { get; set; }
+        public Guid? SeriesId { get; set; }
     }
 
     public class BlockSaveInput
@@ -483,6 +539,8 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? Price { get; set; }
         public bool? IsPaid { get; set; }
         public string? Note { get; set; }
+        /// <summary>Yeni harici rezervasyon: kaç hafta (1 = tek sefer). Dolu haftalar atlanır.</summary>
+        public int? RepeatWeeks { get; set; }
     }
 
     public class BlockPaidInput
@@ -629,6 +687,8 @@ namespace MatchBuddy.Entities.DTOs
     public class BlockIdInput
     {
         public int SlotBlockId { get; set; }
+        /// <summary>Haftalık seride bu ve sonraki haftaları da sil.</summary>
+        public bool AllFollowing { get; set; }
     }
 
     public class ReviewReplyInput

@@ -80,6 +80,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var creatorIds = matches.Where(m => m.CreatedByPlayerId.HasValue).Select(m => m.CreatedByPlayerId!.Value).Distinct().ToList();
             var creators = context.Players.AsNoTracking().Where(p => creatorIds.Contains(p.PlayerId)).ToList().ToDictionary(p => p.PlayerId);
             var lookup = VenueRules.MatchVenueLookup.Load(context, matches);
+            var activeSeries = MatchSeriesService.ActiveIds(context, matches.Select(m => m.SeriesId));
+            var reliability = OrganizerReliability(context, creatorIds);
 
             return matches.Select(m =>
             {
@@ -120,6 +122,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     TotalPrice = m.TotalPrice,
                     CreatedAt = m.CreatedAt,
                     RejectReason = m.RejectReason,
+                    RepeatWeekly = m.SeriesId.HasValue && activeSeries.Contains(m.SeriesId.Value),
+                    CreatorReliability = m.CreatedByPlayerId.HasValue && reliability.TryGetValue(m.CreatedByPlayerId.Value, out var r) ? r : null,
                 };
             }).ToList();
         }
@@ -257,6 +261,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 Price = b.Price,
                 IsPaid = b.IsPaid,
                 Note = b.Note,
+                SeriesId = b.SeriesId,
             }));
 
             return OperationResult<OwnerCalendarDto>.Ok(new OwnerCalendarDto
@@ -630,6 +635,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             Price = b.Price,
             IsPaid = b.IsPaid,
             Note = b.Note,
+            SeriesId = b.SeriesId,
         };
 
         /// <summary>
@@ -675,6 +681,31 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 block = new SlotBlock();
                 context.SlotBlocks.Add(block);
             }
+            // Haftalık tekrar (yalnızca yeni harici rezervasyon): dolu haftalar atlanır
+            var weeks = kind == SlotBlockKind.Manual && block.SlotBlockId == 0 ? Math.Max(1, input.RepeatWeeks ?? 1) : 1;
+            var created = 1;
+            var skipped = 0;
+            if (weeks > 1)
+            {
+                block.SeriesId = Guid.NewGuid();
+                for (var i = 1; i < weeks; i++)
+                {
+                    var s = start.AddDays(7 * i);
+                    var e = end.AddDays(7 * i);
+                    if (VenueRules.BusyMatches(context, ids, s, e).Count > 0 || VenueRules.Blocks(context, ids, s, e).Count > 0)
+                    {
+                        skipped++;
+                        continue;
+                    }
+                    context.SlotBlocks.Add(new SlotBlock
+                    {
+                        PitchId = pitch.PitchId, StartAt = s, EndAt = e, Kind = kind, Reason = input.Reason ?? string.Empty,
+                        CustomerName = input.CustomerName, CustomerPhone = input.CustomerPhone, Price = input.Price,
+                        IsPaid = false, Note = input.Note, SeriesId = block.SeriesId,
+                    });
+                    created++;
+                }
+            }
             block.PitchId = pitch.PitchId;
             block.StartAt = start;
             block.EndAt = end;
@@ -699,6 +730,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             context.SaveChanges();
             transaction.Commit();
+            if (weeks > 1) return OperationResult<int>.Ok(block.SlotBlockId, Msg.Get(MessageKeys.Growth.SeriesSaved, created, skipped));
             return OperationResult<int>.Ok(block.SlotBlockId, Msg.Get(kind == SlotBlockKind.Manual ? MessageKeys.Owner.ManualReservationSaved : MessageKeys.Owner.SlotClosed));
         }
 
@@ -716,13 +748,20 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             return OperationResult<bool>.Ok(true, Msg.Get(isPaid ? MessageKeys.Owner.PaymentReceived : MessageKeys.Owner.PaymentPending));
         }
 
-        public OperationResult<bool> DeleteBlock(int me, int slotBlockId)
+        public OperationResult<bool> DeleteBlock(int me, int slotBlockId, bool allFollowing = false)
         {
             using var context = new MatchBuddyContext();
             var block = context.SlotBlocks.FirstOrDefault(b => b.SlotBlockId == slotBlockId);
             if (block == null) return OperationResult<bool>.NotFound(ErrorCodes.Owner.BlockNotFound);
             var g = Guard(context, me, StadiumOfPitch(context, block.PitchId), true);
             if (g != null) return Fail<bool>(g);
+            if (allFollowing && block.SeriesId.HasValue)
+            {
+                var rows = context.SlotBlocks.Where(b => b.SeriesId == block.SeriesId && b.StartAt >= block.StartAt).ToList();
+                context.SlotBlocks.RemoveRange(rows);
+                context.SaveChanges();
+                return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Growth.SeriesRemoved, rows.Count));
+            }
             context.SlotBlocks.Remove(block);
             context.SaveChanges();
             return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Owner.BlockRemoved));

@@ -277,6 +277,12 @@ namespace MatchBuddy.Business.Concrete
             input.CustomerName = Clean(input.CustomerName);
             input.CustomerPhone = Clean(input.CustomerPhone);
             input.Note = Clean(input.Note);
+            if (input.RepeatWeeks is > 1)
+            {
+                if (input.SlotBlockId is > 0 || input.Kind != SlotBlockKind.Manual) return Bad<int>(ErrorCodes.Owner.RepeatOnlyNewManual);
+                var maxWeeks = P.Int(ParameterKeys.Venue.RepeatMaxWeeks);
+                if (input.RepeatWeeks > maxWeeks) return Bad<int>(ErrorCodes.Validation.OutOfRange, L(MessageKeys.Growth.LabelRepeatWeeks), 2, maxWeeks);
+            }
             if (input.Kind == SlotBlockKind.Manual)
             {
                 if (input.CustomerName == null) return Bad<int>(ErrorCodes.Venue.FieldMustBeEntered, L(MessageKeys.Venue.LabelCustomerName));
@@ -294,7 +300,25 @@ namespace MatchBuddy.Business.Concrete
             return _venueDal.SaveBlock(me, input);
         }
 
-        public OperationResult<bool> DeleteBlock(int me, int slotBlockId) => _venueDal.DeleteBlock(me, slotBlockId);
+        public OperationResult<bool> DeleteBlock(int me, int slotBlockId, bool allFollowing = false) =>
+            _venueDal.DeleteBlock(me, slotBlockId, allFollowing);
+
+        public OperationResult<SlotDealAudienceDto> SlotDealAudience(int me, int stadiumId) => _venueDal.SlotDealAudience(me, stadiumId);
+
+        public OperationResult<SlotDealResultDto> CreateSlotDeal(int me, SlotDealInput input)
+        {
+            if (input == null || input.PitchId <= 0) return Bad<SlotDealResultDto>(ErrorCodes.Venue.PitchMustBeSelected);
+            if (input.Start == null) return Bad<SlotDealResultDto>(ErrorCodes.Venue.StartTimeRequired);
+            if (input.DurationMinutes < 30 || input.DurationMinutes > 240)
+                return Bad<SlotDealResultDto>(ErrorCodes.Venue.DurationOutOfRange, 30, 240);
+            var maxDiscount = P.Int(ParameterKeys.Venue.MaxDiscountPercent);
+            if (input.DiscountPercent < 5 || input.DiscountPercent > maxDiscount)
+                return Bad<SlotDealResultDto>(ErrorCodes.Validation.OutOfRange, L(MessageKeys.Growth.DealTitle), 5, maxDiscount);
+            return _venueDal.CreateSlotDeal(me, input);
+        }
+
+        public OperationResult<List<OwnerCustomerDto>> Customers(int me, int stadiumId, string? q) =>
+            _venueDal.Customers(me, stadiumId, q?.Length > 40 ? q[..40] : q);
 
         public OperationResult<bool> SetBlockPaid(int me, BlockPaidInput input)
         {

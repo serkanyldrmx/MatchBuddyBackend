@@ -23,6 +23,7 @@ namespace MatchBuddy.Entities.Entity
         TeamInvite = 11,
         TournamentUpdate = 12,
         ReservationRequest = 13,
-        VenueReview = 14
+        VenueReview = 14,
+        SlotDeal = 15
     }
 }

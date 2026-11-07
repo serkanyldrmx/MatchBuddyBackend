@@ -37,6 +37,12 @@ namespace MatchBuddy.Core.Parameters
             public const string ReviewsShown = "venue.reviewsShown";
             public const string CreateOwnerMaxPhotos = "venue.createOwnerMaxPhotos";
             public const string DefaultMembershipDays = "venue.defaultMembershipDays";
+            public const string DealMaxPerDay = "venue.dealMaxPerDay";
+            public const string DealMaxDaysAhead = "venue.dealMaxDaysAhead";
+            public const string DealAudienceDays = "venue.dealAudienceDays";
+            public const string DealMaxRecipients = "venue.dealMaxRecipients";
+            public const string RepeatMaxWeeks = "venue.repeatMaxWeeks";
+            public const string SeriesLeadDays = "venue.seriesLeadDays";
         }
 
         public static class Booking

@@ -827,6 +827,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             venueLookup.Fill(detail, match);
 
             detail.MinReliability = match.MinReliability;
+            detail.RepeatWeekly = MatchSeriesService.IsActive(context, match.SeriesId);
             detail.NoShowWindowOpen = canManage && IsPast(match) && match.ReliabilitySettledAt == null && match.IsActive != RejectedStatus
                 && match.MatchDate!.Value.AddHours(P.Int(ParameterKeys.Reliability.NoShowMarkWindowHours)) > DateTime.Now;
             if (canManage) detail.Withdrawals = new EFReliabilityDal().Withdrawals(match.MatchId);

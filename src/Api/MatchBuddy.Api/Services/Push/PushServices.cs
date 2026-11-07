@@ -127,7 +127,7 @@ namespace MatchBuddy.Api.Services.Push
                 .Select(p => new
                 {
                     p.PlayerNotificationId, p.PlayerId, p.Notification.NotificationId, p.Notification.Text,
-                    p.Notification.Type, p.Notification.MatchId,
+                    p.Notification.Type, p.Notification.MatchId, p.Notification.StadiumId,
                 })
                 .ToListAsync(ct);
             if (rows.Count == 0) return 0;
@@ -153,7 +153,7 @@ namespace MatchBuddy.Api.Services.Push
                 {
                     title = "MatchBuddy",
                     body = row.Text,
-                    url = UrlFor(row.Type, row.MatchId),
+                    url = UrlFor(row.Type, row.MatchId, row.StadiumId),
                     tag = $"n{row.NotificationId}",
                 });
                 foreach (var sub in subscriptions.Where(s => s.PlayerId == row.PlayerId && !dead.Contains(s.PushSubscriptionId)))
@@ -181,8 +181,9 @@ namespace MatchBuddy.Api.Services.Push
         }
 
         /// <summary>Bildirime dokununca açılacak sayfa (frontend rotaları).</summary>
-        public static string UrlFor(NotificationType type, int? matchId) => type switch
+        public static string UrlFor(NotificationType type, int? matchId, int? stadiumId = null) => type switch
         {
+            NotificationType.SlotDeal when stadiumId.HasValue => $"/venues/{stadiumId.Value}",
             NotificationType.MatchInvite or NotificationType.TeamInvite => "/invites",
             NotificationType.Message => "/home",
             _ when matchId.HasValue => $"/match-details/{matchId.Value}",

@@ -55,6 +55,7 @@ namespace MatchBuddy.Api.Controllers
                 AwayTeamId = matchModel.AwayTeamId,
                 LookingForOpponent = matchModel.LookingForOpponent,
                 MinReliability = matchModel.MinReliability,
+                RepeatWeekly = matchModel.RepeatWeekly,
             });
             return this.ToHttp(result, result.Success
                 ? new { Success = true, result.Message, MatchId = result.Data, Status = MatchStatus.Pending }
@@ -102,6 +103,11 @@ namespace MatchBuddy.Api.Controllers
         }
 
         //Maç silmek için (yetki: canManage)
+        /// <summary>Haftalık tekrarı durdur (kurucu, tesis işletmesi ya da admin). Oluşmuş haftalar kalır.</summary>
+        [HttpPost("StopRepeat")]
+        public IActionResult StopRepeat(MatchModel model) =>
+            this.ToHttp(MatchBuddy.DataAccess.Concrete.EntityFramework.MatchSeriesService.Stop(model.MatchId, User.GetPlayerId(), User.IsAdmin()));
+
         [HttpPost("DeleteMatch")]
         public IActionResult DeleteMatch(MatchModel matchModel)
         {

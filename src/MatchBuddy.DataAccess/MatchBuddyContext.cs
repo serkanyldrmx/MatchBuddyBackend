@@ -68,6 +68,7 @@ namespace MatchBuddy.DataAccess
         public DbSet<AuthCode> AuthCodes { get; set; }
         public DbSet<ReliabilityEvent> ReliabilityEvents { get; set; }
         public DbSet<PushSubscription> PushSubscriptions { get; set; }
+        public DbSet<MatchSeries> MatchSeries { get; set; }
 
     }
 }

@@ -293,7 +293,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .Select(s => new
                 {
                     s.MessagePermission, s.ProfileVisibility, s.NotifyFollow, s.NotifyMatchInvite, s.NotifyTeamInvite,
-                    s.NotifyMatchReminder, s.NotifyMatchResult, s.NotifyMatchUpdates, s.Theme, s.Language,
+                    s.NotifyMatchReminder, s.NotifyMatchResult, s.NotifyMatchUpdates, s.NotifyDeals, s.Theme, s.Language,
                 }).FirstOrDefault();
 
             var participations = (from mp in context.MatchParticipants.AsNoTracking()

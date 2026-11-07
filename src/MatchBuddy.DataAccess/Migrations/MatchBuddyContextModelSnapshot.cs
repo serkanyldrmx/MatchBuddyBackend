@@ -154,6 +154,12 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<int>("DaysMask")
                         .HasColumnType("int");
 
+                    b.Property<int>("DealNotifiedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DealSentAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -171,6 +177,9 @@ namespace MatchBuddy.DataAccess.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeal")
                         .HasColumnType("bit");
 
                     b.Property<int?>("PitchId")
@@ -439,6 +448,9 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<DateTime?>("ResultEnteredAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("SeriesId")
+                        .HasColumnType("int");
+
                     b.Property<int>("StadiumId")
                         .HasColumnType("int");
 
@@ -455,6 +467,8 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("CreatedByPlayerId");
 
                     b.HasIndex("HomeTeamId");
+
+                    b.HasIndex("SeriesId");
 
                     b.HasIndex("StadiumId");
 
@@ -642,6 +656,49 @@ namespace MatchBuddy.DataAccess.Migrations
                         .IsUnique();
 
                     b.ToTable("MatchParticipants");
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.MatchSeries", b =>
+                {
+                    b.Property<int>("SeriesId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SeriesId"));
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByPlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("NextDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PitchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StadiumId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StoppedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SeriesId");
+
+                    b.HasIndex("CreatedByPlayerId");
+
+                    b.HasIndex("PitchId");
+
+                    b.HasIndex("IsActive", "NextDate");
+
+                    b.ToTable("MatchSeries", (string)null);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.MatchTeam", b =>
@@ -1127,6 +1184,9 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<byte>("MessagePermission")
                         .HasColumnType("tinyint");
 
+                    b.Property<bool>("NotifyDeals")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("NotifyFollow")
                         .HasColumnType("bit");
 
@@ -1457,6 +1517,9 @@ namespace MatchBuddy.DataAccess.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("SeriesId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("StartAt")
                         .HasColumnType("datetime2");
@@ -2221,6 +2284,21 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Navigation("Match");
 
                     b.Navigation("Player");
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.MatchSeries", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByPlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MatchBuddy.Entities.Entity.Pitch", null)
+                        .WithMany()
+                        .HasForeignKey("PitchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.MatchTeam", b =>

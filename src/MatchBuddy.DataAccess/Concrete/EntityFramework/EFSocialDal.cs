@@ -426,6 +426,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     NotifyMatchReminder = settings.NotifyMatchReminder,
                     NotifyMatchResult = settings.NotifyMatchResult,
                     NotifyMatchUpdates = settings.NotifyMatchUpdates,
+                    NotifyDeals = settings.NotifyDeals,
                     Theme = settings.Theme,
                     Language = settings.Language,
                 });
@@ -440,6 +441,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 existing.NotifyMatchReminder = settings.NotifyMatchReminder;
                 existing.NotifyMatchResult = settings.NotifyMatchResult;
                 existing.NotifyMatchUpdates = settings.NotifyMatchUpdates;
+                existing.NotifyDeals = settings.NotifyDeals;
                 existing.Theme = settings.Theme;
                 existing.Language = settings.Language;
             }

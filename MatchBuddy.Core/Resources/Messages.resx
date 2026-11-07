@@ -1833,4 +1833,76 @@
   <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
     <value>Yedek adayları için kaç gün geriye kadar birlikte oynanan maçlara bakılır.</value>
   </data>
+  <data name="OWNER_DEAL_LIMIT" xml:space="preserve">
+    <value>Bir tesis için günde en fazla {0} boş saat ilanı verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_NOT_FUTURE" xml:space="preserve">
+    <value>İlan yalnızca ileri bir saat için verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_TOO_FAR" xml:space="preserve">
+    <value>İlan en fazla {0} gün sonrası için verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_CROSSES_MIDNIGHT" xml:space="preserve">
+    <value>İlan gece yarısını geçemez; saati iki ilana bölün.</value>
+  </data>
+  <data name="OWNER_REPEAT_ONLY_NEW_MANUAL" xml:space="preserve">
+    <value>Haftalık tekrar yalnızca yeni harici rezervasyonda seçilebilir.</value>
+  </data>
+  <data name="MATCH_NOT_REPEATING" xml:space="preserve">
+    <value>Bu maç haftalık tekrar etmiyor.</value>
+  </data>
+  <data name="LABEL_DEAL_TITLE" xml:space="preserve">
+    <value>Son dakika fırsatı</value>
+  </data>
+  <data name="LABEL_REPEAT_WEEKS" xml:space="preserve">
+    <value>Tekrar haftası</value>
+  </data>
+  <data name="MSG_DEAL_SENT" xml:space="preserve">
+    <value>İlan yayında. {0} oyuncuya bildirim gitti.</value>
+  </data>
+  <data name="NOTIF_SLOT_DEAL" xml:space="preserve">
+    <value>{0}: {1:dd.MM HH:mm} {2} boş, %{3} indirimli! Hemen maçını kur.</value>
+  </data>
+  <data name="MSG_SERIES_SAVED" xml:space="preserve">
+    <value>{0} haftalık rezervasyon eklendi.{1:' Dolu olduğu için atlanan hafta: '0;;''}</value>
+  </data>
+  <data name="MSG_SERIES_REMOVED" xml:space="preserve">
+    <value>{0} rezervasyon silindi.</value>
+  </data>
+  <data name="MSG_REPEAT_STOPPED" xml:space="preserve">
+    <value>Haftalık tekrar durduruldu. Oluşmuş haftalar yerinde kalır.</value>
+  </data>
+  <data name="NOTIF_SERIES_INVITE" xml:space="preserve">
+    <value>'{0}' haftalık maçı {1:dd.MM HH:mm}: bu hafta da geliyor musun?</value>
+  </data>
+  <data name="NOTIF_SERIES_CREATED" xml:space="preserve">
+    <value>'{0}' haftalık maçın {1:dd.MM HH:mm} için oluşturuldu; geçen haftaki oyunculara davet gitti.</value>
+  </data>
+  <data name="NOTIF_SERIES_SKIPPED" xml:space="preserve">
+    <value>'{0}' haftalık maçın {1:dd.MM HH:mm} saati dolu ya da kapalı olduğu için bu hafta oluşturulamadı.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_AUTO" xml:space="preserve">
+    <value>Haftalık rezervasyon: '{0}' {1:dd.MM HH:mm} {2} otomatik onaylandı.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_PENDING" xml:space="preserve">
+    <value>Haftalık rezervasyon talebi: '{0}' {1:dd.MM HH:mm} {2}. Onayınızı bekliyor.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXPERDAY" xml:space="preserve">
+    <value>Bir tesisin günde verebileceği en fazla boş saat ilanı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXDAYSAHEAD" xml:space="preserve">
+    <value>Boş saat ilanının en fazla kaç gün sonrası için verilebileceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALAUDIENCEDAYS" xml:space="preserve">
+    <value>İlan bildirimi için oyuncuların kaç gün içinde o tesiste / yakında oynamış olması gerektiği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXRECIPIENTS" xml:space="preserve">
+    <value>Bir ilanın en fazla kaç oyuncuya bildirim olarak gideceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_REPEATMAXWEEKS" xml:space="preserve">
+    <value>Haftalık harici rezervasyonda en fazla kaç hafta seçilebileceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
+    <value>Haftalık sabit maçta bir sonraki haftanın kaç gün önceden oluşturulacağı.</value>
+  </data>
 </root>

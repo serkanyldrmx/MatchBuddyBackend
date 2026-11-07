@@ -46,6 +46,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             FixedPrice = c.FixedPrice,
             PitchId = c.PitchId,
             IsActive = c.IsActive,
+            IsDeal = c.IsDeal,
         };
 
         private static PitchDto ToDto(Pitch p) => new()
@@ -550,6 +551,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             };
             context.Matchs.Add(match);
             context.SaveChanges();
+            if (input.RepeatWeekly) MatchSeriesService.Start(context, match);
 
             context.MatchParticipants.Add(new MatchParticipant
             {
@@ -704,6 +706,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var previous = match.IsActive;
             match.IsActive = status;
             match.RejectReason = status == MatchStatus.Rejected ? reason : null;
+            if (previous != status) MatchSeriesService.OnStatusChanged(context, match, status);
 
             if (previous != status && status != MatchStatus.Pending)
             {

@@ -62,6 +62,8 @@ namespace MatchBuddy.Entities.Entity
         public bool NotifyMatchReminder { get; set; } = true;
         public bool NotifyMatchResult { get; set; } = true;
         public bool NotifyMatchUpdates { get; set; } = true;
+        // İşletmelerin "boş saat / indirim" bildirimleri
+        public bool NotifyDeals { get; set; } = true;
 
         // Arayüz tercihleri (docs/platform-api.md): "system" | "light" | "dark"
         public string Theme { get; set; } = PlayerThemes.System;

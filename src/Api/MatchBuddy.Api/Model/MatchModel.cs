@@ -22,6 +22,7 @@ namespace MatchBuddy.Api.Model
         public bool LookingForOpponent { get; set; }
         /// <summary>En düşük güvenilirlik puanı (null = sınır yok)</summary>
         public int? MinReliability { get; set; }
+        public bool RepeatWeekly { get; set; }
         //public Stadium Stadium { get; set; }
     }
 }

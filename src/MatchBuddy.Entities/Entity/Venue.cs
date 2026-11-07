@@ -75,6 +75,10 @@ namespace MatchBuddy.Entities.Entity
         public int? DiscountPercent { get; set; }
         public decimal? FixedPrice { get; set; }
         public bool IsActive { get; set; }
+        // Boş saat fırsatı: tek bir boş saate indirim + oyunculara bildirim (docs/venue-growth-api.md)
+        public bool IsDeal { get; set; }
+        public DateTime? DealSentAt { get; set; }
+        public int DealNotifiedCount { get; set; }
     }
 
     /// <summary>
@@ -94,6 +98,8 @@ namespace MatchBuddy.Entities.Entity
         public decimal? Price { get; set; }
         public bool IsPaid { get; set; }
         public string? Note { get; set; }
+        // Haftalık tekrar eden telefon rezervasyonu: aynı serideki kayıtlar
+        public Guid? SeriesId { get; set; }
     }
 
     public static class SlotBlockKind

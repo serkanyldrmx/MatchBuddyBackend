@@ -38,6 +38,8 @@ namespace MatchBuddy.Entities.Entity
         public int? MinReliability { get; set; }
         // Maç sonrası güvenilirlik olayları (Attended) yazıldı mı
         public DateTime? ReliabilitySettledAt { get; set; }
+        // Haftalık sabit maç serisi (MatchSeries); null = tek seferlik
+        public int? SeriesId { get; set; }
         // Oluşturulma zamanı (DB varsayılanı GETDATE())
         public DateTime CreatedAt { get; set; }
         public List<MatchTeam> MatchTeams { get; set; }

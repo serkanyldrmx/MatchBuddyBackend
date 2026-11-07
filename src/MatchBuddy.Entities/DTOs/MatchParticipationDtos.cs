@@ -124,6 +124,8 @@ namespace MatchBuddy.Entities.DTOs
         public int? MinReliability { get; set; }
         /// <summary>Kurucu şu an "gelmeyenleri" işaretleyebilir mi (maç başladı, pencere açık).</summary>
         public bool NoShowWindowOpen { get; set; }
+        /// <summary>Haftalık sabit maç serisi aktif mi (kurucu "Tekrarı durdur" diyebilir).</summary>
+        public bool RepeatWeekly { get; set; }
         /// <summary>Yalnızca kurucu/admin: son dakika çekilenler ve gelmeyenler (mazeretleriyle).</summary>
         public List<MatchWithdrawalDto>? Withdrawals { get; set; }
     }

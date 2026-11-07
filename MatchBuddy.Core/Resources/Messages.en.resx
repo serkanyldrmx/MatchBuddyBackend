@@ -376,4 +376,76 @@
   <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
     <value>How many days back to look for past teammates when suggesting substitutes.</value>
   </data>
+  <data name="OWNER_DEAL_LIMIT" xml:space="preserve">
+    <value>A venue can post at most {0} empty-slot deals per day.</value>
+  </data>
+  <data name="OWNER_DEAL_NOT_FUTURE" xml:space="preserve">
+    <value>A deal can only be posted for a future time.</value>
+  </data>
+  <data name="OWNER_DEAL_TOO_FAR" xml:space="preserve">
+    <value>A deal can be posted at most {0} days ahead.</value>
+  </data>
+  <data name="OWNER_DEAL_CROSSES_MIDNIGHT" xml:space="preserve">
+    <value>A deal cannot cross midnight; split it into two deals.</value>
+  </data>
+  <data name="OWNER_REPEAT_ONLY_NEW_MANUAL" xml:space="preserve">
+    <value>Weekly repeat can only be chosen for a new phone booking.</value>
+  </data>
+  <data name="MATCH_NOT_REPEATING" xml:space="preserve">
+    <value>This match does not repeat weekly.</value>
+  </data>
+  <data name="LABEL_DEAL_TITLE" xml:space="preserve">
+    <value>Last-minute deal</value>
+  </data>
+  <data name="LABEL_REPEAT_WEEKS" xml:space="preserve">
+    <value>Repeat weeks</value>
+  </data>
+  <data name="MSG_DEAL_SENT" xml:space="preserve">
+    <value>Deal is live. {0} players notified.</value>
+  </data>
+  <data name="NOTIF_SLOT_DEAL" xml:space="preserve">
+    <value>{0}: {2} is free at {1:dd.MM HH:mm}, {3}% off! Book your match now.</value>
+  </data>
+  <data name="MSG_SERIES_SAVED" xml:space="preserve">
+    <value>{0} weekly bookings added.{1:' Weeks skipped because they were taken: '0;;''}</value>
+  </data>
+  <data name="MSG_SERIES_REMOVED" xml:space="preserve">
+    <value>{0} bookings deleted.</value>
+  </data>
+  <data name="MSG_REPEAT_STOPPED" xml:space="preserve">
+    <value>Weekly repeat stopped. Weeks already created stay.</value>
+  </data>
+  <data name="NOTIF_SERIES_INVITE" xml:space="preserve">
+    <value>'{0}' weekly match {1:dd.MM HH:mm}: are you in this week too?</value>
+  </data>
+  <data name="NOTIF_SERIES_CREATED" xml:space="preserve">
+    <value>Your weekly match '{0}' was created for {1:dd.MM HH:mm}; last week's players were invited.</value>
+  </data>
+  <data name="NOTIF_SERIES_SKIPPED" xml:space="preserve">
+    <value>Your weekly match '{0}' could not be created for {1:dd.MM HH:mm} because the slot is taken or closed.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_AUTO" xml:space="preserve">
+    <value>Weekly booking: '{0}' {1:dd.MM HH:mm} {2} was approved automatically.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_PENDING" xml:space="preserve">
+    <value>Weekly booking request: '{0}' {1:dd.MM HH:mm} {2}. Awaiting your approval.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXPERDAY" xml:space="preserve">
+    <value>Maximum empty-slot deals a venue can post per day.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXDAYSAHEAD" xml:space="preserve">
+    <value>How many days ahead an empty-slot deal can be posted.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALAUDIENCEDAYS" xml:space="preserve">
+    <value>Players who played at / near the venue within this many days receive deal notifications.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXRECIPIENTS" xml:space="preserve">
+    <value>Maximum players notified per deal.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_REPEATMAXWEEKS" xml:space="preserve">
+    <value>Maximum weeks for a weekly phone booking.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
+    <value>How many days ahead the next week of a weekly match is created.</value>
+  </data>
 </root>

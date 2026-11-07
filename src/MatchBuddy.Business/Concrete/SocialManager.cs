@@ -95,6 +95,7 @@ namespace MatchBuddy.Business.Concrete
             if (input.NotifyMatchReminder.HasValue) s.NotifyMatchReminder = input.NotifyMatchReminder.Value;
             if (input.NotifyMatchResult.HasValue) s.NotifyMatchResult = input.NotifyMatchResult.Value;
             if (input.NotifyMatchUpdates.HasValue) s.NotifyMatchUpdates = input.NotifyMatchUpdates.Value;
+            if (input.NotifyDeals.HasValue) s.NotifyDeals = input.NotifyDeals.Value;
             if (theme != null) s.Theme = theme;
             if (language != null) s.Language = language;
 
@@ -112,6 +113,7 @@ namespace MatchBuddy.Business.Concrete
             NotifyMatchReminder = s.NotifyMatchReminder,
             NotifyMatchResult = s.NotifyMatchResult,
             NotifyMatchUpdates = s.NotifyMatchUpdates,
+            NotifyDeals = s.NotifyDeals,
             Theme = s.Theme,
             Language = s.Language,
         };
