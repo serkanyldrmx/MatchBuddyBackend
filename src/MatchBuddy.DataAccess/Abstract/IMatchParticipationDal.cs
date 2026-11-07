@@ -15,7 +15,7 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
 
         OperationResult<byte> Join(int matchId, int playerId);
-        OperationResult<bool> Leave(int matchId, int playerId);
+        OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null);
         OperationResult<bool> Confirm(int matchId, int playerId);
         OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);
         OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput> stats);
@@ -41,7 +41,7 @@ namespace MatchBuddy.DataAccess.Abstract
         List<CalendarItemDto> GetMyCalendar(int playerId, DateTime from, DateTime to);
 
         // Maçı ilişkili kayıtlarıyla siler (bildirimler dahil; yorum/kadro/davet/aktivite FK cascade)
-        bool DeleteMatch(int matchId);
+        bool DeleteMatch(int matchId, int? actorPlayerId = null);
 
         // 24 saat içinde başlayacak maçlar için hatırlatma gönderir; gönderilen oyuncu sayısını döner
         int SendDueReminders();

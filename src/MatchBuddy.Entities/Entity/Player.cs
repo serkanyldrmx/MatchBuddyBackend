@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Core.Entities;
+using MatchBuddy.Core.Entities;
 
 namespace MatchBuddy.Entities.Entity
 {
@@ -42,6 +42,9 @@ namespace MatchBuddy.Entities.Entity
         public string? TermsVersion { get; set; }
         public DateTime? PrivacyAcceptedAt { get; set; }
         public bool MarketingConsent { get; set; }
+
+        // Güvenilirlik puanı önbelleği (0–100, yeni oyuncu 100). Kaynak: ReliabilityEvents — docs/reliability-api.md
+        public int ReliabilityScore { get; set; } = 100;
         public DateTime? MarketingConsentAt { get; set; }
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }

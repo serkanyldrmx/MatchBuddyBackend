@@ -420,6 +420,9 @@ namespace MatchBuddy.DataAccess.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("MinReliability")
+                        .HasColumnType("int");
+
                     b.Property<int?>("PitchId")
                         .HasColumnType("int");
 
@@ -429,6 +432,9 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<string>("RejectReason")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("ReliabilitySettledAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ResultEnteredAt")
                         .HasColumnType("datetime2");
@@ -1000,6 +1006,11 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ReliabilityScore")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100);
+
                     b.Property<byte>("Role")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint")
@@ -1262,6 +1273,53 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("PlayerId", "RevokedAt");
 
                     b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.ReliabilityEvent", b =>
+                {
+                    b.Property<int>("ReliabilityEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReliabilityEventId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Delta")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("ReversedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReversedByPlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("ReliabilityEventId");
+
+                    b.HasIndex("MatchId", "PlayerId");
+
+                    b.HasIndex("PlayerId", "CreatedAt");
+
+                    b.ToTable("ReliabilityEvents", (string)null);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Report", b =>
@@ -2301,6 +2359,17 @@ namespace MatchBuddy.DataAccess.Migrations
                         .WithMany()
                         .HasForeignKey("ReplacedById")
                         .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.ReliabilityEvent", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Report", b =>

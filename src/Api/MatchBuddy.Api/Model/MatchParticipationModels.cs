@@ -64,3 +64,23 @@ namespace MatchBuddy.Api.Model
         public byte Status { get; set; }
     }
 }
+
+namespace MatchBuddy.Api.Model
+{
+    /// <summary>Maçtan çekilme: mazeret isteğe bağlı (emergency, health, bereavement, work, transport, other).</summary>
+    public class LeaveMatchModel : MatchIdModel
+    {
+        public string? ReasonCode { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class MarkNoShowsModel : MatchIdModel
+    {
+        public List<int> PlayerIds { get; set; } = new();
+    }
+
+    public class AcceptExcuseModel : MatchIdModel
+    {
+        public int PlayerId { get; set; }
+    }
+}

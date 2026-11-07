@@ -161,7 +161,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         /// Katıl mantığı. match: LockMatch ile kilitlenmiş satır. SaveChanges çağırmaz.
         /// Going olursa JoinedMatch aktivitesi yazılır, kurucuya bildirim gider.
         /// </summary>
-        public static OperationResult<byte> Join(MatchBuddyContext context, Match match, int playerId, byte? preferredSide = null)
+        /// <param name="checkReliability">Maçın en düşük güvenilirlik sınırı uygulanır mı (davetle / rakip takım olarak katılımda hayır).</param>
+        public static OperationResult<byte> Join(MatchBuddyContext context, Match match, int playerId, byte? preferredSide = null,
+            bool checkReliability = false)
         {
             // İşletme hesapları maça katılamaz (docs/venues-api.md)
             if (context.Players.Any(p => p.PlayerId == playerId && p.Role == PlayerRoles.Owner))
@@ -170,6 +172,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 return OperationResult<byte>.BadRequest(ErrorCodes.Match.RejectedJoinClosed);
             if (IsPast(match))
                 return OperationResult<byte>.BadRequest(ErrorCodes.Match.PastJoinClosed);
+
+            // Kurucunun güvenilirlik sınırı (docs/reliability-api.md): yeni oyuncular takılmaz
+            if (checkReliability && match.MinReliability is int min && min > 0 && match.CreatedByPlayerId != playerId)
+            {
+                var badge = ReliabilityCore.Badge(context, playerId);
+                if (badge.Level != ReliabilityLevel.New && badge.Score < min)
+                    return OperationResult<byte>.BadRequest(ErrorCodes.Reliability.TooLow, min, badge.Score);
+            }
 
             var matchId = match.MatchId;
             var participants = context.MatchParticipants.Where(p => p.MatchId == matchId).ToList();

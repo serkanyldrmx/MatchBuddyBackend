@@ -45,6 +45,7 @@ namespace MatchBuddy.Core.Parameters
         public const string GroupSecurity = "Security";
         public const string GroupAuth = "Auth";
         public const string GroupLegal = "Legal";
+        public const string GroupReliability = "Reliability";
 
         private static string S(int v) => v.ToString(CultureInfo.InvariantCulture);
 
@@ -130,6 +131,19 @@ namespace MatchBuddy.Core.Parameters
             Int(ParameterKeys.Auth.PasswordResetPerIdentifierPerHour, 5, GroupAuth, 1, 1000),
             Bool(ParameterKeys.Auth.PasswordRequireLetterAndDigit, false, GroupAuth, isPublic: true),
             Bool(ParameterKeys.Auth.FacebookEmailTrusted, false, GroupAuth),
+
+            // Güvenilirlik puanı (docs/reliability-api.md). Hepsi herkese açık: arayüz ceza önizlemesi ve rozet seviyesi için kullanır.
+            Int(ParameterKeys.Reliability.NewPlayerMatchCount, 3, GroupReliability, 0, 50, isPublic: true),
+            Int(ParameterKeys.Reliability.LevelGood, 90, GroupReliability, 1, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.LevelMedium, 70, GroupReliability, 0, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.AttendBonus, 2, GroupReliability, 0, 50, isPublic: true),
+            Int(ParameterKeys.Reliability.LateCancelHours, 24, GroupReliability, 1, 168, isPublic: true),
+            Int(ParameterKeys.Reliability.LateCancelPenalty, 5, GroupReliability, 0, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.VeryLateCancelHours, 3, GroupReliability, 0, 72, isPublic: true),
+            Int(ParameterKeys.Reliability.VeryLateCancelPenalty, 10, GroupReliability, 0, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.NoShowPenalty, 20, GroupReliability, 0, 100, isPublic: true),
+            Int(ParameterKeys.Reliability.NoShowMarkWindowHours, 48, GroupReliability, 1, 336, isPublic: true),
+            Int(ParameterKeys.Reliability.OrganizerLateCancelPenalty, 10, GroupReliability, 0, 100, isPublic: true),
 
             // KVKK: kayıt / sosyal girişte kabul edilmesi gereken kullanım koşulları + aydınlatma metni sürümü
             new(ParameterKeys.Legal.TermsVersion, ParameterDataType.String, "2026-11-06", GroupLegal, true),

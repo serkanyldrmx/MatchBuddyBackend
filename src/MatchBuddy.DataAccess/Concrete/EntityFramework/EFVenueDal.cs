@@ -544,6 +544,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 HomeTeamId = home?.TeamId,
                 AwayTeamId = away?.TeamId,
                 LookingForOpponent = input.LookingForOpponent,
+                MinReliability = input.MinReliability is > 0 and <= 100 ? input.MinReliability : null,
                 CreatedByPlayerId = creatorId,
                 CreatedAt = DateTime.Now,
             };

@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Core.Utilities.Results;
@@ -54,6 +54,7 @@ namespace MatchBuddy.Api.Controllers
                 HomeTeamId = matchModel.HomeTeamId,
                 AwayTeamId = matchModel.AwayTeamId,
                 LookingForOpponent = matchModel.LookingForOpponent,
+                MinReliability = matchModel.MinReliability,
             });
             return this.ToHttp(result, result.Success
                 ? new { Success = true, result.Message, MatchId = result.Data, Status = MatchStatus.Pending }
@@ -108,7 +109,7 @@ namespace MatchBuddy.Api.Controllers
             if (!permission.Success) return FromOperation(permission);
 
             // Yorumlar, kadro, davetler, aktiviteler (FK cascade) ve maça ait bildirimler de silinir
-            var result = _participationService.DeleteMatch(matchModel.MatchId);
+            var result = _participationService.DeleteMatch(matchModel.MatchId, User.GetPlayerId());
             if (result.Success)
             {
                 return Ok(result);
@@ -222,9 +223,12 @@ namespace MatchBuddy.Api.Controllers
         }
 
         [HttpPost("Leave")]
-        public IActionResult Leave(MatchIdModel model)
+        public IActionResult Leave(LeaveMatchModel model)
         {
-            return FromOperation(_participationService.Leave(model.MatchId, User.GetPlayerId()));
+            // Mazeret (reasonCode) + not isteğe bağlı; dönüş { success, message, penalty, newScore } — docs/reliability-api.md
+            var result = _participationService.Leave(model.MatchId, User.GetPlayerId(), model.ReasonCode, model.Note);
+            if (!result.Success || result.Data == null) return this.ToHttp(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("Confirm")]

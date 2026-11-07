@@ -105,6 +105,22 @@ namespace MatchBuddy.Core.Parameters
             public const string FacebookEmailTrusted = "auth.facebookEmailTrusted";
         }
 
+        /// <summary>Güvenilirlik puanı (docs/reliability-api.md).</summary>
+        public static class Reliability
+        {
+            public const string NewPlayerMatchCount = "reliability.newPlayerMatchCount";
+            public const string LevelGood = "reliability.levelGood";
+            public const string LevelMedium = "reliability.levelMedium";
+            public const string AttendBonus = "reliability.attendBonus";
+            public const string LateCancelHours = "reliability.lateCancelHours";
+            public const string LateCancelPenalty = "reliability.lateCancelPenalty";
+            public const string VeryLateCancelHours = "reliability.veryLateCancelHours";
+            public const string VeryLateCancelPenalty = "reliability.veryLateCancelPenalty";
+            public const string NoShowPenalty = "reliability.noShowPenalty";
+            public const string NoShowMarkWindowHours = "reliability.noShowMarkWindowHours";
+            public const string OrganizerLateCancelPenalty = "reliability.organizerLateCancelPenalty";
+        }
+
         /// <summary>KVKK / kullanım koşulları.</summary>
         public static class Legal
         {

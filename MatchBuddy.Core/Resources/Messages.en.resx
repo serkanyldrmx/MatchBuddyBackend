@@ -295,4 +295,70 @@
   <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
     <value>Balancing needs between {0} and {1} players.</value>
   </data>
+  <data name="RELIABILITY_INVALID_REASON" xml:space="preserve">
+    <value>Invalid excuse.</value>
+  </data>
+  <data name="RELIABILITY_NOTE_TOO_LONG" xml:space="preserve">
+    <value>The note can be at most {0} characters.</value>
+  </data>
+  <data name="RELIABILITY_TOO_LOW" xml:space="preserve">
+    <value>This match requires a reliability score of at least {0}; yours is {1}.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_STARTED" xml:space="preserve">
+    <value>No-shows can be marked after the match starts.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_WINDOW_CLOSED" xml:space="preserve">
+    <value>No-shows can be marked within {0} hours after the match; the window has closed.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Only players in the match roster can be marked.</value>
+  </data>
+  <data name="RELIABILITY_NO_PENALTY" xml:space="preserve">
+    <value>This player has no penalty to reverse for this match.</value>
+  </data>
+  <data name="RELIABILITY_CANNOT_EXCUSE_SELF" xml:space="preserve">
+    <value>You cannot accept your own excuse.</value>
+  </data>
+  <data name="RELIABILITY_MIN_OUT_OF_RANGE" xml:space="preserve">
+    <value>The minimum reliability score must be between 1 and 100.</value>
+  </data>
+  <data name="MSG_RELIABILITY_LEFT_WITH_PENALTY" xml:space="preserve">
+    <value>You left the match. {0} points were deducted from your reliability score (new score: {1}). They are refunded if the organizer accepts your excuse.</value>
+  </data>
+  <data name="MSG_RELIABILITY_NOSHOWS_SAVED" xml:space="preserve">
+    <value>No-shows saved ({0} players).</value>
+  </data>
+  <data name="MSG_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>Excuse accepted for {0}; points refunded.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW" xml:space="preserve">
+    <value>{0} withdrew from "{1}" at the last minute. Excuse: {2}. Accept it to refund their points.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW_NO_REASON" xml:space="preserve">
+    <value>{0} withdrew from "{1}" at the last minute.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>Your excuse for "{0}" was accepted; {1} points refunded.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_NOSHOW" xml:space="preserve">
+    <value>You were marked as a no-show for "{0}"; {1} points were deducted. Contact the organizer if this is a mistake.</value>
+  </data>
+  <data name="LABEL_EXCUSE_EMERGENCY" xml:space="preserve">
+    <value>Emergency</value>
+  </data>
+  <data name="LABEL_EXCUSE_HEALTH" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="LABEL_EXCUSE_BEREAVEMENT" xml:space="preserve">
+    <value>Bereavement</value>
+  </data>
+  <data name="LABEL_EXCUSE_WORK" xml:space="preserve">
+    <value>Work</value>
+  </data>
+  <data name="LABEL_EXCUSE_TRANSPORT" xml:space="preserve">
+    <value>Transport</value>
+  </data>
+  <data name="LABEL_EXCUSE_OTHER" xml:space="preserve">
+    <value>Other</value>
+  </data>
 </root>

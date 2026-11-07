@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Entities.Entity;
+using MatchBuddy.Entities.Entity;
 
 namespace MatchBuddy.Api.Model
 {
@@ -20,6 +20,8 @@ namespace MatchBuddy.Api.Model
         public int? HomeTeamId { get; set; }
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
+        /// <summary>En düşük güvenilirlik puanı (null = sınır yok)</summary>
+        public int? MinReliability { get; set; }
         //public Stadium Stadium { get; set; }
     }
 }

@@ -8,7 +8,7 @@ namespace MatchBuddy.Business.Abstract
     {
         OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
         OperationResult<byte> Join(int matchId, int playerId);
-        OperationResult<bool> Leave(int matchId, int playerId);
+        OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null);
         OperationResult<bool> Confirm(int matchId, int playerId);
         OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);
         OperationResult<bool> SubmitResult(int matchId, int actorPlayerId, bool isAdmin, int homeScore, int awayScore, List<PlayerStatInput>? stats);
@@ -29,7 +29,7 @@ namespace MatchBuddy.Business.Abstract
         IDataResult<PlayerStatsDto?> GetPlayerStats(int playerId);
         IDataResult<List<LeaderboardRowDto>> GetLeaderboard(int top, int viewerPlayerId);
         IDataResult<List<CalendarItemDto>> GetMyCalendar(int playerId, DateTime? from, DateTime? to);
-        IResult DeleteMatch(int matchId);
+        IResult DeleteMatch(int matchId, int? actorPlayerId = null);
 
         int SendDueReminders();
     }

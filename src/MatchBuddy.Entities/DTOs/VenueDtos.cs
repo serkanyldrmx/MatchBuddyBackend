@@ -1,4 +1,4 @@
-﻿namespace MatchBuddy.Entities.DTOs
+namespace MatchBuddy.Entities.DTOs
 {
     // Anlaşmalı tesis paketi DTO'ları (docs/venues-api.md). JSON camelCase.
 
@@ -212,6 +212,8 @@
         public int? HomeTeamId { get; set; }
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
+        /// <summary>En düşük güvenilirlik puanı (null = sınır yok) — docs/reliability-api.md</summary>
+        public int? MinReliability { get; set; }
     }
 
     public class MatchVenueDto

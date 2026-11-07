@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Entities.Entity;
+using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -66,6 +66,7 @@ namespace MatchBuddy.DataAccess
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<ExternalLogin> ExternalLogins { get; set; }
         public DbSet<AuthCode> AuthCodes { get; set; }
+        public DbSet<ReliabilityEvent> ReliabilityEvents { get; set; }
 
     }
 }

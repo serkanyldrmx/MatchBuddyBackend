@@ -41,12 +41,29 @@ Tüm sayılar `SystemParameters` (grup `Reliability`) içindedir; admin panelind
   doğrudan katılamaz: katılım **Pending** olur, kurucu "Kabul / Reddet" der (bildirimle). Yeni oyuncular bu kurala takılmaz.
 - Maç sonrası (sonuç girme ekranı) "Gelmeyenler" işaretleme: katılımcı listesinde onay kutuları; misafir oyuncular hariç.
 
-## Uç noktalar (öneri — uygulayan ajan netleştirip bu dosyayı günceller)
-- `POST /api/Match/Leave` → gövdeye `reasonCode?`, `note?` eklenir; dönüşte `{ penalty, newScore }`.
-- `GET /api/Match/LeavePreview?matchId=` → `{ hoursLeft, penalty, kind: "none|late|veryLate" }`
-- `POST /api/Match/MarkNoShows` `{ matchId, playerIds[] }` (kurucu, pencere içinde; tekrar çağrı = güncelleme)
-- `POST /api/Match/AcceptExcuse` `{ matchId, playerId }` (kurucu)
-- `POST /api/Match/RespondJoin` `{ matchId, playerId, accept }` (Pending onayı)
-- `GET /api/Players/Reliability?playerId=` → `{ score, level, completedMatches, last10: { attended, lateCancels, noShows }, history[] (sadece kendisi veya admin) }`
-- Oyuncu özetlerinin döndüğü yerlerde (participants, profil, arama) `reliability: { score, level }` alanı.
-- Hata kodları `docs/platform-api.md` kataloğuna (RELIABILITY_*, MATCH_*) eklenir.
+## Uç noktalar (uygulandı)
+
+| Yöntem | Yol | Kim | Gövde / yanıt |
+|---|---|---|---|
+| POST | `/api/Match/Leave` | oyuncu | `{ matchId, reasonCode?, note? }` → `{ success, message, penalty, newScore }`. `reasonCode`: emergency, health, bereavement, work, transport, other |
+| GET | `/api/Reliability/LeavePreview?matchId=` | oyuncu | `{ hoursLeft, kind: none\|late\|veryLate, penalty, currentScore, isGoing }` |
+| POST | `/api/Reliability/MarkNoShows` | kurucu/admin | `{ matchId, playerIds[] }` — tam liste, tekrar çağrı günceller. Maç başladıktan sonra, pencere içinde |
+| POST | `/api/Reliability/AcceptExcuse` | kurucu/admin | `{ matchId, playerId }` — bu maçtaki iptal/gelmedi cezaları geri alınır |
+| GET | `/api/Reliability/Player?playerId=` | herkes | `{ score, level, completedMatches, attended, lateCancels, noShows, history? }` (history yalnızca kendisi/admin) |
+| GET | `/api/Reliability/Withdrawals?matchId=` | kurucu/admin | Son dakika çekilenler ve gelmeyenler |
+
+`GET /api/Match/GetMatchDetail` ek alanlar: `participants[].reliability { score, level, completedMatches }`, `participants[].noShow`,
+`minReliability`, `noShowWindowOpen`, `withdrawals` (yalnızca kurucu/admin).
+
+Maç oluşturma (`POST /api/Match/SaveMatch`): `minReliability` (1–100, boş = sınır yok). Sınırın altındaki oyuncu katılmaya çalışırsa
+`RELIABILITY_TOO_LOW` (400). Yeni oyuncular ve davetle / rakip takım olarak katılanlar sınıra takılmaz. (Tasarımdaki "Pending + kurucu onayı"
+akışı sadelik için uygulanmadı; sınır doğrudan engeller.)
+
+Kurucu, başkalarının "katılıyor" olduğu maçı `LateCancelHours` içinde silerse kendisine `OrganizerLateCancel` yazılır.
+
+Arka plan: `MatchReminderService` her turda `SettleDue` çalıştırır — "gelmedi" penceresi kapanan maçlarda katılan ve işaretlenmeyen
+oyunculara `Attended` yazılır (maç saatine tarihlenir), maç `ReliabilitySettledAt` ile işaretlenir.
+
+Hata kodları: `RELIABILITY_INVALID_REASON`, `RELIABILITY_NOTE_TOO_LONG`, `RELIABILITY_TOO_LOW`, `RELIABILITY_NOSHOW_NOT_STARTED`,
+`RELIABILITY_NOSHOW_WINDOW_CLOSED`, `RELIABILITY_NOSHOW_NOT_PARTICIPANT`, `RELIABILITY_NO_PENALTY`, `RELIABILITY_CANNOT_EXCUSE_SELF`,
+`MATCH_ORGANIZER_ONLY`.

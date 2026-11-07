@@ -1719,4 +1719,103 @@
   <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
     <value>Takım dengelemek için {0} ile {1} arasında oyuncu gerekir.</value>
   </data>
+  <data name="RELIABILITY_INVALID_REASON" xml:space="preserve">
+    <value>Geçersiz mazeret seçimi.</value>
+  </data>
+  <data name="RELIABILITY_NOTE_TOO_LONG" xml:space="preserve">
+    <value>Not en fazla {0} karakter olabilir.</value>
+  </data>
+  <data name="RELIABILITY_TOO_LOW" xml:space="preserve">
+    <value>Bu maç için en az {0} güvenilirlik puanı gerekiyor; senin puanın {1}.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_STARTED" xml:space="preserve">
+    <value>Gelmeyenler maç başladıktan sonra işaretlenebilir.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_WINDOW_CLOSED" xml:space="preserve">
+    <value>Gelmeyenler maçtan sonraki {0} saat içinde işaretlenebilir; süre doldu.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Yalnızca maç kadrosundaki oyuncular işaretlenebilir.</value>
+  </data>
+  <data name="RELIABILITY_NO_PENALTY" xml:space="preserve">
+    <value>Bu oyuncunun bu maç için geri alınacak bir cezası yok.</value>
+  </data>
+  <data name="RELIABILITY_CANNOT_EXCUSE_SELF" xml:space="preserve">
+    <value>Kendi mazeretini kabul edemezsin.</value>
+  </data>
+  <data name="RELIABILITY_MIN_OUT_OF_RANGE" xml:space="preserve">
+    <value>En düşük güvenilirlik puanı 1 ile 100 arasında olmalıdır.</value>
+  </data>
+  <data name="MSG_RELIABILITY_LEFT_WITH_PENALTY" xml:space="preserve">
+    <value>Maçtan çekildin. Güvenilirlik puanından {0} düştü (yeni puan: {1}). Kurucu mazeretini kabul ederse iade edilir.</value>
+  </data>
+  <data name="MSG_RELIABILITY_NOSHOWS_SAVED" xml:space="preserve">
+    <value>Gelmeyenler kaydedildi ({0} kişi).</value>
+  </data>
+  <data name="MSG_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>{0} için mazeret kabul edildi, puanı iade edildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW" xml:space="preserve">
+    <value>{0}, "{1}" maçından son dakika çekildi. Mazeret: {2}. Kabul edersen puanı iade edilir.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW_NO_REASON" xml:space="preserve">
+    <value>{0}, "{1}" maçından son dakika çekildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>"{0}" maçı için mazeretin kabul edildi; {1} puan iade edildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_NOSHOW" xml:space="preserve">
+    <value>"{0}" maçına gelmedin olarak işaretlendin; güvenilirlik puanından {1} düştü. Bir yanlışlık varsa kurucuyla iletişime geç.</value>
+  </data>
+  <data name="LABEL_EXCUSE_EMERGENCY" xml:space="preserve">
+    <value>Acil durum</value>
+  </data>
+  <data name="LABEL_EXCUSE_HEALTH" xml:space="preserve">
+    <value>Sağlık</value>
+  </data>
+  <data name="LABEL_EXCUSE_BEREAVEMENT" xml:space="preserve">
+    <value>Vefat / taziye</value>
+  </data>
+  <data name="LABEL_EXCUSE_WORK" xml:space="preserve">
+    <value>İş</value>
+  </data>
+  <data name="LABEL_EXCUSE_TRANSPORT" xml:space="preserve">
+    <value>Ulaşım</value>
+  </data>
+  <data name="LABEL_EXCUSE_OTHER" xml:space="preserve">
+    <value>Diğer</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NEWPLAYERMATCHCOUNT" xml:space="preserve">
+    <value>Bu sayıdan az maç tamamlayan oyuncu "yeni oyuncu" sayılır; puan sınırına takılmaz.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LEVELGOOD" xml:space="preserve">
+    <value>Bu puan ve üstü "Güvenilir" (yeşil) rozetidir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LEVELMEDIUM" xml:space="preserve">
+    <value>Bu puan ve üstü "Orta" (sarı), altı "Riskli" (kırmızı) rozetidir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_ATTENDBONUS" xml:space="preserve">
+    <value>Katıldığı her maç için eklenen puan (100'ü geçmez).</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LATECANCELHOURS" xml:space="preserve">
+    <value>Maça bu kadar saatten az kala çekilmek "geç iptal" sayılır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LATECANCELPENALTY" xml:space="preserve">
+    <value>Geç iptalde düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_VERYLATECANCELHOURS" xml:space="preserve">
+    <value>Maça bu kadar saatten az kala çekilmek "çok geç iptal" sayılır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_VERYLATECANCELPENALTY" xml:space="preserve">
+    <value>Çok geç iptalde düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NOSHOWPENALTY" xml:space="preserve">
+    <value>Maça gelmeyen (kurucunun işaretlediği) oyuncudan düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NOSHOWMARKWINDOWHOURS" xml:space="preserve">
+    <value>Kurucu gelmeyenleri maçtan sonra bu kadar saat içinde işaretleyebilir; süre bitince katılanlara puan eklenir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_ORGANIZERLATECANCELPENALTY" xml:space="preserve">
+    <value>Başkalarının katıldığı maçı son dakika iptal eden kurucudan düşülen puan.</value>
+  </data>
 </root>

@@ -116,6 +116,13 @@ namespace MatchBuddy.Entities.DTOs
         public int? OwnerPlayerId { get; set; }
         public bool CanReview { get; set; }
         public MyReviewDto? MyReview { get; set; }
+
+        // Güvenilirlik (docs/reliability-api.md)
+        public int? MinReliability { get; set; }
+        /// <summary>Kurucu şu an "gelmeyenleri" işaretleyebilir mi (maç başladı, pencere açık).</summary>
+        public bool NoShowWindowOpen { get; set; }
+        /// <summary>Yalnızca kurucu/admin: son dakika çekilenler ve gelmeyenler (mazeretleriyle).</summary>
+        public List<MatchWithdrawalDto>? Withdrawals { get; set; }
     }
 
     public class MatchStadiumDto
@@ -142,6 +149,10 @@ namespace MatchBuddy.Entities.DTOs
         public double? AvgRating { get; set; }
         // Sosyal paket: bu oyuncuyu takip ediyor muyum
         public bool IFollow { get; set; }
+        // Güvenilirlik rozeti (docs/reliability-api.md)
+        public ReliabilityBadgeDto? Reliability { get; set; }
+        // Kurucu "gelmedi" işaretledi mi
+        public bool NoShow { get; set; }
     }
 
     public class MatchGuestDto

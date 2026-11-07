@@ -53,3 +53,21 @@ namespace MatchBuddy.DataAccess.Configuration
         }
     }
 }
+
+namespace MatchBuddy.DataAccess.Configuration
+{
+    /// <summary>Güvenilirlik puanı olayları — docs/reliability-api.md.</summary>
+    public class ReliabilityEventConfiguration : IEntityTypeConfiguration<ReliabilityEvent>
+    {
+        public void Configure(EntityTypeBuilder<ReliabilityEvent> builder)
+        {
+            builder.ToTable("ReliabilityEvents");
+            builder.HasKey(x => x.ReliabilityEventId);
+            builder.Property(x => x.ReasonCode).HasMaxLength(20).IsUnicode(false);
+            builder.Property(x => x.Note).HasMaxLength(ExcuseReason.NoteMaxLength);
+            builder.HasIndex(x => new { x.PlayerId, x.CreatedAt });
+            builder.HasIndex(x => new { x.MatchId, x.PlayerId });
+            builder.HasOne(x => x.Player).WithMany().HasForeignKey(x => x.PlayerId).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+}

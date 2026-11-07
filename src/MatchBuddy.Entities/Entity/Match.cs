@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Core.Entities;
+using MatchBuddy.Core.Entities;
 
 namespace MatchBuddy.Entities.Entity
 {
@@ -34,6 +34,10 @@ namespace MatchBuddy.Entities.Entity
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
         public string? RejectReason { get; set; }
+        // Kurucunun istediği en düşük güvenilirlik puanı (null = sınır yok). Yeni oyuncular takılmaz.
+        public int? MinReliability { get; set; }
+        // Maç sonrası güvenilirlik olayları (Attended) yazıldı mı
+        public DateTime? ReliabilitySettledAt { get; set; }
         // Oluşturulma zamanı (DB varsayılanı GETDATE())
         public DateTime CreatedAt { get; set; }
         public List<MatchTeam> MatchTeams { get; set; }

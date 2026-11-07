@@ -24,8 +24,16 @@ namespace MatchBuddy.Business.Concrete
         public OperationResult<byte> Join(int matchId, int playerId) =>
             _participationDal.Join(matchId, playerId);
 
-        public OperationResult<bool> Leave(int matchId, int playerId) =>
-            _participationDal.Leave(matchId, playerId);
+        public OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null)
+        {
+            reasonCode = string.IsNullOrWhiteSpace(reasonCode) ? null : reasonCode.Trim().ToLowerInvariant();
+            if (reasonCode != null && !ExcuseReason.All.Contains(reasonCode))
+                return OperationResult<LeaveResultDto>.FieldError("reasonCode", ErrorCodes.Reliability.InvalidReason);
+            note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+            if (note != null && note.Length > ExcuseReason.NoteMaxLength)
+                return OperationResult<LeaveResultDto>.FieldError("note", ErrorCodes.Reliability.NoteTooLong, ExcuseReason.NoteMaxLength);
+            return _participationDal.Leave(matchId, playerId, reasonCode, note);
+        }
 
         public OperationResult<bool> Confirm(int matchId, int playerId) =>
             _participationDal.Confirm(matchId, playerId);
@@ -148,9 +156,9 @@ namespace MatchBuddy.Business.Concrete
             return new SuccessDataResult<List<CalendarItemDto>>(_participationDal.GetMyCalendar(playerId, start, end));
         }
 
-        public IResult DeleteMatch(int matchId)
+        public IResult DeleteMatch(int matchId, int? actorPlayerId = null)
         {
-            return _participationDal.DeleteMatch(matchId)
+            return _participationDal.DeleteMatch(matchId, actorPlayerId)
                 ? new SuccessResult(Msg.Get(MessageKeys.Match.Deleted))
                 : new ErrorResult(ErrorCodes.Match.NotFound);
         }
