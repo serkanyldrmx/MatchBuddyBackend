@@ -187,7 +187,12 @@ namespace MatchBuddy.Entities.DTOs
         public decimal PitchTotal { get; set; }
         public decimal ExtrasTotal { get; set; }
         public decimal Total { get; set; }
+        /// <summary>Kişi başı pay (krampon hariç).</summary>
         public decimal PerPlayer { get; set; }
+        /// <summary>Krampon toplamı (yalnızca kiralayanlar öder, kişi başına bölünmez).</summary>
+        public decimal CleatTotal { get; set; }
+        /// <summary>Bir çift krampon ücreti (tesis kiralamıyorsa null).</summary>
+        public decimal? CleatPrice { get; set; }
     }
 
     public class ReviewInput

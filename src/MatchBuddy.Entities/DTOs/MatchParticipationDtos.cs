@@ -45,7 +45,10 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? PitchPrice { get; set; }
         public decimal? ExtrasPrice { get; set; }
         public decimal? TotalPrice { get; set; }
+        /// <summary>Kişi başı pay (krampon hariç; kiralayan ayrıca CleatPrice öder).</summary>
         public decimal? PerPlayer { get; set; }
+        /// <summary>Bir çift krampon ücreti (maçta krampon yoksa null).</summary>
+        public decimal? CleatPrice { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int CleatCount { get; set; }
         public bool CameraRequested { get; set; }

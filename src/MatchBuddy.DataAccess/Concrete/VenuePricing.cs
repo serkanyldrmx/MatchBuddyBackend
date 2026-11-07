@@ -218,7 +218,11 @@ namespace MatchBuddy.DataAccess.Concrete
             return Round2(total);
         }
 
-        /// <summary>Kişi başı = ceil(toplam / oyuncu sayısı).</summary>
+        /// <summary>Krampon ücreti (adet × çift ücreti). Kişi başına bölünmez; yalnızca kiralayan öder.</summary>
+        public static decimal CleatTotal(Stadium? stadium, int cleatCount) =>
+            cleatCount > 0 && stadium != null ? Round2(cleatCount * (stadium.CleatRentalPrice ?? 0m)) : 0m;
+
+        /// <summary>Kişi başı = ceil(toplam / oyuncu sayısı). Krampon ücreti toplamdan önceden düşülmelidir.</summary>
         public static decimal PerPlayer(decimal total, int userCount) =>
             userCount <= 0 ? Math.Ceiling(total) : Math.Ceiling(total / userCount);
 

@@ -187,7 +187,8 @@ Unique (MatchId, PlayerId).
 - `pitchTotal` = dilimlerin toplamı, kampanya uygulanmış hâliyle.
 - `extrasTotal` = `cleatCount * CleatRentalPrice` + (kamera istendiyse `CameraPrice`).
 - `total` = pitchTotal + extrasTotal.
-- `perPlayer` = ceil(total / userCount).
+- `cleatTotal` = `cleatCount * CleatRentalPrice`. Krampon ücretini yalnızca kiralayan öder; kişi başına bölünmez.
+- `perPlayer` = ceil((total − cleatTotal) / userCount). Krampon kiralayan buna ek olarak `cleatPrice` (bir çift) öder.
 - Tutarlar ₺ olarak decimal(10,2).
 
 ## Müsaitlik kuralları
@@ -245,7 +246,7 @@ O günün dilimleri, saatlik ve tüm aktif sahalar için.
 ```json
 { "available": true, "reason": null,
   "lines": [{ "label": "18:00–19:00", "price": 1350, "originalPrice": 1800, "campaignTitle": "..." }],
-  "pitchTotal": 2025, "extrasTotal": 300, "total": 2325, "perPlayer": 233 }
+  "pitchTotal": 2025, "extrasTotal": 300, "total": 2325, "cleatTotal": 100, "cleatPrice": 50, "perPlayer": 223 }
 ```
 Müsait değilse `available:false` ve sebep döner (yine 200).
 
@@ -281,7 +282,7 @@ Başarılı yanıt: `{ success: true, message, matchId, status }`.
 `GetMatchFeed` ve `GetMatchDetail` yanıtlarına eklenenler:
 ```json
 "venue": { "stadiumId": 1, "name": "...", "pitchId": 3, "pitchName": "Saha 1", "isIndoor": true, "surface": 1, "coverPhotoUrl": "..." } | null,
-"durationMinutes": 60, "totalPrice": 2325, "perPlayer": 233, "cleatCount": 2, "cameraRequested": true,
+"durationMinutes": 60, "totalPrice": 2325, "perPlayer": 223, "cleatPrice": 50, "cleatCount": 2, "cameraRequested": true,
 "homeTeam": { "teamId": 5, "teamName": "..." } | null, "awayTeam": { ... } | null, "lookingForOpponent": false,
 "rejectReason": null
 ```

@@ -194,7 +194,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             quote.PitchTotal = VenuePricing.Round2(lines.Sum(l => l.Price));
             quote.ExtrasTotal = VenuePricing.Extras(pricing.Stadium, Math.Max(0, cleatCount), cameraRequested);
             quote.Total = quote.PitchTotal + quote.ExtrasTotal;
-            quote.PerPlayer = VenuePricing.PerPlayer(quote.Total, userCount);
+            // Krampon ücreti herkese bölünmez: kişi başı payı saha + kamera üzerinden, kiralayan ayrıca öder
+            quote.CleatTotal = VenuePricing.CleatTotal(pricing.Stadium, Math.Max(0, cleatCount));
+            quote.CleatPrice = pricing.Stadium.CleatRental ? pricing.Stadium.CleatRentalPrice : null;
+            quote.PerPlayer = VenuePricing.PerPlayer(quote.Total - quote.CleatTotal, userCount);
             return quote;
         }
 
@@ -237,7 +240,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 dto.ExtrasPrice = m.ExtrasPrice;
                 dto.TotalPrice = m.TotalPrice;
                 dto.CreatedAt = m.CreatedAt == default ? null : m.CreatedAt;
-                dto.PerPlayer = m.TotalPrice.HasValue ? VenuePricing.PerPlayer(m.TotalPrice.Value, m.UserCount) : null;
+                Stadiums.TryGetValue(m.StadiumId, out var matchStadium);
+                // Krampon payı herkese bölünmez (kiralayan öder); geçmiş fiyat değişse de ekstra toplamını aşmasın
+                var cleatTotal = Math.Min(VenuePricing.CleatTotal(matchStadium, m.CleatCount), m.ExtrasPrice ?? 0m);
+                dto.PerPlayer = m.TotalPrice.HasValue ? VenuePricing.PerPlayer(m.TotalPrice.Value - cleatTotal, m.UserCount) : null;
+                dto.CleatPrice = cleatTotal > 0 ? VenuePricing.Round2(cleatTotal / m.CleatCount) : null;
                 dto.CleatCount = m.CleatCount;
                 dto.CameraRequested = m.CameraRequested;
                 dto.LookingForOpponent = m.LookingForOpponent;
