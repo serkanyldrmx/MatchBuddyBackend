@@ -130,6 +130,7 @@ namespace MatchBuddy.Api
             builder.Services.AddSingleton<IParameterStore>(sp => sp.GetRequiredService<EFParameterService>());
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<MatchBuddy.Api.Services.Ai.RecommendationService>();
 
             // ---- Kimlik doğrulama paketi (docs/auth-api.md)
             builder.Services.AddSingleton(new MatchBuddy.Business.Auth.AuthSettings

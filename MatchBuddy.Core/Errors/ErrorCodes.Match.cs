@@ -5,6 +5,8 @@ namespace MatchBuddy.Core.Errors
         public static partial class Match
         {
             public const string OwnerCannotJoin = "MATCH_OWNER_CANNOT_JOIN";
+            public const string OrganizerOnly = "MATCH_ORGANIZER_ONLY";
+            public const string BalancePlayerCount = "MATCH_BALANCE_PLAYER_COUNT";   // {0} en az, {1} en fazla
             public const string OwnerCannotCreate = "MATCH_OWNER_CANNOT_CREATE";
             public const string SideFull = "MATCH_SIDE_FULL";
             public const string RejectedJoinClosed = "MATCH_REJECTED_JOIN_CLOSED";

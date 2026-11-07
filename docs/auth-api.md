@@ -47,7 +47,7 @@ Base URL: `/api/Auth`. Hata gövdesi ve kodlar için bkz. `platform-api.md` §1.
 | POST | `AcceptTerms` | JWT | `{ termsVersion, marketingConsent }` | |
 | GET | `/api/Me/Export` | JWT | — | KVKK veri dışa aktarımı |
 
-Kayıt (`POST /api/Players/PlayerRegister`) artık `termsVersion` (güncel `legal.termsVersion`) ve isteğe bağlı `marketingConsent` ister.
+Kayıt (`POST /api/Players/SavePlayer`, `playerModel` JSON'u içinde) artık `termsVersion` (güncel `legal.termsVersion`) ve isteğe bağlı `marketingConsent` ister.
 
 ## Sosyal giriş eşleştirme
 

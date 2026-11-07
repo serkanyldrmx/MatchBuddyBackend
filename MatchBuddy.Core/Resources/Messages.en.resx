@@ -289,4 +289,10 @@
   <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
     <value>The sign-in method was removed from your account.</value>
   </data>
+  <data name="MATCH_ORGANIZER_ONLY" xml:space="preserve">
+    <value>Only the match organizer can do this.</value>
+  </data>
+  <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
+    <value>Balancing needs between {0} and {1} players.</value>
+  </data>
 </root>

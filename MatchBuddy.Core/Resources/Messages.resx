@@ -1713,4 +1713,10 @@
   <data name="PARAMDESC_LEGAL_TERMSVERSION" xml:space="preserve">
     <value>Güncel kullanım koşulları / aydınlatma metni sürümü. Değişirse kullanıcılardan yeniden onay istenir.</value>
   </data>
+  <data name="MATCH_ORGANIZER_ONLY" xml:space="preserve">
+    <value>Bu işlemi yalnızca maçı kuran yapabilir.</value>
+  </data>
+  <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
+    <value>Takım dengelemek için {0} ile {1} arasında oyuncu gerekir.</value>
+  </data>
 </root>
