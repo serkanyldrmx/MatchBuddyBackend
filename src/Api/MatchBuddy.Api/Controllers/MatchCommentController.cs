@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
@@ -22,7 +22,7 @@ namespace MatchBuddy.Api.Controllers
 
         // Yorum ekle: yorumu yazan her zaman token sahibidir
         [HttpPost("SaveMatchComment")]
-        public IActionResult SaveMatchComment(MatchCommentModel matchCommentModel)
+        public IActionResult SaveMatchComment(MatchCommentModel matchCommentModel, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             if (string.IsNullOrWhiteSpace(matchCommentModel.Comment))
             {
@@ -38,6 +38,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _matchCommentsService.Add(matchComment);
             if (result.Success)
             {
+                _ = realtime.MatchCommentAsync(matchComment.MatchId); // anlık: maçı açık tutanlar yenilesin
                 return Ok(result);
             }
             return this.ToHttp(result);
@@ -45,7 +46,7 @@ namespace MatchBuddy.Api.Controllers
 
         // Yorum sil: sadece yorumun sahibi veya admin
         [HttpPost("DeleteMatchComment")]
-        public IActionResult DeleteMatchComment(int commentId)
+        public IActionResult DeleteMatchComment(int commentId, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             var comment = _matchCommentsService.GetComment(commentId);
             if (comment == null)
@@ -60,6 +61,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _matchCommentsService.Delete(comment);
             if (result.Success)
             {
+                _ = realtime.MatchCommentAsync(comment.MatchId);
                 return Ok(result);
             }
             return this.ToHttp(result);

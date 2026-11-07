@@ -131,6 +131,9 @@ namespace MatchBuddy.Api
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<MatchBuddy.Api.Services.Ai.RecommendationService>();
+            // Anlık mesajlaşma (docs/realtime-api.md)
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<MatchBuddy.Api.Hubs.RealtimeNotifier>();
 
             // ---- Kimlik doğrulama paketi (docs/auth-api.md)
             builder.Services.AddSingleton(new MatchBuddy.Business.Auth.AuthSettings
@@ -206,6 +209,14 @@ namespace MatchBuddy.Api
                     // 401 / 403 → standart hata gövdesi (AUTH_UNAUTHORIZED / AUTH_FORBIDDEN)
                     options.Events = new JwtBearerEvents
                     {
+                        // SignalR (WebSocket) access token'ı başlık yerine sorgu dizesinde gönderir: yalnızca hub yolunda kabul edilir
+                        OnMessageReceived = ctx =>
+                        {
+                            var accessToken = ctx.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(accessToken) && ctx.HttpContext.Request.Path.StartsWithSegments(MatchBuddy.Api.Hubs.ChatHub.Path))
+                                ctx.Token = accessToken;
+                            return Task.CompletedTask;
+                        },
                         OnChallenge = async ctx =>
                         {
                             ctx.HandleResponse();
@@ -385,6 +396,7 @@ namespace MatchBuddy.Api
             }).AllowAnonymous().DisableRateLimiting();
 
             app.MapControllers();
+            app.MapHub<MatchBuddy.Api.Hubs.ChatHub>(MatchBuddy.Api.Hubs.ChatHub.Path);
 
             try
             {

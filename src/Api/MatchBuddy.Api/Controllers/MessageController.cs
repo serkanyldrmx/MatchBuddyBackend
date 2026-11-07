@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
@@ -59,7 +59,7 @@ namespace MatchBuddy.Api.Controllers
         }
 
         [HttpPost("MessageSave")]
-        public IActionResult MessageSave(MessageSaveModel mesageModel)
+        public IActionResult MessageSave(MessageSaveModel mesageModel, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             // Metin ya da fotoğraf (mediaId) dolu olmalı
             if (string.IsNullOrWhiteSpace(mesageModel.MatchMessage) && mesageModel.MediaId == null)
@@ -93,6 +93,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _messageService.Add(message);
             if (result.Success)
             {
+                _ = realtime.DirectMessageAsync(User.GetPlayerId(), mesageModel.RecipientPlayerId ?? 0);
                 return Ok(result);
             }
             return this.ToHttp(result);

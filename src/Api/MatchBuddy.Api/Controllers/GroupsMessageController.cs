@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
@@ -29,7 +29,7 @@ namespace MatchBuddy.Api.Controllers
             User.IsAdmin() || _groupPlayerService.IsPlayerInGroup(groupId, User.GetPlayerId());
 
         [HttpPost("SaveGroupMessage")]
-        public IActionResult SaveGroupMessage(GroupMessageModel groupMessageModel)
+        public IActionResult SaveGroupMessage(GroupMessageModel groupMessageModel, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             // Metin ya da fotoğraf (mediaId) dolu olmalı
             if (string.IsNullOrWhiteSpace(groupMessageModel.MatchMessage) && groupMessageModel.MediaId == null)
@@ -65,6 +65,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _groupMessageService.Add(groupMessage);
             if (result.Success)
             {
+                _ = realtime.GroupMessageAsync(groupMessageModel.GroupId, User.GetPlayerId());
                 return Ok(result);
             }
             return this.ToHttp(result);
