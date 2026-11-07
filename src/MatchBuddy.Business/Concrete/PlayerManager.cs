@@ -35,6 +35,11 @@ namespace MatchBuddy.Business.Concrete
             {
                 return new ErrorResult(ErrorCodes.Auth.PasswordTooShort, MinPasswordLength);
             }
+            var policy = MatchBuddy.Business.Auth.PasswordPolicy.Validate(player.Password);
+            if (policy != null)
+            {
+                return new ErrorResult(policy.Code, policy.Args);
+            }
             if (IsUserNameTaken(player.UserName))
             {
                 return new ErrorResult(ErrorCodes.Auth.UserNameTaken);

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
@@ -21,8 +21,12 @@ namespace MatchBuddy.Api.Controllers
         private readonly OsmService _osmService;
         private readonly IMediaService _mediaService;
 
-        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService, IMediaService mediaService)
+        private readonly MatchBuddy.Business.Auth.IAuthService _auth;
+
+        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService, IMediaService mediaService,
+            MatchBuddy.Business.Auth.IAuthService auth)
         {
+            _auth = auth;
             _mediaService = mediaService;
             _socialService = socialService;
             _venueService = venueService;
@@ -60,6 +64,8 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult ResetOwnerPassword(ResetOwnerPasswordModel model)
         {
             var res = _venueService.ResetOwnerPassword(model.OwnerId);
+            // Şifre değişti: işletmenin açık oturumları (refresh token) kapanır
+            if (res.Success) _auth.RevokeAllSessions(model.OwnerId, MatchBuddy.Entities.Entity.RevokeReasons.PasswordReset);
             return res.Success
                 ? Ok(new { success = true, userName = res.Data!.UserName, password = res.Data.Password })
                 : this.ToHttp(res);

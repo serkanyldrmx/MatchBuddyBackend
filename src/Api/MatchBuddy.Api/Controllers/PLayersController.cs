@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
@@ -24,10 +24,15 @@ namespace MatchBuddy.Api.Controllers
         private readonly ISocialService _socialService;
 
         private readonly IMediaService _mediaService;
+        private readonly MatchBuddy.Business.Auth.IAuthService _auth;
+        private readonly AuthSessionIssuer _issuer;
 
         public PLayersController(IPlayerService playerService, IJwtTokenService tokenService, ILogger<PLayersController> logger,
-            IMatchParticipationService participationService, ISocialService socialService, IMediaService mediaService)
+            IMatchParticipationService participationService, ISocialService socialService, IMediaService mediaService,
+            MatchBuddy.Business.Auth.IAuthService auth, AuthSessionIssuer issuer)
         {
+            _auth = auth;
+            _issuer = issuer;
             _mediaService = mediaService;
             _socialService = socialService;
             _playerService = playerService;
@@ -100,6 +105,13 @@ namespace MatchBuddy.Api.Controllers
                 return this.BadRequestError(ErrorCodes.Player.InvalidData);
             }
 
+            // KVKK: güncel kullanım koşulları + aydınlatma metni kabul edilmeden kayıt olunmaz (docs/auth-api.md)
+            var consentError = _auth.ValidateRegistrationConsent(playerData.TermsVersion);
+            if (consentError != null)
+            {
+                return this.FieldError("termsVersion", consentError.Code, consentError.Args);
+            }
+
             var player = new Player
             {
                 PlayerName = playerData.PlayerName,
@@ -116,6 +128,7 @@ namespace MatchBuddy.Api.Controllers
                 IsAdmin = 0,
                 ProfilePictureUrl = ""
             };
+            _auth.ApplyRegistrationConsent(player, playerData.MarketingConsent);
 
             // Profil fotoğrafı medya hattından geçer (docs/media-api.md); oyuncu henüz yok: sahibi kayıttan sonra yazılır
             MediaDto? avatar = null;
@@ -132,6 +145,9 @@ namespace MatchBuddy.Api.Controllers
             if (result.Success)
             {
                 if (avatar != null) _mediaService.MarkAttached(avatar.MediaId, player.PlayerId);
+                // E-posta doğrulama kodu (yumuşak zorunluluk: giriş yine çalışır)
+                if (!string.IsNullOrWhiteSpace(player.Email))
+                    _auth.SendEmailVerification(player.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
                 return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
@@ -182,6 +198,10 @@ namespace MatchBuddy.Api.Controllers
             existingPlayer.Weight = playerData.Weight;
             existingPlayer.Address = playerData.Address;
             existingPlayer.Age = playerData.Age;
+            // E-posta değişirse doğrulama sıfırlanır ve yeni adrese kod gönderilir
+            var emailChanged = !string.Equals((existingPlayer.Email ?? string.Empty).Trim(), (playerData.Email ?? string.Empty).Trim(),
+                StringComparison.OrdinalIgnoreCase);
+            if (emailChanged) existingPlayer.EmailConfirmed = false;
             existingPlayer.Email = playerData.Email;
             existingPlayer.PhoneNumber = playerData.PhoneNumber;
             existingPlayer.UserName = playerData.UserName;
@@ -193,13 +213,17 @@ namespace MatchBuddy.Api.Controllers
             }
 
             // Şifre boş gönderildiyse mevcut şifre korunur
+            var passwordChanged = false;
             if (!string.IsNullOrEmpty(playerData.Password))
             {
-                if (playerData.Password.Length < MatchBuddy.Business.Concrete.PlayerManager.MinPasswordLength)
+                var policy = MatchBuddy.Business.Auth.PasswordPolicy.Validate(playerData.Password);
+                if (policy != null)
                 {
-                    return this.BadRequestError(ErrorCodes.Auth.PasswordTooShort, MatchBuddy.Business.Concrete.PlayerManager.MinPasswordLength);
+                    return this.BadRequestError(policy.Code, policy.Args);
                 }
                 existingPlayer.Password = PasswordHasher.Hash(playerData.Password);
+                existingPlayer.HasPassword = true;
+                passwordChanged = true;
             }
 
             // Yeni profil fotoğrafı: medya hattı; başarılı güncellemeden sonra eskisi (medya ya da /uploads dosyası) silinir
@@ -223,6 +247,10 @@ namespace MatchBuddy.Api.Controllers
                     _mediaService.MarkAttached(avatar.MediaId);
                     await _mediaService.DeleteImageAsync(oldMediaId, oldUrl, CancellationToken.None);
                 }
+                // Şifre değişti → tüm refresh token'lar iptal (docs/auth-api.md). Tercihen /api/Auth/ChangePassword kullanılmalı.
+                if (passwordChanged) _auth.OnPasswordChangedExternally(existingPlayer.PlayerId);
+                if (emailChanged && !string.IsNullOrWhiteSpace(existingPlayer.Email))
+                    _auth.SendEmailVerification(existingPlayer.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
                 return Ok(new { result.Success, result.Message, existingPlayer.ProfilePictureUrl });
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
@@ -248,14 +276,10 @@ namespace MatchBuddy.Api.Controllers
                 return this.UnauthorizedError(ErrorCodes.Auth.InvalidCredentials);
             }
 
-            var (token, expiresAt) = _tokenService.CreateToken(result.Data);
-            return new LoginResponse
-            {
-                Token = token,
-                ExpiresAt = expiresAt,
-                Player = PlayerDto.From(result.Data),
-                Role = result.Data.Role,
-            };
+            // ESKİ uç nokta (geriye uyumluluk): /api/Auth/Login ile aynı; access token eski süreyle
+            // (auth.legacyAccessTokenMinutes, varsayılan 120 dk), refresh çerezi de yazılır. docs/auth-api.md.
+            return _issuer.SignIn(HttpContext, result.Data, rememberMe: true,
+                accessMinutes: P.Int(ParameterKeys.Auth.LegacyAccessTokenMinutes));
         }
 
         // Öneri servisinin kullandığı oyuncu geçmişi: sadece kendisi veya admin

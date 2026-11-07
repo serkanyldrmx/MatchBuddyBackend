@@ -30,6 +30,19 @@ namespace MatchBuddy.Entities.Entity
         // Sadece işletmeler için: üyelik bitiş tarihi (null = süresiz) ve askı durumu
         public DateTime? MembershipUntil { get; set; }
         public bool MembershipSuspended { get; set; }
+
+        // ---- Hesap güvenliği / KVKK (docs/auth-api.md). Tarihler UTC.
+        // E-posta doğrulandı mı (kod ile, sosyal sağlayıcının doğruladığı e-posta ile ya da e-posta ile şifre sıfırlamada)
+        public bool EmailConfirmed { get; set; }
+        // Telefon doğrulandı mı (SMS ile şifre sıfırlamada işaretlenir)
+        public bool PhoneConfirmed { get; set; }
+        // Kullanılabilir bir şifre var mı (sosyal girişle açılan hesapta false; şifre sıfırlama ile true olur)
+        public bool HasPassword { get; set; } = true;
+        public DateTime? TermsAcceptedAt { get; set; }
+        public string? TermsVersion { get; set; }
+        public DateTime? PrivacyAcceptedAt { get; set; }
+        public bool MarketingConsent { get; set; }
+        public DateTime? MarketingConsentAt { get; set; }
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }
         public List<GroupPlayer> GroupPlayers { get; set; }

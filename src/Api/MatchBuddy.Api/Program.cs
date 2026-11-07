@@ -1,10 +1,12 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Business;
 using MatchBuddy.Api.Controllers;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
+using MatchBuddy.Api.Services.Auth;
+using MatchBuddy.Api.Services.Messaging;
 using MatchBuddy.Core;
 using MatchBuddy.DataAccess;
 using MatchBuddy.DataAccess.Concrete.EntityFramework;
@@ -108,7 +110,7 @@ namespace MatchBuddy.Api
                         Scheme = "bearer",
                         BearerFormat = "JWT",
                         In = ParameterLocation.Header,
-                        Description = "PlayerLogin'den aldığınız token'ı girin."
+                        Description = "/api/Auth/Login'den aldığınız token'ı girin."
                     });
                     c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
                     {
@@ -128,6 +130,39 @@ namespace MatchBuddy.Api
             builder.Services.AddSingleton<IParameterStore>(sp => sp.GetRequiredService<EFParameterService>());
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+            // ---- Kimlik doğrulama paketi (docs/auth-api.md)
+            builder.Services.AddSingleton(new MatchBuddy.Business.Auth.AuthSettings
+            {
+                FrontendBaseUrl = builder.Configuration["Auth:FrontendBaseUrl"] ?? "http://localhost:3000",
+                // Kod özetleri için gizli anahtar: Auth:CodePepper, yoksa Jwt:Key
+                CodePepper = builder.Configuration["Auth:CodePepper"] is { Length: >= 16 } pepper ? pepper : jwt.Key,
+            });
+            builder.Services.Configure<RefreshCookieOptions>(builder.Configuration.GetSection(RefreshCookieOptions.SectionName));
+            builder.Services.AddSingleton<RefreshCookie>();
+            builder.Services.AddScoped<AuthSessionIssuer>();
+            builder.Services.Configure<ExternalAuthOptions>(builder.Configuration.GetSection(ExternalAuthOptions.SectionName));
+            builder.Services.AddSingleton<MatchBuddy.Business.Auth.IExternalTokenValidator, GoogleTokenValidator>();
+            builder.Services.AddSingleton<MatchBuddy.Business.Auth.IExternalTokenValidator, FacebookTokenValidator>();
+            builder.Services.AddScoped<ExternalAvatarImporter>();
+            builder.Services.AddSingleton<IdentifierThrottle>();
+            builder.Services.AddHttpClient(FacebookTokenValidator.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15));
+            builder.Services.AddHttpClient(ExternalAvatarImporter.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+            builder.Services.AddHttpClient(NetgsmSmsSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(20));
+
+            // E-posta / SMS: yapılandırılmamışsa outbox (App_Data/outbox/*.txt). Gönderim arka planda kuyruktan yapılır.
+            builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
+            builder.Services.Configure<NetgsmOptions>(builder.Configuration.GetSection(NetgsmOptions.SectionName));
+            builder.Services.AddSingleton<OutboxWriter>();
+            var smtpConfigured = builder.Configuration.GetSection(SmtpOptions.SectionName).Get<SmtpOptions>()?.IsConfigured == true;
+            var netgsmConfigured = builder.Configuration.GetSection(NetgsmOptions.SectionName).Get<NetgsmOptions>()?.IsConfigured == true;
+            if (smtpConfigured) builder.Services.AddSingleton<MatchBuddy.Core.Messaging.IEmailSender, SmtpEmailSender>();
+            else builder.Services.AddSingleton<MatchBuddy.Core.Messaging.IEmailSender, OutboxEmailSender>();
+            if (netgsmConfigured) builder.Services.AddSingleton<MatchBuddy.Core.Messaging.ISmsSender, NetgsmSmsSender>();
+            else builder.Services.AddSingleton<MatchBuddy.Core.Messaging.ISmsSender, OutboxSmsSender>();
+            builder.Services.AddSingleton<OutgoingMessageQueue>();
+            builder.Services.AddSingleton<MatchBuddy.Core.Messaging.IOutgoingMessageQueue>(sp => sp.GetRequiredService<OutgoingMessageQueue>());
+            builder.Services.AddHostedService<OutgoingMessageService>();
 
             // OpenStreetMap (Nominatim / Overpass): 40 sn zaman aşımı, kimlik belirten User-Agent
             builder.Services.AddHttpClient(OsmService.HttpClientName, c =>
@@ -174,7 +209,10 @@ namespace MatchBuddy.Api
                         {
                             ctx.HandleResponse();
                             if (ctx.Response.HasStarted) return;
-                            ctx.Response.Headers.WWWAuthenticate = "Bearer";
+                            // Süresi dolmuş token: RFC 6750 error_description (kod yine AUTH_UNAUTHORIZED; istemci Refresh dener)
+                            ctx.Response.Headers.WWWAuthenticate = ctx.AuthenticateFailure is SecurityTokenExpiredException
+                                ? "Bearer error=\"invalid_token\", error_description=\"The access token expired\""
+                                : "Bearer";
                             await ApiErrors.WriteAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, ErrorCodes.Auth.Unauthorized);
                         },
                         OnForbidden = ctx =>
@@ -192,6 +230,7 @@ namespace MatchBuddy.Api
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
                           .AllowAnyHeader()
+                          .AllowCredentials() // refresh çerezi (mb_rt) için: fetch(..., { credentials: 'include' })
                           .WithExposedHeaders(ApiErrors.TraceHeader, "Retry-After"));
             });
 
@@ -205,6 +244,19 @@ namespace MatchBuddy.Api
                     var limit = P.Int(ParameterKeys.RateLimit.AuthPerMinute);
                     var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                     return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}:{limit}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = limit,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    });
+                });
+
+                // Şifre sıfırlama (ForgotPassword / ResetPassword): IP başına; tanımlayıcı başına sınır IdentifierThrottle'da
+                options.AddPolicy(AuthController.PasswordResetPolicy, httpContext =>
+                {
+                    var limit = P.Int(ParameterKeys.Auth.PasswordResetPerMinute);
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"pwreset:{ip}:{limit}", _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = limit,
                         Window = TimeSpan.FromMinutes(1),

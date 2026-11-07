@@ -163,4 +163,130 @@
   <data name="VENUE_SETTINGS_OUT_OF_RANGE" xml:space="preserve">
     <value>{0} must be between {1} and {2}.</value>
   </data>
+  <data name="AUTH_REFRESH_INVALID" xml:space="preserve">
+    <value>Your session has ended. Please sign in again.</value>
+  </data>
+  <data name="AUTH_REFRESH_REUSED" xml:space="preserve">
+    <value>For your security you were signed out. Please sign in again.</value>
+  </data>
+  <data name="AUTH_PASSWORD_TOO_WEAK" xml:space="preserve">
+    <value>The password must contain at least one letter and one digit.</value>
+  </data>
+  <data name="AUTH_PASSWORD_NOT_SET" xml:space="preserve">
+    <value>Your account has no password yet. Use "Forgot password" to set one.</value>
+  </data>
+  <data name="AUTH_IDENTIFIER_REQUIRED" xml:space="preserve">
+    <value>Enter your user name, email or phone number.</value>
+  </data>
+  <data name="AUTH_INVALID_CHANNEL" xml:space="preserve">
+    <value>Delivery method must be email or SMS.</value>
+  </data>
+  <data name="AUTH_CODE_REQUIRED" xml:space="preserve">
+    <value>Enter the verification code.</value>
+  </data>
+  <data name="AUTH_CODE_INVALID" xml:space="preserve">
+    <value>The code is wrong or has expired.</value>
+  </data>
+  <data name="AUTH_CODE_ATTEMPTS_EXCEEDED" xml:space="preserve">
+    <value>Too many wrong attempts. Please request a new code.</value>
+  </data>
+  <data name="AUTH_CODE_RESEND_COOLDOWN" xml:space="preserve">
+    <value>Please wait {0} seconds before requesting a new code.</value>
+  </data>
+  <data name="AUTH_EMAIL_MISSING" xml:space="preserve">
+    <value>Your account has no email address.</value>
+  </data>
+  <data name="AUTH_EMAIL_ALREADY_CONFIRMED" xml:space="preserve">
+    <value>Your email address is already verified.</value>
+  </data>
+  <data name="AUTH_PROVIDER_NOT_CONFIGURED" xml:space="preserve">
+    <value>Sign-in with {0} is not available right now.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNKNOWN" xml:space="preserve">
+    <value>Unknown sign-in provider.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNAVAILABLE" xml:space="preserve">
+    <value>The sign-in provider is unreachable. Please try again later.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_REQUIRED" xml:space="preserve">
+    <value>No sign-in data was received from the provider.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_INVALID" xml:space="preserve">
+    <value>The provider sign-in could not be verified. Please try again.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_NOT_FOUND" xml:space="preserve">
+    <value>This sign-in method is not linked to your account.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_LAST_METHOD" xml:space="preserve">
+    <value>This is the only way into your account. Set a password before removing it.</value>
+  </data>
+  <data name="AUTH_TERMS_REQUIRED" xml:space="preserve">
+    <value>You must accept the terms of use and privacy notice to continue.</value>
+  </data>
+  <data name="AUTH_TERMS_VERSION_MISMATCH" xml:space="preserve">
+    <value>The terms have been updated. Please reload and accept the current version.</value>
+  </data>
+  <data name="LABEL_AUTH_DEFAULT_PLAYER_NAME" xml:space="preserve">
+    <value>Player</value>
+  </data>
+  <data name="MAIL_GREETING" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="MAIL_FOOTER" xml:space="preserve">
+    <value>MatchBuddy — set up your pickup game easily.</value>
+  </data>
+  <data name="MAIL_IGNORE_NOTICE" xml:space="preserve">
+    <value>If you did not request this, you can ignore this email; nothing has changed on your account.</value>
+  </data>
+  <data name="MAIL_RESET_SUBJECT" xml:space="preserve">
+    <value>Your MatchBuddy password reset code</value>
+  </data>
+  <data name="MAIL_RESET_BODY" xml:space="preserve">
+    <value>Use the code below to reset your password. It is valid for {0} minutes.</value>
+  </data>
+  <data name="MAIL_VERIFY_SUBJECT" xml:space="preserve">
+    <value>Verify your MatchBuddy email</value>
+  </data>
+  <data name="MAIL_VERIFY_BODY" xml:space="preserve">
+    <value>Enter the code below in the app or click the button to verify your email. The code is valid for {0} minutes.</value>
+  </data>
+  <data name="MAIL_VERIFY_BUTTON" xml:space="preserve">
+    <value>Verify my email</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_SUBJECT" xml:space="preserve">
+    <value>Your MatchBuddy password was changed</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_BODY" xml:space="preserve">
+    <value>Your password was changed on {0} and other devices were signed out. If this wasn't you, use "Forgot password" right away.</value>
+  </data>
+  <data name="SMS_RESET_BODY" xml:space="preserve">
+    <value>Your MatchBuddy password reset code: {0}. Valid for {1} minutes. Do not share it.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT" xml:space="preserve">
+    <value>Signed out.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT_ALL" xml:space="preserve">
+    <value>Signed out of all devices.</value>
+  </data>
+  <data name="MSG_AUTH_RESET_REQUESTED" xml:space="preserve">
+    <value>If the details match an account, a verification code has been sent.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_RESET" xml:space="preserve">
+    <value>Your password has been reset. You can now sign in.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_CHANGED" xml:space="preserve">
+    <value>Your password has been changed.</value>
+  </data>
+  <data name="MSG_AUTH_EMAIL_VERIFIED" xml:space="preserve">
+    <value>Your email address has been verified.</value>
+  </data>
+  <data name="MSG_AUTH_VERIFICATION_SENT" xml:space="preserve">
+    <value>A verification code was sent to your email.</value>
+  </data>
+  <data name="MSG_AUTH_TERMS_ACCEPTED" xml:space="preserve">
+    <value>Thanks, your consent has been recorded.</value>
+  </data>
+  <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
+    <value>The sign-in method was removed from your account.</value>
+  </data>
 </root>

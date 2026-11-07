@@ -30,6 +30,9 @@ namespace MatchBuddy.Api.Services
         /// <summary>Doğrula → işle → depoya yaz → Media (Pending).</summary>
         Task<OperationResult<MediaDto>> UploadAsync(IFormFile? file, MediaKind kind, int? uploaderId, CancellationToken ct = default);
 
+        /// <summary>Bellekteki resim (ör. sosyal girişte indirilen profil fotoğrafı) için aynı hat.</summary>
+        Task<OperationResult<MediaDto>> UploadBytesAsync(byte[] bytes, MediaKind kind, int? uploaderId, CancellationToken ct = default);
+
         /// <summary>Pending + aynı sahip + aynı tür ise atomik olarak Attached yapar; değilse "Fotoğraf bulunamadı.".</summary>
         OperationResult<MediaDto> Attach(int mediaId, MediaKind expectedKind, int ownerId);
 
@@ -111,7 +114,7 @@ namespace MatchBuddy.Api.Services
             return await UploadBytesAsync(bytes, kind, uploaderId, ct);
         }
 
-        private async Task<OperationResult<MediaDto>> UploadBytesAsync(byte[] bytes, MediaKind kind, int? uploaderId, CancellationToken ct)
+        public async Task<OperationResult<MediaDto>> UploadBytesAsync(byte[] bytes, MediaKind kind, int? uploaderId, CancellationToken ct = default)
         {
             ImageProcessor.Result processed;
             try

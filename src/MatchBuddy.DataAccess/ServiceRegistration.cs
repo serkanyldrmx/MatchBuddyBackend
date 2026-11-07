@@ -26,6 +26,8 @@ namespace MatchBuddy.DataAccess
             services.AddScoped<IInviteDal, EFInviteDal>();
             services.AddScoped<ITournamentDal, EFTournamentDal>();
             services.AddScoped<IVenueDal, EFVenueDal>();
+            services.AddScoped<IAuthDal, EFAuthDal>();
+            services.AddScoped<IExternalAccountStore>(sp => sp.GetRequiredService<IAuthDal>());
         }
     }
 }

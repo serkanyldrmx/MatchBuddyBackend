@@ -64,6 +64,58 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.ToTable("Activities", (string)null);
                 });
 
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.AuthCode", b =>
+                {
+                    b.Property<long>("AuthCodeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AuthCodeId"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Channel")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Purpose")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("AuthCodeId");
+
+                    b.HasIndex("PlayerId", "Purpose", "CreatedAt");
+
+                    b.ToTable("AuthCodes", (string)null);
+                });
+
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Block", b =>
                 {
                     b.Property<int>("BlockId")
@@ -145,6 +197,54 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("StadiumId");
 
                     b.ToTable("Campaigns", (string)null);
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.ExternalLogin", b =>
+                {
+                    b.Property<int>("ExternalLoginId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExternalLoginId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("ExternalLoginId");
+
+                    b.HasIndex("PlayerId", "Provider")
+                        .IsUnique();
+
+                    b.HasIndex("Provider", "ProviderKey")
+                        .IsUnique();
+
+                    b.ToTable("ExternalLogins", (string)null);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Follow", b =>
@@ -844,11 +944,23 @@ namespace MatchBuddy.DataAccess.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HasPassword")
+                        .HasColumnType("bit");
+
                     b.Property<byte>("IsAdmin")
                         .HasColumnType("tinyint");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("MarketingConsent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("MarketingConsentAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("MembershipSuspended")
                         .HasColumnType("bit");
@@ -860,6 +972,9 @@ namespace MatchBuddy.DataAccess.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("PhoneConfirmed")
+                        .HasColumnType("bit");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -876,6 +991,9 @@ namespace MatchBuddy.DataAccess.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("PrivacyAcceptedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("ProfileMediaId")
                         .HasColumnType("int");
 
@@ -889,6 +1007,13 @@ namespace MatchBuddy.DataAccess.Migrations
 
                     b.Property<int>("Size")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("TermsAcceptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TermsVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -1074,6 +1199,69 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasIndex("StadiumId");
 
                     b.ToTable("PriceRules", (string)null);
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.RefreshToken", b =>
+                {
+                    b.Property<long>("RefreshTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("RefreshTokenId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Persistent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ReplacedById")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("RefreshTokenId");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("ReplacedById");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("PlayerId", "RevokedAt");
+
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Report", b =>
@@ -1691,6 +1879,15 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.AuthCode", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Block", b =>
                 {
                     b.HasOne("MatchBuddy.Entities.Entity.Player", "Blocked")
@@ -1720,6 +1917,15 @@ namespace MatchBuddy.DataAccess.Migrations
                     b.HasOne("MatchBuddy.Entities.Entity.Stadium", null)
                         .WithMany()
                         .HasForeignKey("StadiumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.ExternalLogin", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -2081,6 +2287,20 @@ namespace MatchBuddy.DataAccess.Migrations
                         .HasForeignKey("StadiumId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MatchBuddy.Entities.Entity.RefreshToken", b =>
+                {
+                    b.HasOne("MatchBuddy.Entities.Entity.Player", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MatchBuddy.Entities.Entity.RefreshToken", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacedById")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("MatchBuddy.Entities.Entity.Report", b =>

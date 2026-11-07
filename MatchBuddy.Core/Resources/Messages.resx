@@ -1545,4 +1545,172 @@
   <data name="VENUE_USERNAME_TAKEN" xml:space="preserve">
     <value>Bu kullanıcı adı zaten kullanılıyor.</value>
   </data>
+  <data name="AUTH_REFRESH_INVALID" xml:space="preserve">
+    <value>Oturumunuz sona erdi. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="AUTH_REFRESH_REUSED" xml:space="preserve">
+    <value>Güvenliğiniz için oturumunuz kapatıldı. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="AUTH_PASSWORD_TOO_WEAK" xml:space="preserve">
+    <value>Şifre en az bir harf ve bir rakam içermelidir.</value>
+  </data>
+  <data name="AUTH_PASSWORD_NOT_SET" xml:space="preserve">
+    <value>Hesabınızın henüz bir şifresi yok. "Şifremi unuttum" ile şifre belirleyebilirsiniz.</value>
+  </data>
+  <data name="AUTH_IDENTIFIER_REQUIRED" xml:space="preserve">
+    <value>Kullanıcı adı, e-posta ya da telefon numarası girin.</value>
+  </data>
+  <data name="AUTH_INVALID_CHANNEL" xml:space="preserve">
+    <value>Gönderim yöntemi e-posta ya da SMS olmalıdır.</value>
+  </data>
+  <data name="AUTH_CODE_REQUIRED" xml:space="preserve">
+    <value>Doğrulama kodunu girin.</value>
+  </data>
+  <data name="AUTH_CODE_INVALID" xml:space="preserve">
+    <value>Kod hatalı ya da süresi dolmuş.</value>
+  </data>
+  <data name="AUTH_CODE_ATTEMPTS_EXCEEDED" xml:space="preserve">
+    <value>Çok fazla hatalı deneme yapıldı. Lütfen yeni bir kod isteyin.</value>
+  </data>
+  <data name="AUTH_CODE_RESEND_COOLDOWN" xml:space="preserve">
+    <value>Yeni kod istemek için {0} saniye bekleyin.</value>
+  </data>
+  <data name="AUTH_EMAIL_MISSING" xml:space="preserve">
+    <value>Hesabınızda kayıtlı bir e-posta adresi yok.</value>
+  </data>
+  <data name="AUTH_EMAIL_ALREADY_CONFIRMED" xml:space="preserve">
+    <value>E-posta adresiniz zaten doğrulanmış.</value>
+  </data>
+  <data name="AUTH_PROVIDER_NOT_CONFIGURED" xml:space="preserve">
+    <value>{0} ile giriş şu anda kullanılamıyor.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNKNOWN" xml:space="preserve">
+    <value>Bilinmeyen giriş sağlayıcısı.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNAVAILABLE" xml:space="preserve">
+    <value>Giriş sağlayıcısına şu anda ulaşılamıyor. Lütfen biraz sonra tekrar deneyin.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_REQUIRED" xml:space="preserve">
+    <value>Sağlayıcıdan giriş bilgisi alınamadı.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_INVALID" xml:space="preserve">
+    <value>Sağlayıcı girişi doğrulanamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_NOT_FOUND" xml:space="preserve">
+    <value>Bu giriş yöntemi hesabınıza bağlı değil.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_LAST_METHOD" xml:space="preserve">
+    <value>Bu, hesabınıza girmenin tek yolu. Kaldırmadan önce bir şifre belirleyin.</value>
+  </data>
+  <data name="AUTH_TERMS_REQUIRED" xml:space="preserve">
+    <value>Devam etmek için kullanım koşullarını ve aydınlatma metnini kabul etmelisiniz.</value>
+  </data>
+  <data name="AUTH_TERMS_VERSION_MISMATCH" xml:space="preserve">
+    <value>Kullanım koşulları güncellendi. Lütfen sayfayı yenileyip güncel metni kabul edin.</value>
+  </data>
+  <data name="LABEL_AUTH_DEFAULT_PLAYER_NAME" xml:space="preserve">
+    <value>Oyuncu</value>
+  </data>
+  <data name="MAIL_GREETING" xml:space="preserve">
+    <value>Merhaba {0},</value>
+  </data>
+  <data name="MAIL_FOOTER" xml:space="preserve">
+    <value>MatchBuddy — halı saha maçını kolayca kur.</value>
+  </data>
+  <data name="MAIL_IGNORE_NOTICE" xml:space="preserve">
+    <value>Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz; hesabınızda bir değişiklik yapılmadı.</value>
+  </data>
+  <data name="MAIL_RESET_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy şifre sıfırlama kodunuz</value>
+  </data>
+  <data name="MAIL_RESET_BODY" xml:space="preserve">
+    <value>Şifrenizi sıfırlamak için aşağıdaki kodu kullanın. Kod {0} dakika geçerlidir.</value>
+  </data>
+  <data name="MAIL_VERIFY_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy e-posta doğrulama</value>
+  </data>
+  <data name="MAIL_VERIFY_BODY" xml:space="preserve">
+    <value>E-posta adresinizi doğrulamak için aşağıdaki kodu uygulamaya girin ya da butona tıklayın. Kod {0} dakika geçerlidir.</value>
+  </data>
+  <data name="MAIL_VERIFY_BUTTON" xml:space="preserve">
+    <value>E-postamı doğrula</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy şifreniz değiştirildi</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_BODY" xml:space="preserve">
+    <value>Hesabınızın şifresi {0} tarihinde değiştirildi ve diğer cihazlardaki oturumlar kapatıldı. Bu değişikliği siz yapmadıysanız hemen "Şifremi unuttum" ile yeni şifre alın.</value>
+  </data>
+  <data name="SMS_RESET_BODY" xml:space="preserve">
+    <value>MatchBuddy şifre sıfırlama kodunuz: {0}. Kod {1} dakika geçerlidir. Kimseyle paylaşmayın.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT" xml:space="preserve">
+    <value>Çıkış yapıldı.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT_ALL" xml:space="preserve">
+    <value>Tüm cihazlardan çıkış yapıldı.</value>
+  </data>
+  <data name="MSG_AUTH_RESET_REQUESTED" xml:space="preserve">
+    <value>Bilgiler bir hesapla eşleşiyorsa doğrulama kodu gönderildi.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_RESET" xml:space="preserve">
+    <value>Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_CHANGED" xml:space="preserve">
+    <value>Şifreniz değiştirildi.</value>
+  </data>
+  <data name="MSG_AUTH_EMAIL_VERIFIED" xml:space="preserve">
+    <value>E-posta adresiniz doğrulandı.</value>
+  </data>
+  <data name="MSG_AUTH_VERIFICATION_SENT" xml:space="preserve">
+    <value>Doğrulama kodu e-posta adresinize gönderildi.</value>
+  </data>
+  <data name="MSG_AUTH_TERMS_ACCEPTED" xml:space="preserve">
+    <value>Teşekkürler, onayınız kaydedildi.</value>
+  </data>
+  <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
+    <value>Giriş yöntemi hesabınızdan kaldırıldı.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_ACCESSTOKENMINUTES" xml:space="preserve">
+    <value>Erişim anahtarının (access token) geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_LEGACYACCESSTOKENMINUTES" xml:space="preserve">
+    <value>Eski giriş uç noktasının (PlayerLogin) verdiği anahtarın süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_REFRESHTOKENDAYS" xml:space="preserve">
+    <value>"Beni hatırla" seçiliyken oturumun açık kalacağı gün sayısı.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_SESSIONREFRESHTOKENHOURS" xml:space="preserve">
+    <value>"Beni hatırla" seçili değilken oturumun en uzun süresi, saat.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_REFRESHREUSEGRACESECONDS" xml:space="preserve">
+    <value>Aynı anda gelen yenileme isteklerine tanınan tolerans, saniye.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODETTLMINUTES" xml:space="preserve">
+    <value>Şifre sıfırlama kodunun geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODEMAXATTEMPTS" xml:space="preserve">
+    <value>Bir kod için izin verilen en fazla hatalı deneme.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODERESENDCOOLDOWNSECONDS" xml:space="preserve">
+    <value>Yeni kod istemek için beklenecek süre, saniye.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_EMAILVERIFICATIONTTLMINUTES" xml:space="preserve">
+    <value>E-posta doğrulama kodunun geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDRESETPERMINUTE" xml:space="preserve">
+    <value>Şifre sıfırlama: IP başına dakikada en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDRESETPERIDENTIFIERPERHOUR" xml:space="preserve">
+    <value>Şifre sıfırlama: hesap başına saatte en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDREQUIRELETTERANDDIGIT" xml:space="preserve">
+    <value>Şifrede en az bir harf ve bir rakam zorunlu olsun mu.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_FACEBOOKEMAILTRUSTED" xml:space="preserve">
+    <value>Facebook'tan gelen e-posta doğrulanmış sayılsın mı (aynı e-postalı hesaba otomatik bağlanır).</value>
+  </data>
+  <data name="PARAMDESC_LEGAL_TERMSVERSION" xml:space="preserve">
+    <value>Güncel kullanım koşulları / aydınlatma metni sürümü. Değişirse kullanıcılardan yeniden onay istenir.</value>
+  </data>
 </root>

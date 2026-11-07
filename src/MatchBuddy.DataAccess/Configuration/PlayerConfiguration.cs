@@ -64,6 +64,10 @@ namespace MatchBuddy.DataAccess.Configuration
             // 0 oyuncu, 1 admin, 2 işletme
             builder.Property(b => b.Role).HasDefaultValue((byte)0);
 
+            // Hesap güvenliği / KVKK (docs/auth-api.md). HasPassword için mevcut satırlar migration'da 1 ile doldurulur;
+            // modelde varsayılan tanımlanmaz ki EF yeni kayıtlarda değeri her zaman göndersin (false da yazılabilsin).
+            builder.Property(b => b.TermsVersion).HasMaxLength(20);
+
         }
     }
 }

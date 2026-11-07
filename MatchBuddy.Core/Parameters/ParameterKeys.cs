@@ -86,5 +86,29 @@ namespace MatchBuddy.Core.Parameters
             public const string PasswordMinLength = "security.passwordMinLength";
             public const string TempPasswordLength = "security.tempPasswordLength";
         }
+
+        /// <summary>Oturum, tek kullanımlık kod ve sosyal giriş ayarları (docs/auth-api.md).</summary>
+        public static class Auth
+        {
+            public const string AccessTokenMinutes = "auth.accessTokenMinutes";
+            public const string LegacyAccessTokenMinutes = "auth.legacyAccessTokenMinutes";
+            public const string RefreshTokenDays = "auth.refreshTokenDays";
+            public const string SessionRefreshTokenHours = "auth.sessionRefreshTokenHours";
+            public const string RefreshReuseGraceSeconds = "auth.refreshReuseGraceSeconds";
+            public const string CodeTtlMinutes = "auth.codeTtlMinutes";
+            public const string CodeMaxAttempts = "auth.codeMaxAttempts";
+            public const string CodeResendCooldownSeconds = "auth.codeResendCooldownSeconds";
+            public const string EmailVerificationTtlMinutes = "auth.emailVerificationTtlMinutes";
+            public const string PasswordResetPerMinute = "auth.passwordResetPerMinute";
+            public const string PasswordResetPerIdentifierPerHour = "auth.passwordResetPerIdentifierPerHour";
+            public const string PasswordRequireLetterAndDigit = "auth.passwordRequireLetterAndDigit";
+            public const string FacebookEmailTrusted = "auth.facebookEmailTrusted";
+        }
+
+        /// <summary>KVKK / kullanım koşulları.</summary>
+        public static class Legal
+        {
+            public const string TermsVersion = "legal.termsVersion";
+        }
     }
 }

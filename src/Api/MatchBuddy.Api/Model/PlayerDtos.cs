@@ -34,6 +34,15 @@ namespace MatchBuddy.Api.Model
         public string? PhoneNumber { get; set; }
         public string? Address { get; set; }
 
+        // Hesap güvenliği / KVKK (docs/auth-api.md)
+        public bool EmailConfirmed { get; set; }
+        public bool PhoneConfirmed { get; set; }
+        /// <summary>false: sosyal girişle açılmış, şifre belirlenmemiş hesap (şifre "Şifremi unuttum" akışıyla belirlenir).</summary>
+        public bool HasPassword { get; set; }
+        public string? TermsVersion { get; set; }
+        public DateTime? TermsAcceptedAt { get; set; }
+        public bool MarketingConsent { get; set; }
+
         public static new PlayerDto From(Player p) => new()
         {
             PlayerId = p.PlayerId,
@@ -50,6 +59,12 @@ namespace MatchBuddy.Api.Model
             Email = p.Email,
             PhoneNumber = p.PhoneNumber,
             Address = p.Address,
+            EmailConfirmed = p.EmailConfirmed,
+            PhoneConfirmed = p.PhoneConfirmed,
+            HasPassword = p.HasPassword,
+            TermsVersion = p.TermsVersion,
+            TermsAcceptedAt = p.TermsAcceptedAt,
+            MarketingConsent = p.MarketingConsent,
         };
     }
 

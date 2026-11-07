@@ -118,14 +118,17 @@ namespace MatchBuddy.Business.Concrete
 
         public OperationResult<bool> DeleteAccount(int me, string? password)
         {
-            if (string.IsNullOrEmpty(password))
-                return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordRequired);
-
             var player = _playerDal.Get(p => p.PlayerId == me);
             if (player == null || player.IsDeleted)
                 return OperationResult<bool>.NotFound(ErrorCodes.Player.NotFound);
-            if (!PasswordHasher.Verify(password, player.Password, out _))
-                return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordWrong);
+            // Sosyal girişle açılmış ve şifre belirlenmemiş hesapta şifre sorulmaz (docs/auth-api.md)
+            if (player.HasPassword)
+            {
+                if (string.IsNullOrEmpty(password))
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordRequired);
+                if (!PasswordHasher.Verify(password, player.Password, out _))
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Auth.PasswordWrong);
+            }
 
             // Eski şifre ile giriş yapılamasın: rastgele bir değerin hash'i
             var randomHash = PasswordHasher.Hash(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));

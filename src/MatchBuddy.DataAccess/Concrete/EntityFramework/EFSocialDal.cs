@@ -624,6 +624,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.PlayerSettings.Where(s => s.PlayerId == playerId).ExecuteDelete();
             context.MatchInvites.Where(i => i.InviterId == playerId || i.InviteeId == playerId).ExecuteDelete();
             context.TeamInvites.Where(i => i.InviterId == playerId || i.InviteeId == playerId).ExecuteDelete();
+            // Oturumlar, sosyal giriş bağlantıları ve tek kullanımlık kodlar (docs/auth-api.md)
+            context.RefreshTokens.Where(t => t.PlayerId == playerId).ExecuteDelete();
+            context.ExternalLogins.Where(l => l.PlayerId == playerId).ExecuteDelete();
+            context.AuthCodes.Where(c => c.PlayerId == playerId).ExecuteDelete();
 
             // Anonimleştirme (geçmiş maç kayıtları korunur)
             player.PlayerName = Msg.GetDefault(MessageKeys.Player.LabelDeletedName);
@@ -637,6 +641,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             player.Password = randomPasswordHash;
             player.IsDeleted = true;
             player.DeletedAt = now;
+            player.EmailConfirmed = false;
+            player.PhoneConfirmed = false;
+            player.MarketingConsent = false;
 
             context.SaveChanges();
             transaction.Commit();

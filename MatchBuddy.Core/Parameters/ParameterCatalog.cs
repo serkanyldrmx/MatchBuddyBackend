@@ -43,6 +43,8 @@ namespace MatchBuddy.Core.Parameters
         public const string GroupTournament = "Tournament";
         public const string GroupOsm = "Osm";
         public const string GroupSecurity = "Security";
+        public const string GroupAuth = "Auth";
+        public const string GroupLegal = "Legal";
 
         private static string S(int v) => v.ToString(CultureInfo.InvariantCulture);
 
@@ -113,7 +115,28 @@ namespace MatchBuddy.Core.Parameters
             // Güvenlik (iş kuralı düzeyi; JWT anahtarı/CORS yapılandırmada kalır)
             Int(ParameterKeys.Security.PasswordMinLength, 6, GroupSecurity, 6, 64, isPublic: true),
             Int(ParameterKeys.Security.TempPasswordLength, 12, GroupSecurity, 8, 64),
+
+            // Kimlik doğrulama (docs/auth-api.md). Gizli anahtarlar (JWT, Google, Facebook, SMTP, Netgsm) yapılandırmada kalır.
+            Int(ParameterKeys.Auth.AccessTokenMinutes, 15, GroupAuth, 1, 1440, isPublic: true),
+            Int(ParameterKeys.Auth.LegacyAccessTokenMinutes, 120, GroupAuth, 5, 1440),
+            Int(ParameterKeys.Auth.RefreshTokenDays, 30, GroupAuth, 1, 365),
+            Int(ParameterKeys.Auth.SessionRefreshTokenHours, 24, GroupAuth, 1, 720),
+            Int(ParameterKeys.Auth.RefreshReuseGraceSeconds, 15, GroupAuth, 0, 120),
+            Int(ParameterKeys.Auth.CodeTtlMinutes, 15, GroupAuth, 1, 1440, isPublic: true),
+            Int(ParameterKeys.Auth.CodeMaxAttempts, 5, GroupAuth, 1, 20),
+            Int(ParameterKeys.Auth.CodeResendCooldownSeconds, 60, GroupAuth, 0, 3600, isPublic: true),
+            Int(ParameterKeys.Auth.EmailVerificationTtlMinutes, 1440, GroupAuth, 5, 10080),
+            Int(ParameterKeys.Auth.PasswordResetPerMinute, 5, GroupAuth, 1, 1000),
+            Int(ParameterKeys.Auth.PasswordResetPerIdentifierPerHour, 5, GroupAuth, 1, 1000),
+            Bool(ParameterKeys.Auth.PasswordRequireLetterAndDigit, false, GroupAuth, isPublic: true),
+            Bool(ParameterKeys.Auth.FacebookEmailTrusted, false, GroupAuth),
+
+            // KVKK: kayıt / sosyal girişte kabul edilmesi gereken kullanım koşulları + aydınlatma metni sürümü
+            new(ParameterKeys.Legal.TermsVersion, ParameterDataType.String, "2026-11-06", GroupLegal, true),
         };
+
+        private static ParameterDefinition Bool(string key, bool def, string group, bool isPublic = false) =>
+            new(key, ParameterDataType.Bool, def ? "true" : "false", group, isPublic);
 
         private static readonly Dictionary<string, ParameterDefinition> ByKey =
             All.ToDictionary(d => d.Key, StringComparer.OrdinalIgnoreCase);

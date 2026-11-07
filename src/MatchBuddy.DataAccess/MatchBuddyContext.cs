@@ -63,6 +63,9 @@ namespace MatchBuddy.DataAccess
         public DbSet<SystemParameter> SystemParameters { get; set; }
         public DbSet<ParameterAudit> ParameterAudits { get; set; }
         public DbSet<VenueSettings> VenueSettings { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<ExternalLogin> ExternalLogins { get; set; }
+        public DbSet<AuthCode> AuthCodes { get; set; }
 
     }
 }
