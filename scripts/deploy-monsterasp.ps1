@@ -21,6 +21,8 @@ param(
   [string]$FtpUser = "",
   [string]$FtpRoot = "/wwwroot",
   [switch]$SkipDatabase,
+  # Hazır .bacpac dosyası (yerel veritabanı bu oturumda başlatılamıyorsa önceden dışa aktarılmış dosya)
+  [string]$BacpacPath = "",
   [switch]$SkipUpload
 )
 
@@ -102,9 +104,14 @@ foreach ($item in @("media", "vapid.json")) {
 # ------------------------------------------------------------------ Veritabanı
 if (-not $SkipDatabase) {
   Step "Veritabanı taşınıyor (yerel demo verileri -> sunucu)"
-  $bacpac = Join-Path $work "MatchBuddy.bacpac"
-  & sqlpackage /Action:Export "/SourceConnectionString:Server=(localdb)\mssqllocaldb;Database=MatchBuddy;Trusted_Connection=True;TrustServerCertificate=True" "/TargetFile:$bacpac" /Quiet:True
-  if ($LASTEXITCODE -ne 0) { throw "Yerel veritabanı dışa aktarılamadı." }
+  if ($BacpacPath) {
+    if (-not (Test-Path $BacpacPath)) { throw "Bacpac dosyası bulunamadı: $BacpacPath" }
+    $bacpac = $BacpacPath
+  } else {
+    $bacpac = Join-Path $work "MatchBuddy.bacpac"
+    & sqlpackage /Action:Export "/SourceConnectionString:Server=(localdb)\mssqllocaldb;Database=MatchBuddy;Trusted_Connection=True;TrustServerCertificate=True" "/TargetFile:$bacpac" /Quiet:True
+    if ($LASTEXITCODE -ne 0) { throw "Yerel veritabanı dışa aktarılamadı. Hazır bir dosya varsa -BacpacPath ile ver." }
+  }
   & sqlpackage /Action:Import "/SourceFile:$bacpac" "/TargetConnectionString:$conn" /Quiet:True
   if ($LASTEXITCODE -ne 0) {
     throw "Veritabanı içe aktarılamadı. Sunucudaki veritabanı boş olmalı (ilk kurulum). Sonraki yüklemelerde -SkipDatabase kullan."
