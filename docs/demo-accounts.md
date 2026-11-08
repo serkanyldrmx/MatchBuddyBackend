@@ -29,8 +29,17 @@ Demo takımlar:
 - 12 gelecek maç: bir kısmı onay bekliyor, bir kısmı onaylı; 2 takım maçı (Kartallar - Moda Spor, Yıldızlar - Kartallar), 1 "rakip aranıyor" (Moda Spor).
 - 6 geçmiş maç: skor, gol/asist, MVP oyları, oyuncu puanları, tesis yorumları ve bazı işletme yanıtları.
 
-## Admin
-Seed, geçici `seed_admin` hesabı kullanır ve sonunda siler. Mevcut admin hesabına dokunulmaz.
+## Admin (Role = 1)
+- `demo_admin` — şifre: `Admin!2026` (sunum ve test için; yönetim paneli `/adminPanel`).
+- Seed, geçici `seed_admin` hesabı kullanır ve sonunda siler. Mevcut admin hesabına dokunulmaz.
+
+## Giriş adresleri
+- Oyuncu: giriş yaptıktan sonra `/home`.
+- İşletme: giriş yaptıktan sonra panel kendiliğinden açılır (`/venue`).
+- Yönetim: `/adminPanel`.
+
+Not: Aynı adresten kısa sürede çok fazla giriş denemesi yapılırsa sunucu bir süre `COMMON_RATE_LIMITED` döner;
+bu bir şifre hatası değildir, birkaç dakika sonra tekrar denenir.
 
 ## Finans demosu (harici rezervasyon + giderler) — docs/venues-api.md "Ek paket"
 `seed_demo.py` sonunda her demo tesise eklenir; sadece bu kısmı yeniden yüklemek için:
@@ -55,7 +64,7 @@ silinip aynı kurallarla, tesis adına göre sabit rastgelelikle yeniden eklenir
 | Bornova Futbol Merkezi | 10 | 21 |
 
 Not: Bu yükleme sırasında `isletme_besiktasarena` hesabının şifresi `Isletme!2026` değildi (sonradan değiştirilmiş);
-şifreye dokunulmadı. `--finance-only` bu durumda fiyatı oyuncu `Venues/Quote` ile (aynı fiyat mantığı) hesaplar ve satırları
+şifreye o sırada dokunulmadı; 2026-11-08 tarihinde tekrar `Isletme!2026` yapıldı. `--finance-only` bu durumda fiyatı oyuncu `Venues/Quote` ile (aynı fiyat mantığı) hesaplar ve satırları
 aynı çakışma kuralıyla SQL üzerinden ekler.
 
 ## Takım maçları (yeni kadro kuralı)
