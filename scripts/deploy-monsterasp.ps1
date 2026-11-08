@@ -45,7 +45,16 @@ $conn = Plain (Read-Host "Veritabanı bağlantı dizesi (Databases > bağlantı 
 if ([string]::IsNullOrWhiteSpace($conn)) { throw "Bağlantı dizesi boş olamaz." }
 if ($conn -notmatch "TrustServerCertificate") { $conn = $conn.TrimEnd(';') + ";TrustServerCertificate=True" }
 if (-not $SkipUpload) {
-  if (-not $FtpHost) { $FtpHost = Read-Host "FTP sunucusu (ör. site12345.siteasp.net)" }
+  Write-Host "FTP bilgileri VERİTABANI sayfasında değil, WEB SİTESİ (matchbuddy.runasp.net) sayfasındaki FTP / Deploy bölümünde." -ForegroundColor Yellow
+  while ($true) {
+    if (-not $FtpHost) { $FtpHost = Read-Host "FTP sunucusu (ör. site12345.siteasp.net)" }
+    $FtpHost = $FtpHost.Trim() -replace '^(ftps?|https?)://', '' -replace '[:/].*$', ''
+    if ($FtpHost -match 'databaseasp\.net$') {
+      Write-Host "Bu veritabanı sunucusu, FTP sunucusu değil. Web sitesinin FTP bilgisindeki adresi gir." -ForegroundColor Red
+      $FtpHost = ""; continue
+    }
+    break
+  }
   if (-not $FtpUser) { $FtpUser = Read-Host "FTP kullanıcı adı" }
   $ftpPass = Plain (Read-Host "FTP şifresi" -AsSecureString)
 }
@@ -73,7 +82,7 @@ try {
 # ------------------------------------------------------------------ Derleme
 Step "API derleniyor"
 if (Test-Path $work) { Remove-Item -Recurse -Force $work }
-& dotnet publish $api -c Release -o $out --nologo -v q
+& dotnet publish $api -c Release -o $out --nologo -v q -clp:ErrorsOnly
 if ($LASTEXITCODE -ne 0) { throw "Derleme başarısız." }
 
 $prod = [ordered]@{
