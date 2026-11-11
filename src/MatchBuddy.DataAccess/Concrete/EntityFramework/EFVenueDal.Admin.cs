@@ -218,7 +218,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         public List<VenueGeoRefDto> GeoRefs()
         {
             using var context = new MatchBuddyContext();
+            // Harici (oyuncu eklediği) sahalar OSM eşleştirmesine karışmaz
             return context.Stadiums.AsNoTracking()
+                .Where(s => !s.IsExternal)
                 .Select(s => new VenueGeoRefDto { StadiumId = s.StadiumId, OsmId = s.OsmId, Location = s.Location })
                 .ToList();
         }

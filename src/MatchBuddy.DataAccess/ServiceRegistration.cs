@@ -1,4 +1,4 @@
-using MatchBuddy.DataAccess.Concrete.EntityFramework;
+﻿using MatchBuddy.DataAccess.Concrete.EntityFramework;
 using MatchBuddy.DataAccess.Abstract;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +27,7 @@ namespace MatchBuddy.DataAccess
             services.AddScoped<IInviteDal, EFInviteDal>();
             services.AddScoped<ITournamentDal, EFTournamentDal>();
             services.AddScoped<IVenueDal, EFVenueDal>();
+            services.AddScoped<IChatDal, EFChatDal>();
             services.AddScoped<IAuthDal, EFAuthDal>();
             services.AddScoped<IExternalAccountStore>(sp => sp.GetRequiredService<IAuthDal>());
         }

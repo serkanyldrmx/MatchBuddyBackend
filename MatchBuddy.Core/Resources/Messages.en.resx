@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -447,5 +447,125 @@
   </data>
   <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
     <value>How many days ahead the next week of a weekly match is created.</value>
+  </data>
+  <data name="GROUP_NOT_MEMBER" xml:space="preserve">
+    <value>You are not a member of this group.</value>
+  </data>
+  <data name="GROUP_CREATOR_ONLY" xml:space="preserve">
+    <value>Only the group creator can do this.</value>
+  </data>
+  <data name="GROUP_NO_PLAYERS" xml:space="preserve">
+    <value>Select players to add.</value>
+  </data>
+  <data name="MESSAGE_TOO_LONG" xml:space="preserve">
+    <value>Messages can be at most {0} characters.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NAME_REQUIRED" xml:space="preserve">
+    <value>Venue name must be {0}-{1} characters.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NOT_FOUND" xml:space="preserve">
+    <value>The selected venue was not found.</value>
+  </data>
+  <data name="EXTERNAL_DATE_REQUIRED" xml:space="preserve">
+    <value>Choose a match date and time.</value>
+  </data>
+  <data name="EXTERNAL_PAST_DATE" xml:space="preserve">
+    <value>A match cannot be created in the past.</value>
+  </data>
+  <data name="EXTERNAL_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>A match can be created at most {0} days ahead.</value>
+  </data>
+  <data name="EXTERNAL_INVALID_PRICE" xml:space="preserve">
+    <value>Pitch fee must be between 0 and {0}.</value>
+  </data>
+  <data name="EXTERNAL_NOT_EXTERNAL_MATCH" xml:space="preserve">
+    <value>This match is at a partner venue; make a new booking to change the time.</value>
+  </data>
+  <data name="EXTERNAL_MATCH_CLOSED" xml:space="preserve">
+    <value>A played or cancelled match cannot be edited.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_CREATED" xml:space="preserve">
+    <value>Match created. You booked the pitch yourself, so no approval is needed.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>Match details updated.</value>
+  </data>
+  <data name="NOTIF_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>"{0}" was updated: {1:dd.MM.yyyy HH:mm}, {2}.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBERS_ADDED" xml:space="preserve">
+    <value>{0} player(s) added to the group.</value>
+  </data>
+  <data name="MSG_GROUP_LEFT" xml:space="preserve">
+    <value>You left the group.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBER_REMOVED" xml:space="preserve">
+    <value>Member removed from the group.</value>
+  </data>
+  <data name="MSG_GROUP_RENAMED" xml:space="preserve">
+    <value>Group name updated.</value>
+  </data>
+  <data name="MESSAGE_NOT_FOUND" xml:space="preserve">
+    <value>Message not found.</value>
+  </data>
+  <data name="MESSAGE_NOT_YOURS" xml:space="preserve">
+    <value>You can only delete your own messages.</value>
+  </data>
+  <data name="MESSAGE_REPLY_INVALID" xml:space="preserve">
+    <value>The replied message is not in this conversation.</value>
+  </data>
+  <data name="MESSAGE_INVALID_REACTION" xml:space="preserve">
+    <value>This reaction cannot be used.</value>
+  </data>
+  <data name="MESSAGE_ALREADY_DELETED" xml:space="preserve">
+    <value>This message is already deleted.</value>
+  </data>
+  <data name="SHARE_NOT_FOUND" xml:space="preserve">
+    <value>The invite link is invalid or the match was deleted.</value>
+  </data>
+  <data name="EXTERNAL_LINK_NO_VENUES" xml:space="preserve">
+    <value>Select external venues to link.</value>
+  </data>
+  <data name="EXTERNAL_LINK_TARGET_INVALID" xml:space="preserve">
+    <value>Target venue not found or it is an external venue.</value>
+  </data>
+  <data name="LABEL_MESSAGE_DELETED" xml:space="preserve">
+    <value>🚫 This message was deleted</value>
+  </data>
+  <data name="MSG_MESSAGE_DELETED" xml:space="preserve">
+    <value>Message deleted.</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dddd, MMMM dd, HH:mm}
+📍 {2}
+🔥 {3} players needed, join us!
+
+👉 {4}</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT_FULL" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dddd, MMMM dd, HH:mm}
+📍 {2}
+
+👉 {3}</value>
+  </data>
+  <data name="SHARE_OG_TITLE" xml:space="preserve">
+    <value>⚽ {0} · {1} players needed</value>
+  </data>
+  <data name="SHARE_OG_TITLE_FULL" xml:space="preserve">
+    <value>⚽ {0}</value>
+  </data>
+  <data name="SHARE_OG_DESCRIPTION" xml:space="preserve">
+    <value>📅 {0:dddd, MMMM dd, HH:mm} · 📍 {1}</value>
+  </data>
+  <data name="SHARE_OG_PER_PLAYER" xml:space="preserve">
+    <value>{0:0.##} TRY per player</value>
+  </data>
+  <data name="SHARE_NOT_FOUND_TITLE" xml:space="preserve">
+    <value>MatchBuddy · Match not found</value>
+  </data>
+  <data name="MSG_EXTERNAL_LINKED" xml:space="preserve">
+    <value>{0} venue(s) linked, {1} match(es) moved.</value>
   </data>
 </root>

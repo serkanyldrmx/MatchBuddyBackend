@@ -225,6 +225,60 @@ namespace MatchBuddy.Entities.DTOs
         public bool RepeatWeekly { get; set; }
     }
 
+    /// <summary>
+    /// Harici (anlaşmasız) sahada maç: oyuncu sahayı telefonla kendisi ayarlar, işletme onayı yoktur
+    /// (docs/external-venues-api.md). Saha ya önceki bir harici saham (ExternalVenueId) ya da yeni (VenueName...).
+    /// </summary>
+    public class ExternalMatchInput
+    {
+        public string? MatchName { get; set; }
+        public string? Description { get; set; }
+        public int UserCount { get; set; }
+        public DateTime? MatchDate { get; set; }
+        public int? DurationMinutes { get; set; }
+        public int? ExternalVenueId { get; set; }
+        public string? VenueName { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        /// <summary>"lat, lon" (isteğe bağlı)</summary>
+        public string? Location { get; set; }
+        /// <summary>Sahaya ödenecek toplam ücret (isteğe bağlı; kişi başı payı hesaplamak için)</summary>
+        public decimal? TotalPrice { get; set; }
+        public int? HomeTeamId { get; set; }
+        public int? AwayTeamId { get; set; }
+        public bool LookingForOpponent { get; set; }
+        public int? MinReliability { get; set; }
+    }
+
+    /// <summary>Oyuncunun daha önce eklediği harici saha (tekrar seçebilsin diye).</summary>
+    public class ExternalVenueDto
+    {
+        public int StadiumId { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
+        public int MatchCount { get; set; }
+        public DateTime? LastMatchDate { get; set; }
+    }
+
+    /// <summary>Harici sahadaki maçın tarih / süre / ücret düzenlemesi (kurucu; işletme onayı olmadığı için serbest).</summary>
+    public class UpdateExternalMatchInput
+    {
+        public int MatchId { get; set; }
+        public DateTime? MatchDate { get; set; }
+        public int? DurationMinutes { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public string? VenueName { get; set; }
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
+    }
+
     public class MatchVenueDto
     {
         public int StadiumId { get; set; }
@@ -235,6 +289,13 @@ namespace MatchBuddy.Entities.DTOs
         public byte Surface { get; set; }
         public string? CoverPhotoUrl { get; set; }
         public string? CancellationPolicy { get; set; }
+        // Harici (anlaşmasız) saha: tesis sayfası yok; adres / telefon / konum burada
+        public bool IsExternal { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
     }
 
     public class MyReviewDto

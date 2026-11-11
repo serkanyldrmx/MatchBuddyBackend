@@ -16,16 +16,20 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 var result = from p in context.GroupMessages
                              join pl in context.Players on p.SendPlayerId equals pl.PlayerId
                              where p.GroupId == groupId
+                             orderby p.SendingDate, p.GroupMessageId
                              select new GroupMessageModelDto
                              {
+                                 GroupMessageId = p.GroupMessageId,
                                  GroupId = p.GroupId,
                                  MatchMessage = p.MatchMessage,
                                  SendingDate = p.SendingDate,
                                  SendPlayerId = p.SendPlayerId,
                                  Status = p.Status,
                                  ImageUrl = p.ImageUrl,
-                                 UserName = pl.UserName  // Player tablosundan UserName alınıyor
-                                                         // Diğer alanları buraya ekleyin
+                                 UserName = pl.UserName,
+                                 PlayerName = pl.PlayerName,
+                                 PlayerSurname = pl.PlayerSurname,
+                                 ProfilePictureUrl = pl.IsDeleted ? null : pl.ProfilePictureUrl
                              };
                 return result.ToList();
             }

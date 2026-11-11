@@ -1,4 +1,4 @@
-using MatchBuddy.Entities.DTOs;
+﻿using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
 
@@ -266,6 +266,25 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                         Surface = pitch.Surface,
                         CoverPhotoUrl = Covers.TryGetValue(stadium.StadiumId, out var c) ? c : null,
                         CancellationPolicy = stadium.CancellationPolicy,
+                        Address = stadium.Address,
+                        City = stadium.City,
+                        District = stadium.District,
+                        Location = stadium.Location,
+                    };
+                }
+                else if (matchStadium is { IsExternal: true })
+                {
+                    // Harici saha: tesis sayfası yok, oyuncu telefonla ayarladı (docs/external-venues-api.md)
+                    dto.Venue = new MatchVenueDto
+                    {
+                        StadiumId = matchStadium.StadiumId,
+                        Name = matchStadium.StadiumName,
+                        IsExternal = true,
+                        Address = matchStadium.Address,
+                        City = matchStadium.City,
+                        District = matchStadium.District,
+                        Phone = matchStadium.Phone,
+                        Location = matchStadium.Location,
                     };
                 }
             }

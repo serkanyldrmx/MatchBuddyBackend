@@ -31,6 +31,14 @@ namespace MatchBuddy.Entities.Entity
         public bool ProvidesBall { get; set; }
         public string? CancellationPolicy { get; set; }
         public long? OsmId { get; set; }
+
+        // Harici (anlaşmasız) saha: oyuncunun telefonla rezerve ettiği, sistemde üyesi olmayan bir yer.
+        // Oyunculara tesis olarak listelenmez, işletmesi / sahası / fiyat kuralı yoktur (docs/external-venues-api.md).
+        public bool IsExternal { get; set; }
+        // Harici sahayı ilk kez ekleyen oyuncu (sonraki maçlarda tekrar seçebilsin diye)
+        public int? CreatedByPlayerId { get; set; }
+        // Admin bu harici sahayı sistemdeki bir tesise bağladıysa o tesis (satış listesinden düşer; maçları taşınır)
+        public int? LinkedStadiumId { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<Match> Matches { get; set; }
     }

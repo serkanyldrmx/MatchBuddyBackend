@@ -1,4 +1,4 @@
-namespace MatchBuddy.Core.Errors
+﻿namespace MatchBuddy.Core.Errors
 {
     public static partial class ErrorCodes
     {
@@ -36,6 +36,7 @@ namespace MatchBuddy.Core.Errors
             public const string NotAllowed = "MESSAGE_NOT_ALLOWED";
             public const string Blocked = "MESSAGE_BLOCKED";
             public const string Empty = "MESSAGE_EMPTY";
+            public const string TooLong = "MESSAGE_TOO_LONG";                       // {0} en fazla
         }
 
         public static partial class Invite

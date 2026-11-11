@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
@@ -470,6 +470,65 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             return (going, waitlisted);
         }
 
+        /// <summary>
+        /// Maç kurarken takım kuralları: ev sahibi takımın üyesi olmalıyım, rakip farklı olmalı, "rakip aranıyor" ile
+        /// rakip takım birlikte seçilemez. Hata yoksa null döner.
+        /// </summary>
+        private static OperationResult<int>? LoadTeams(MatchBuddyContext context, int creatorId, int? homeTeamId, int? awayTeamId,
+            bool lookingForOpponent, out Team? home, out Team? away)
+        {
+            home = null;
+            away = null;
+            if (homeTeamId.HasValue)
+            {
+                home = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == homeTeamId.Value);
+                if (home == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.HomeTeamNotFound);
+                var homeId = home.TeamId;
+                if (!context.PlayerTeam.Any(pt => pt.TeamId == homeId && pt.PlayerId == creatorId))
+                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.NotHomeTeamMember);
+            }
+            if (awayTeamId.HasValue)
+            {
+                if (awayTeamId == homeTeamId)
+                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.SameTeams);
+                away = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == awayTeamId.Value);
+                if (away == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.AwayTeamNotFound);
+            }
+            if (lookingForOpponent && awayTeamId.HasValue)
+                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.OpponentFlagConflict);
+            return null;
+        }
+
+        /// <summary>
+        /// Yeni maç kaydedildikten sonra: kurucu Going (ev sahibi, onaylı), "maç kurdu" aktivitesi, seçilen takımlar
+        /// MatchTeam'e ve üyeleri doğrudan kadroya (ev sahibi Side 1, rakip Side 2). SaveChanges çağırmaz.
+        /// </summary>
+        private static void AddCreatorAndTeams(MatchBuddyContext context, Match match, Player creator, Team? home, Team? away)
+        {
+            var creatorId = creator.PlayerId;
+            context.MatchParticipants.Add(new MatchParticipant
+            {
+                MatchId = match.MatchId,
+                PlayerId = creatorId,
+                Status = ParticipantStatus.Going,
+                Side = ParticipantSide.Home,
+                Confirmed = true,
+                JoinedAt = DateTime.Now,
+            });
+            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
+
+            if (home != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
+                AddTeamToSquad(context, match, creatorId, creator, home.TeamId, ParticipantSide.Home);
+            }
+            if (away != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
+                AddTeamToSquad(context, match, creatorId, creator, away.TeamId, ParticipantSide.Away);
+            }
+        }
+
         public OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input)
         {
             if (input.PitchId is not > 0 || input.MatchDate == null)
@@ -502,23 +561,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (extrasError != null) return OperationResult<int>.BadRequest(extrasError);
 
             // Takım kuralları
-            Team? home = null, away = null;
-            if (input.HomeTeamId.HasValue)
-            {
-                home = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.HomeTeamId.Value);
-                if (home == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.HomeTeamNotFound);
-                if (!context.PlayerTeam.Any(pt => pt.TeamId == home.TeamId && pt.PlayerId == creatorId))
-                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.NotHomeTeamMember);
-            }
-            if (input.AwayTeamId.HasValue)
-            {
-                if (input.AwayTeamId == input.HomeTeamId)
-                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.SameTeams);
-                away = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.AwayTeamId.Value);
-                if (away == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.AwayTeamNotFound);
-            }
-            if (input.LookingForOpponent && input.AwayTeamId.HasValue)
-                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.OpponentFlagConflict);
+            var teamError = LoadTeams(context, creatorId, input.HomeTeamId, input.AwayTeamId, input.LookingForOpponent, out var home, out var away);
+            if (teamError != null) return teamError;
 
             var start = input.MatchDate.Value;
             var pricing = VenueRules.LoadPricing(context, stadium);
@@ -553,28 +597,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.SaveChanges();
             if (input.RepeatWeekly) MatchSeriesService.Start(context, match);
 
-            context.MatchParticipants.Add(new MatchParticipant
-            {
-                MatchId = match.MatchId,
-                PlayerId = creatorId,
-                Status = ParticipantStatus.Going,
-                Side = ParticipantSide.Home,
-                Confirmed = true,
-                JoinedAt = DateTime.Now,
-            });
-            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
-
-            // Takımlar: MatchTeam (eski ekranlar için) + üyeler doğrudan kadroya (ev sahibi Side 1, rakip Side 2)
-            if (home != null)
-            {
-                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
-                AddTeamToSquad(context, match, creatorId, creator, home.TeamId, ParticipantSide.Home);
-            }
-            if (away != null)
-            {
-                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
-                AddTeamToSquad(context, match, creatorId, creator, away.TeamId, ParticipantSide.Away);
-            }
+            AddCreatorAndTeams(context, match, creator, home, away);
 
             // İşletmeye rezervasyon talebi
             if (stadium.OwnerPlayerId.HasValue)

@@ -1,4 +1,4 @@
-using MatchBuddy.Core.Entities;
+﻿using MatchBuddy.Core.Entities;
 
 namespace MatchBuddy.Entities.Entity
 {
@@ -42,6 +42,8 @@ namespace MatchBuddy.Entities.Entity
         public int? SeriesId { get; set; }
         // Oluşturulma zamanı (DB varsayılanı GETDATE())
         public DateTime CreatedAt { get; set; }
+        // Paylaşılabilir davet linki kodu (/m/{kod}); ilk paylaşımda oluşur (docs/engagement-api.md)
+        public string? ShareCode { get; set; }
         public List<MatchTeam> MatchTeams { get; set; }
         public List<MatchComment> MatchComments { get; set; }
     }

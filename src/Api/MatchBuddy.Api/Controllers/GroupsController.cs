@@ -1,6 +1,7 @@
 ﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
+using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +15,11 @@ namespace MatchBuddy.Api.Controllers
     {
         private readonly IGroupService _groupService;
         private readonly IGroupPlayerService _groupPlayerService;
+        private readonly IChatService _chatService;
 
-        public GroupsController(IGroupService groupService, IGroupPlayerService groupPlayerService)
+        public GroupsController(IGroupService groupService, IGroupPlayerService groupPlayerService, IChatService chatService)
         {
+            _chatService = chatService;
             _groupService = groupService;
             _groupPlayerService = groupPlayerService;
         }
@@ -44,41 +47,49 @@ namespace MatchBuddy.Api.Controllers
             return _groupService.GetGroupInfo(groupId).Data;
         }
 
+        /// <summary>Grup sohbetlerim: üyeler (fotoğraflarıyla), son mesaj ve okunmamış sayısı; son mesaja göre sıralı.</summary>
+        [HttpGet("MyGroups")]
+        public ActionResult<List<GroupSummaryDto>> MyGroups() => _chatService.MyGroups(User.GetPlayerId(), User.IsAdmin());
+
+        // Grubu kuran kişi her zaman üyedir; engelli / işletme / silinmiş oyuncular eklenmez
         [HttpPost("SaveGroup")]
         public IActionResult SaveGroup(GroupModel groupModel)
         {
-            var group = new Group()
-            {
-                GroupName = groupModel.GroupName,
-            };
-
-            var result = _groupService.Add(group);
-            if (!result.Success)
-            {
-                return this.ToHttp(result);
-            }
-
-            // Grubu oluşturan kişi de her zaman grubun üyesidir
-            var playerIds = (groupModel.PlayerList ?? new List<int>())
-                .Append(User.GetPlayerId())
-                .Distinct();
-
-            foreach (var playerId in playerIds)
-            {
-                var result1 = _groupPlayerService.Add(new GroupPlayer
-                {
-                    PlayerId = playerId,
-                    GroupId = group.GroupId
-                });
-
-                if (!result1.Success)
-                {
-                    return this.ToHttp(result1);
-                }
-            }
-
-            return Ok(result);
+            var result = _chatService.CreateGroup(User.GetPlayerId(), groupModel.GroupName, groupModel.PlayerList);
+            return this.ToHttp(result, result.Success ? new { Success = true, GroupId = result.Data } : null);
         }
+
+        /// <summary>Gruba üye ekle (her üye ekleyebilir).</summary>
+        [HttpPost("AddMembers")]
+        public IActionResult AddMembers(GroupMembersModel model, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
+        {
+            var result = _chatService.AddMembers(User.GetPlayerId(), model.GroupId, model.PlayerList);
+            if (result.Success) _ = realtime.GroupChangedAsync(model.GroupId, Enumerable.Empty<int>());
+            return this.ToHttp(result);
+        }
+
+        /// <summary>Gruptan çıkar (yalnızca kurucu ya da admin).</summary>
+        [HttpPost("RemoveMember")]
+        public IActionResult RemoveMember(GroupMembersModel model, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
+        {
+            var result = _chatService.RemoveMember(User.GetPlayerId(), model.GroupId, model.PlayerId, User.IsAdmin());
+            if (result.Success) _ = realtime.GroupChangedAsync(model.GroupId, new[] { model.PlayerId });
+            return this.ToHttp(result);
+        }
+
+        /// <summary>Gruptan ayrıl. Son üye ayrılırsa grup silinir.</summary>
+        [HttpPost("Leave")]
+        public IActionResult Leave(GroupMembersModel model, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
+        {
+            var result = _chatService.RemoveMember(User.GetPlayerId(), model.GroupId, User.GetPlayerId(), User.IsAdmin());
+            if (result.Success) _ = realtime.GroupChangedAsync(model.GroupId, Enumerable.Empty<int>());
+            return this.ToHttp(result);
+        }
+
+        /// <summary>Grup sohbetini okundu yap (açıldığında / yeni mesaj geldiğinde).</summary>
+        [HttpPost("MarkRead")]
+        public IActionResult MarkRead(GroupMembersModel model) =>
+            this.ToHttp(_chatService.MarkGroupRead(User.GetPlayerId(), model.GroupId));
 
         [HttpPost("UpdateGroup")]
         public IActionResult UpdateGroup(GroupModel groupModel)

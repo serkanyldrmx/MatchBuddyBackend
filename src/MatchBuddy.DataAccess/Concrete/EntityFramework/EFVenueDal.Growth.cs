@@ -1,4 +1,4 @@
-using MatchBuddy.Core.Utilities.Results;
+﻿using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var since = DateTime.Now.AddDays(-P.Int(ParameterKeys.Venue.DealAudienceDays));
             var max = P.Int(ParameterKeys.Venue.DealMaxRecipients);
             var nearby = context.Stadiums.AsNoTracking()
-                .Where(s => s.StadiumId != stadium.StadiumId && s.City == stadium.City
+                .Where(s => s.StadiumId != stadium.StadiumId && !s.IsExternal && s.City == stadium.City
                             && (stadium.District == null || s.District == stadium.District))
                 .Select(s => s.StadiumId);
 

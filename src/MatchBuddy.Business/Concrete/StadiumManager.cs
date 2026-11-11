@@ -35,7 +35,7 @@ namespace MatchBuddy.Business.Concrete
 
         public IDataResult<List<Stadium>> GetAll()
         {
-            return new SuccessDataResult<List<Stadium>>(_stadiumDal.GetAll(), Messages.PlayersListed);
+            return new SuccessDataResult<List<Stadium>>(_stadiumDal.GetAll(s => !s.IsExternal), Messages.PlayersListed);
         }
     }
 }

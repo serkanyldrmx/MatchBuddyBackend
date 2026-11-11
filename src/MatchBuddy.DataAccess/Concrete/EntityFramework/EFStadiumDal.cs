@@ -13,6 +13,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 // LINQ sorgusu ile istenen yapıyı oluşturuyoruz.
                 var result = from s in context.Stadiums
+                             where !s.IsExternal
                              select new GetStadiumMatchModel
                              {
                                  StadiumId = s.StadiumId,

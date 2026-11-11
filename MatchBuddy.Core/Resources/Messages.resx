@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -1904,5 +1904,125 @@
   </data>
   <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
     <value>Haftalık sabit maçta bir sonraki haftanın kaç gün önceden oluşturulacağı.</value>
+  </data>
+  <data name="GROUP_NOT_MEMBER" xml:space="preserve">
+    <value>Bu grubun üyesi değilsiniz.</value>
+  </data>
+  <data name="GROUP_CREATOR_ONLY" xml:space="preserve">
+    <value>Bu işlemi yalnızca grubu kuran kişi yapabilir.</value>
+  </data>
+  <data name="GROUP_NO_PLAYERS" xml:space="preserve">
+    <value>Eklenecek oyuncu seçin.</value>
+  </data>
+  <data name="MESSAGE_TOO_LONG" xml:space="preserve">
+    <value>Mesaj en fazla {0} karakter olabilir.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NAME_REQUIRED" xml:space="preserve">
+    <value>Saha adı {0}-{1} karakter olmalı.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NOT_FOUND" xml:space="preserve">
+    <value>Seçilen saha bulunamadı.</value>
+  </data>
+  <data name="EXTERNAL_DATE_REQUIRED" xml:space="preserve">
+    <value>Maç tarihi ve saati seçin.</value>
+  </data>
+  <data name="EXTERNAL_PAST_DATE" xml:space="preserve">
+    <value>Geçmiş bir saate maç kurulamaz.</value>
+  </data>
+  <data name="EXTERNAL_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>Maç en fazla {0} gün sonrasına kurulabilir.</value>
+  </data>
+  <data name="EXTERNAL_INVALID_PRICE" xml:space="preserve">
+    <value>Saha ücreti 0 ile {0} arasında olmalı.</value>
+  </data>
+  <data name="EXTERNAL_NOT_EXTERNAL_MATCH" xml:space="preserve">
+    <value>Bu maç anlaşmalı bir tesiste; saat değişikliği için yeni rezervasyon yapın.</value>
+  </data>
+  <data name="EXTERNAL_MATCH_CLOSED" xml:space="preserve">
+    <value>Oynanmış ya da iptal edilmiş maç düzenlenemez.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_CREATED" xml:space="preserve">
+    <value>Maç oluşturuldu. Saha rezervasyonunu sen yaptığın için onay beklemez.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>Maç bilgileri güncellendi.</value>
+  </data>
+  <data name="NOTIF_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>"{0}" maçının bilgileri değişti: {1:dd.MM.yyyy HH:mm}, {2}.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBERS_ADDED" xml:space="preserve">
+    <value>{0} kişi gruba eklendi.</value>
+  </data>
+  <data name="MSG_GROUP_LEFT" xml:space="preserve">
+    <value>Gruptan ayrıldın.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBER_REMOVED" xml:space="preserve">
+    <value>Üye gruptan çıkarıldı.</value>
+  </data>
+  <data name="MSG_GROUP_RENAMED" xml:space="preserve">
+    <value>Grup adı güncellendi.</value>
+  </data>
+  <data name="MESSAGE_NOT_FOUND" xml:space="preserve">
+    <value>Mesaj bulunamadı.</value>
+  </data>
+  <data name="MESSAGE_NOT_YOURS" xml:space="preserve">
+    <value>Yalnızca kendi mesajını silebilirsin.</value>
+  </data>
+  <data name="MESSAGE_REPLY_INVALID" xml:space="preserve">
+    <value>Yanıtlanan mesaj bu konuşmada değil.</value>
+  </data>
+  <data name="MESSAGE_INVALID_REACTION" xml:space="preserve">
+    <value>Bu tepki kullanılamaz.</value>
+  </data>
+  <data name="MESSAGE_ALREADY_DELETED" xml:space="preserve">
+    <value>Bu mesaj zaten silinmiş.</value>
+  </data>
+  <data name="SHARE_NOT_FOUND" xml:space="preserve">
+    <value>Davet linki geçersiz ya da maç silinmiş.</value>
+  </data>
+  <data name="EXTERNAL_LINK_NO_VENUES" xml:space="preserve">
+    <value>Bağlanacak harici saha seçin.</value>
+  </data>
+  <data name="EXTERNAL_LINK_TARGET_INVALID" xml:space="preserve">
+    <value>Hedef tesis bulunamadı ya da harici bir saha.</value>
+  </data>
+  <data name="LABEL_MESSAGE_DELETED" xml:space="preserve">
+    <value>🚫 Bu mesaj silindi</value>
+  </data>
+  <data name="MSG_MESSAGE_DELETED" xml:space="preserve">
+    <value>Mesaj silindi.</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dd MMMM dddd, HH:mm}
+📍 {2}
+🔥 {3} kişi eksik, gel!
+
+👉 {4}</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT_FULL" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dd MMMM dddd, HH:mm}
+📍 {2}
+
+👉 {3}</value>
+  </data>
+  <data name="SHARE_OG_TITLE" xml:space="preserve">
+    <value>⚽ {0} · {1} kişi eksik</value>
+  </data>
+  <data name="SHARE_OG_TITLE_FULL" xml:space="preserve">
+    <value>⚽ {0}</value>
+  </data>
+  <data name="SHARE_OG_DESCRIPTION" xml:space="preserve">
+    <value>📅 {0:dd MMMM dddd, HH:mm} · 📍 {1}</value>
+  </data>
+  <data name="SHARE_OG_PER_PLAYER" xml:space="preserve">
+    <value>Kişi başı {0:0.##} ₺</value>
+  </data>
+  <data name="SHARE_NOT_FOUND_TITLE" xml:space="preserve">
+    <value>MatchBuddy · Maç bulunamadı</value>
+  </data>
+  <data name="MSG_EXTERNAL_LINKED" xml:space="preserve">
+    <value>{0} saha bağlandı, {1} maç taşındı.</value>
   </data>
 </root>

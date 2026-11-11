@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
@@ -44,6 +44,24 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult ResolveReport(ReportIdModel model)
         {
             return this.ToHttp(_socialService.ResolveReport(model.ReportId));
+        }
+
+        // ------------------------------------------------------------------ Harici saha satış listesi (docs/engagement-api.md §4)
+
+        /// <summary>Oyuncuların telefonla ayarladığı, anlaşmamız olmayan sahalar: en çok maç yapılan önce.</summary>
+        [HttpGet("ExternalVenueLeads")]
+        public ActionResult<List<ExternalVenueLeadDto>> ExternalVenueLeads([FromQuery] string? q) => _venueService.ExternalLeads(q);
+
+        /// <summary>Bağlanabilecek tesisler (harici olmayan; işletmeli ya da aday).</summary>
+        [HttpGet("ExternalVenueLeads/Targets")]
+        public ActionResult<List<LinkTargetDto>> ExternalVenueLinkTargets([FromQuery] string? q) => _venueService.LinkTargets(q);
+
+        /// <summary>Harici sahaları mevcut bir tesise ya da yeni aday tesise bağla; maçları taşınır. Yanıt: { success, message, stadiumId }.</summary>
+        [HttpPost("ExternalVenueLeads/Link")]
+        public IActionResult LinkExternalVenues(LinkExternalInput input)
+        {
+            var result = _venueService.LinkExternal(input);
+            return result.Success ? Ok(new { Success = true, result.Message, StadiumId = result.Data }) : this.ToHttp(result);
         }
 
         // ------------------------------------------------------------------ İşletmeler

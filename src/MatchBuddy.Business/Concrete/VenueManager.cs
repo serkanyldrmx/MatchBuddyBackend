@@ -93,6 +93,95 @@ namespace MatchBuddy.Business.Concrete
             return _venueDal.CreateReservation(creatorId, input);
         }
 
+        // ------------------------------------------------------------------ Harici saha (docs/external-venues-api.md)
+
+        private const int ExternalVenueNameMin = 2;
+        private const int ExternalVenueNameMax = 100;
+        private const decimal ExternalMaxPrice = 100000m;
+
+        /// <summary>Harici saha alanlarını temizler ve doğrular (ad, adres, şehir, ilçe, telefon, konum).</summary>
+        private static AppError? CheckExternalVenue(ref string? name, ref string? address, ref string? city, ref string? district,
+            ref string? phone, ref string? location, bool nameRequired)
+        {
+            name = Clean(name);
+            address = Clean(address);
+            city = Clean(city);
+            district = Clean(district);
+            phone = Clean(phone);
+            location = Clean(location);
+            if (name == null ? nameRequired : name.Length < ExternalVenueNameMin || name.Length > ExternalVenueNameMax)
+                return AppError.Bad(ErrorCodes.External.VenueNameRequired, ExternalVenueNameMin, ExternalVenueNameMax);
+            if (location != null)
+            {
+                if (!VenueGeo.TryParseLocation(location, out var lat, out var lon)) return AppError.Bad(ErrorCodes.Venue.InvalidLocationFormat);
+                location = VenueGeo.Format(lat, lon);
+            }
+            return CheckLength(address, 300, MessageKeys.Venue.LabelAddress)
+                   ?? CheckLength(city, 60, MessageKeys.Venue.LabelCity)
+                   ?? CheckLength(district, 60, MessageKeys.Venue.LabelDistrict)
+                   ?? CheckLength(phone, 30, MessageKeys.Venue.LabelPhone);
+        }
+
+        private static AppError? CheckExternalWhen(DateTime? date, int? duration, decimal? price)
+        {
+            if (date == null) return AppError.Bad(ErrorCodes.External.DateRequired);
+            if (date.Value < DateTime.Now.AddMinutes(-5)) return AppError.Bad(ErrorCodes.External.PastDate);
+            var maxDays = P.Int(ParameterKeys.Booking.DefaultMaxAdvanceDays);
+            if (date.Value > DateTime.Now.AddDays(maxDays)) return AppError.Bad(ErrorCodes.External.TooFarAhead, maxDays);
+            if (duration.HasValue && !VenuePricing.AllowedDurations.Contains(duration.Value)) return AppError.Bad(ErrorCodes.Venue.InvalidDuration);
+            if (price is < 0 or > ExternalMaxPrice) return AppError.Bad(ErrorCodes.External.InvalidPrice, ExternalMaxPrice);
+            return null;
+        }
+
+        public OperationResult<int> CreateExternalMatch(int creatorId, ExternalMatchInput input)
+        {
+            if (input == null) return Bad<int>(ErrorCodes.External.DateRequired);
+            input.MatchName = Clean(input.MatchName);
+            if (input.MatchName == null || input.MatchName.Length < 5) return Bad<int>(Messages.MatchNameInvalid);
+            input.Description = Clean(input.Description);
+            string? name = input.VenueName, address = input.Address, city = input.City, district = input.District, phone = input.Phone, location = input.Location;
+            var err = CheckLength(input.MatchName, 100, MessageKeys.Venue.LabelMatchName)
+                      ?? CheckLength(input.Description, 500, MessageKeys.Venue.LabelDescription)
+                      ?? CheckExternalVenue(ref name, ref address, ref city, ref district, ref phone, ref location, nameRequired: input.ExternalVenueId is not > 0)
+                      ?? CheckExternalWhen(input.MatchDate, input.DurationMinutes, input.TotalPrice);
+            if (err != null) return Bad<int>(err);
+            (input.VenueName, input.Address, input.City, input.District, input.Phone, input.Location) = (name, address, city, district, phone, location);
+            return _venueDal.CreateExternalMatch(creatorId, input);
+        }
+
+        public OperationResult<bool> UpdateExternalMatch(int actorId, bool isAdmin, UpdateExternalMatchInput input)
+        {
+            if (input == null || input.MatchId <= 0) return Bad<bool>(ErrorCodes.Match.NotFound);
+            string? name = input.VenueName, address = input.Address, city = null, district = null, phone = input.Phone, location = input.Location;
+            var err = CheckExternalVenue(ref name, ref address, ref city, ref district, ref phone, ref location, nameRequired: false)
+                      ?? (input.MatchDate.HasValue || input.DurationMinutes.HasValue || input.TotalPrice.HasValue
+                          ? CheckExternalWhen(input.MatchDate ?? DateTime.Now.AddHours(1), input.DurationMinutes, input.TotalPrice)
+                          : null);
+            if (err != null) return Bad<bool>(err);
+            (input.VenueName, input.Address, input.Phone, input.Location) = (name, address, phone, location);
+            return _venueDal.UpdateExternalMatch(actorId, isAdmin, input);
+        }
+
+        public List<ExternalVenueDto> MyExternalVenues(int me) => _venueDal.MyExternalVenues(me);
+
+        public List<ExternalVenueLeadDto> ExternalLeads(string? query) => _venueDal.ExternalLeads(query);
+
+        public List<LinkTargetDto> LinkTargets(string? query) => _venueDal.LinkTargets(query);
+
+        public OperationResult<int> LinkExternal(LinkExternalInput? input)
+        {
+            if (input == null || input.StadiumIds == null || input.StadiumIds.Count == 0) return Bad<int>(ErrorCodes.External.LinkNoVenues);
+            if (!input.CreateCandidate && input.TargetStadiumId is not > 0) return Bad<int>(ErrorCodes.External.LinkTargetInvalid);
+            if (input.CreateCandidate)
+            {
+                string? name = input.Name, address = input.Address, city = input.City, district = input.District, phone = input.Phone, location = input.Location;
+                var err = CheckExternalVenue(ref name, ref address, ref city, ref district, ref phone, ref location, nameRequired: false);
+                if (err != null) return Bad<int>(err);
+                (input.Name, input.Address, input.City, input.District, input.Phone, input.Location) = (name, address, city, district, phone, location);
+            }
+            return _venueDal.LinkExternal(input);
+        }
+
         public OperationResult<bool> ClaimOpponent(int me, ClaimOpponentInput input)
         {
             if (input == null || input.MatchId <= 0 || input.TeamId <= 0) return Bad<bool>(ErrorCodes.Venue.MatchAndTeamRequired);

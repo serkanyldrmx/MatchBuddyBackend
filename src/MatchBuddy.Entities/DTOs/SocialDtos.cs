@@ -79,12 +79,38 @@ namespace MatchBuddy.Entities.DTOs
         public DateTime SendingDate { get; set; }
         public bool Mine { get; set; }
         public bool HasImage { get; set; }
+        /// <summary>Benim gönderdiğim son mesaj karşı tarafça okundu mu (birebir)</summary>
+        public bool Read { get; set; }
+        /// <summary>Grup sohbetinde son mesajı gönderen (benim değilse)</summary>
+        public string? SenderName { get; set; }
     }
 
     public class MessageContactDto
     {
         public SocialPlayerDto Player { get; set; } = null!;
         public LastMessageDto? LastMessage { get; set; }
+        /// <summary>Bu kişiden gelen okunmamış mesaj sayısı</summary>
+        public int UnreadCount { get; set; }
+    }
+
+    /// <summary>Grup sohbeti özeti: üyeler (fotoğraflarıyla), son mesaj, okunmamış sayısı.</summary>
+    public class GroupSummaryDto
+    {
+        public int GroupId { get; set; }
+        public string? GroupName { get; set; }
+        public int? CreatedByPlayerId { get; set; }
+        public int MemberCount { get; set; }
+        public List<PlayerSummaryDto> Members { get; set; } = new();
+        public LastMessageDto? LastMessage { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    /// <summary>Mesaj simgesindeki rozet: okunmamış birebir + grup mesajı.</summary>
+    public class UnreadSummaryDto
+    {
+        public int Direct { get; set; }
+        public int Groups { get; set; }
+        public int Total => Direct + Groups;
     }
 
     public class ActivityMatchDto

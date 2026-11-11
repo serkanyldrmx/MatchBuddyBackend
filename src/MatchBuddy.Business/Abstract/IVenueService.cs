@@ -15,6 +15,14 @@ namespace MatchBuddy.Business.Abstract
 
         // Maç
         OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input);
+        // Harici (anlaşmasız) saha: telefonla ayarlanan, sistemde üyesi olmayan yer (docs/external-venues-api.md)
+        OperationResult<int> CreateExternalMatch(int creatorId, ExternalMatchInput input);
+        OperationResult<bool> UpdateExternalMatch(int actorId, bool isAdmin, UpdateExternalMatchInput input);
+        List<ExternalVenueDto> MyExternalVenues(int me);
+        // Admin: harici sahalardan satış listesi (docs/engagement-api.md §4)
+        List<ExternalVenueLeadDto> ExternalLeads(string? query);
+        List<LinkTargetDto> LinkTargets(string? query);
+        OperationResult<int> LinkExternal(LinkExternalInput? input);
         OperationResult<bool> ClaimOpponent(int me, ClaimOpponentInput input);
         OperationResult<bool> RespondReservation(int ownerId, RespondReservationInput input);
         OperationResult<bool> AdminSetStatus(int matchId, byte status, string? reason);

@@ -1,4 +1,4 @@
-namespace MatchBuddy.Core.Errors
+﻿namespace MatchBuddy.Core.Errors
 {
     /// <summary>
     /// Merkezi hata kodu kataloğu. Her kodun Türkçe metni Resources/Messages.resx'te aynı anahtarla durur.
@@ -89,6 +89,9 @@ namespace MatchBuddy.Core.Errors
         {
             public const string NotFound = "GROUP_NOT_FOUND";
             public const string NameInvalid = "GROUP_NAME_INVALID";
+            public const string NotMember = "GROUP_NOT_MEMBER";
+            public const string CreatorOnly = "GROUP_CREATOR_ONLY";
+            public const string NoPlayers = "GROUP_NO_PLAYERS";
         }
 
         public static partial class Social

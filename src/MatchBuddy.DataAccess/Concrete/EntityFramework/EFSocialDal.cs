@@ -1,4 +1,4 @@
-using MatchBuddy.Core.Utilities.Results;
+﻿using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
@@ -473,12 +473,21 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     m.SendingDate,
                     m.MatchMessage,
                     HasImage = m.ImageUrl != null,
-                    Mine = m.SendPlayerId == me
+                    Mine = m.SendPlayerId == me,
+                    Read = m.ReadAt != null,
+                    m.IsDeleted
                 })
                 .ToList()
                 .Where(m => m.Other.HasValue && m.Other.Value != me)
                 .GroupBy(m => m.Other!.Value)
                 .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.SendingDate).ThenByDescending(m => m.MessageId).First());
+
+            // Kişi başına okunmamış (bana gelen, okunmadı)
+            var unread = context.Messages.AsNoTracking()
+                .Where(m => m.RecipientPlayerId == me && m.ReadAt == null && !m.IsDeleted && m.SendPlayerId != null)
+                .GroupBy(m => m.SendPlayerId!.Value)
+                .Select(g => new { PlayerId = g.Key, Count = g.Count() })
+                .ToDictionary(x => x.PlayerId, x => x.Count);
 
             // + karşılıklı takipleştiklerim (işletmeler için takip mantığı yok: sadece yazıştıkları)
             var meIsOwner = context.Players.Any(p => p.PlayerId == me && p.Role == PlayerRoles.Owner);
@@ -500,12 +509,15 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     ? new LastMessageDto
                     {
                         // Resimli ve metinsiz mesaj: "📷 Fotoğraf" (docs/media-api.md)
-                        Text = m.HasImage && string.IsNullOrWhiteSpace(m.MatchMessage) ? Msg.Get(MessageKeys.Message.LabelPhotoPreview) : m.MatchMessage,
+                        Text = m.IsDeleted ? Msg.Get(MessageKeys.Message.LabelDeleted)
+                            : m.HasImage && string.IsNullOrWhiteSpace(m.MatchMessage) ? Msg.Get(MessageKeys.Message.LabelPhotoPreview) : m.MatchMessage,
                         SendingDate = m.SendingDate,
                         Mine = m.Mine,
                         HasImage = m.HasImage,
+                        Read = m.Mine && m.Read,
                     }
                     : null,
+                UnreadCount = unread.TryGetValue(p.PlayerId, out var u) ? u : 0,
             }).ToList();
 
             // Son mesaj tarihi azalan; mesajı olmayanlar sonda, ada göre

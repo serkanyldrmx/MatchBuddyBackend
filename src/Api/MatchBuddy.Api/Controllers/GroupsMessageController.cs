@@ -1,4 +1,4 @@
-using MatchBuddy.Api.Model;
+﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
@@ -17,9 +17,12 @@ namespace MatchBuddy.Api.Controllers
         private readonly IGroupMessageService _groupMessageService;
         private readonly IGroupPlayerService _groupPlayerService;
         private readonly IMediaService _mediaService;
+        private readonly IChatService _chatService;
 
-        public GroupsMessageController(IGroupMessageService groupMessageService, IGroupPlayerService groupPlayerService, IMediaService mediaService)
+        public GroupsMessageController(IGroupMessageService groupMessageService, IGroupPlayerService groupPlayerService, IMediaService mediaService,
+            IChatService chatService)
         {
+            _chatService = chatService;
             _mediaService = mediaService;
             _groupMessageService = groupMessageService;
             _groupPlayerService = groupPlayerService;
@@ -36,10 +39,21 @@ namespace MatchBuddy.Api.Controllers
             {
                 return this.BadRequestError(ErrorCodes.Message.Empty);
             }
+            if (groupMessageModel.MatchMessage != null && groupMessageModel.MatchMessage.Trim().Length > MessageController.MaxMessageLength)
+            {
+                return this.BadRequestError(ErrorCodes.Message.TooLong, MessageController.MaxMessageLength);
+            }
 
             if (!CanAccessGroup(groupMessageModel.GroupId))
             {
                 return Forbid();
+            }
+
+            // Yanıt: aynı gruptan bir mesaj olmalı
+            if (groupMessageModel.ReplyToGroupMessageId.HasValue
+                && !_chatService.IsValidReply(true, groupMessageModel.ReplyToGroupMessageId.Value, User.GetPlayerId(), groupMessageModel.GroupId))
+            {
+                return this.BadRequestError(ErrorCodes.Message.ReplyInvalid);
             }
 
             // Fotoğraf: gönderene ait, Pending, MessageImage olmalı -> Attached
@@ -54,12 +68,13 @@ namespace MatchBuddy.Api.Controllers
             var groupMessage = new GroupMessage()
             {
                 GroupId = groupMessageModel.GroupId,
-                MatchMessage = groupMessageModel.MatchMessage ?? string.Empty,
-                SendingDate = groupMessageModel.SendingDate,
+                MatchMessage = groupMessageModel.MatchMessage?.Trim() ?? string.Empty,
+                SendingDate = DateTime.Now,
                 SendPlayerId = User.GetPlayerId(), // Gönderen her zaman token sahibidir
                 Status = groupMessageModel.Status,
                 MediaId = groupMessageModel.MediaId,
                 ImageUrl = imageUrl,
+                ReplyToGroupMessageId = groupMessageModel.ReplyToGroupMessageId,
             };
 
             var result = _groupMessageService.Add(groupMessage);
@@ -72,13 +87,14 @@ namespace MatchBuddy.Api.Controllers
         }
 
         [HttpPost("GetGroupMessageById")]
-        public ActionResult<List<GroupMessageModelDto>> GetGroupMessageById(GroupMessageModel groupMessageModel)
+        public ActionResult<List<ChatMessageDto>> GetGroupMessageById(GroupMessageModel groupMessageModel)
         {
             if (!CanAccessGroup(groupMessageModel.GroupId))
             {
                 return Forbid();
             }
-            return _groupMessageService.GetGroupMessageById(groupMessageModel.GroupId).Data;
+            // Gönderen fotoğrafı, yanıt önizlemesi, tepkiler ve silinme bilgisiyle (docs/engagement-api.md §1)
+            return _chatService.GroupConversation(User.GetPlayerId(), groupMessageModel.GroupId);
         }
     }
 }

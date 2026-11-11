@@ -1,4 +1,4 @@
-using MatchBuddy.Api.Model;
+﻿using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Core.Utilities.Results;
@@ -60,6 +60,52 @@ namespace MatchBuddy.Api.Controllers
             return this.ToHttp(result, result.Success
                 ? new { Success = true, result.Message, MatchId = result.Data, Status = MatchStatus.Pending }
                 : null);
+        }
+
+        /// <summary>
+        /// Harici (anlaşmasız) sahada maç kur: oyuncu sahayı telefonla kendisi ayarladı (docs/external-venues-api.md).
+        /// İşletme onayı yoktur, maç doğrudan onaylı açılır. Saha: önceki harici sahalarımdan biri (externalVenueId)
+        /// ya da yeni (venueName, address, city, district, phone, location).
+        /// </summary>
+        [HttpPost("SaveExternalMatch")]
+        public IActionResult SaveExternalMatch(ExternalMatchInput input)
+        {
+            if (User.IsOwner())
+                return this.ForbiddenError(ErrorCodes.Match.OwnerCannotCreate);
+
+            var result = _venueService.CreateExternalMatch(User.GetPlayerId(), input);
+            return this.ToHttp(result, result.Success
+                ? new { Success = true, result.Message, MatchId = result.Data, Status = MatchStatus.Approved }
+                : null);
+        }
+
+        /// <summary>Harici sahadaki maçın saat / süre / ücret / saha bilgisini değiştir (kurucu ya da admin). Kadroya bildirim gider.</summary>
+        [HttpPost("UpdateExternalMatch")]
+        public IActionResult UpdateExternalMatch(UpdateExternalMatchInput input) =>
+            this.ToHttp(_venueService.UpdateExternalMatch(User.GetPlayerId(), User.IsAdmin(), input));
+
+        /// <summary>Daha önce eklediğim harici sahalar (son kullanılan önce).</summary>
+        [HttpGet("MyExternalVenues")]
+        public ActionResult<List<ExternalVenueDto>> MyExternalVenues() => _venueService.MyExternalVenues(User.GetPlayerId());
+
+        /// <summary>Paylaşılabilir davet linki (WhatsApp vb.): { code, url, text }. Link ilk istekte oluşur, sonra aynı kalır.</summary>
+        [HttpPost("ShareLink")]
+        public IActionResult ShareLink(MatchIdModel model, [FromServices] MatchBuddy.Api.Services.ShareService share)
+        {
+            var result = share.GetOrCreate(model.MatchId);
+            return result.Success ? Ok(result.Data) : this.ToHttp(result);
+        }
+
+        /// <summary>Davet linkiyle katıl (kayıt / girişten sonra). Yanıt: { matchId, status, message }.</summary>
+        [HttpPost("JoinByCode")]
+        public IActionResult JoinByCode(JoinByCodeModel model, [FromServices] MatchBuddy.Api.Services.ShareService share)
+        {
+            var matchId = share.MatchIdOf(model.Code);
+            if (matchId == null) return this.NotFoundError(ErrorCodes.Share.NotFound);
+            if (User.IsOwner()) return this.ForbiddenError(ErrorCodes.Match.OwnerCannotJoin);
+            var result = _participationService.Join(matchId.Value, User.GetPlayerId());
+            if (!result.Success) return FromOperation(result);
+            return Ok(new { Success = true, MatchId = matchId.Value, Status = result.Data, result.Message });
         }
 
         // Rakip takım olarak katılma: lookingForOpponent maçlarda, takımın üyesi

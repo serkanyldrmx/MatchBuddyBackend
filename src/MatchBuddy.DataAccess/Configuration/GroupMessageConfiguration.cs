@@ -17,7 +17,7 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder
                 .Property(b => b.MatchMessage)
-                .HasMaxLength(250)
+                .HasMaxLength(1000)
                 .IsRequired();
 
             builder
@@ -33,6 +33,8 @@ namespace MatchBuddy.DataAccess.Configuration
 
             // Resimli mesaj (docs/media-api.md); sadece resimli mesajda MatchMessage "" olur
             builder.Property(x => x.ImageUrl).HasMaxLength(300);
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+            builder.HasOne<GroupMessage>().WithMany().HasForeignKey(x => x.ReplyToGroupMessageId).OnDelete(DeleteBehavior.NoAction);
 
 
 

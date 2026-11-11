@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Business;
@@ -176,6 +176,15 @@ namespace MatchBuddy.Api
                 c.DefaultRequestHeaders.UserAgent.ParseAdd("MatchBuddy/1.0 (+https://github.com/serkanyldrmx/MatchBuddy)");
             });
             builder.Services.AddScoped<OsmService>();
+
+            // Hava durumu (Open-Meteo, anahtarsız) ve maç davet linki (docs/engagement-api.md)
+            builder.Services.AddHttpClient(WeatherService.HttpClientName, c =>
+            {
+                c.Timeout = TimeSpan.FromSeconds(10);
+                c.DefaultRequestHeaders.UserAgent.ParseAdd("MatchBuddy/1.0");
+            });
+            builder.Services.AddSingleton<WeatherService>();
+            builder.Services.AddSingleton<ShareService>();
 
             // Maç hatırlatmaları (Reminders:IntervalSeconds, varsayılan 600 sn)
             builder.Services.AddHostedService<MatchReminderService>();
