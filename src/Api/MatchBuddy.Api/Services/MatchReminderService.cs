@@ -37,6 +37,20 @@ namespace MatchBuddy.Api.Services
                     {
                         _logger.LogInformation("{Count} oyuncuya maç hatırlatması gönderildi.", sent);
                     }
+
+                    // Haftalık sabit maçlar: vadesi gelen haftayı oluştur (docs/venue-growth-api.md)
+                    var weekly = MatchBuddy.DataAccess.Concrete.EntityFramework.MatchSeriesService.Run();
+                    if (weekly > 0)
+                    {
+                        _logger.LogInformation("{Count} haftalık maç oluşturuldu.", weekly);
+                    }
+
+                    // Güvenilirlik: "gelmedi" penceresi kapanan maçlara katılım puanı (docs/reliability-api.md)
+                    var settled = scope.ServiceProvider.GetRequiredService<MatchBuddy.DataAccess.Concrete.EntityFramework.IReliabilityDal>().SettleDue();
+                    if (settled > 0)
+                    {
+                        _logger.LogInformation("{Count} maçın güvenilirlik puanları işlendi.", settled);
+                    }
                 }
                 catch (Exception ex)
                 {

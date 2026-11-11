@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
@@ -46,6 +46,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             FixedPrice = c.FixedPrice,
             PitchId = c.PitchId,
             IsActive = c.IsActive,
+            IsDeal = c.IsDeal,
         };
 
         private static PitchDto ToDto(Pitch p) => new()
@@ -62,14 +63,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         private static double? RoundRating(double? v) => v.HasValue ? Math.Round(v.Value, 1) : null;
 
-        // Dilim durumu: past > booked > pending > blocked > free
+        // Dilim durumu: past > booked > pending > blocked > free.
+        // Harici rezervasyon (blok Kind 1) oyunculara "booked", kapalı/bakım bloğu (Kind 0) "blocked" görünür.
         private static string SlotStatus(DateTime start, DateTime end, int pitchId, List<VenueRules.BusyMatch> busy, List<SlotBlock> blocks, DateTime now)
         {
             if (start < now) return "past";
             var overlapping = busy.Where(m => m.PitchId == pitchId && VenuePricing.Overlaps(m.Start, m.End, start, end)).ToList();
-            if (overlapping.Any(m => m.Status == MatchStatus.Approved)) return "booked";
+            var overlappingBlocks = blocks.Where(b => b.PitchId == pitchId && VenuePricing.Overlaps(b.StartAt, b.EndAt, start, end)).ToList();
+            if (overlapping.Any(m => m.Status == MatchStatus.Approved) || overlappingBlocks.Any(b => b.Kind == SlotBlockKind.Manual)) return "booked";
             if (overlapping.Count > 0) return "pending";
-            if (blocks.Any(b => b.PitchId == pitchId && VenuePricing.Overlaps(b.StartAt, b.EndAt, start, end))) return "blocked";
+            if (overlappingBlocks.Count > 0) return "blocked";
             return "free";
         }
 
@@ -162,7 +165,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatchBuddyContext();
             var s = context.Stadiums.AsNoTracking().FirstOrDefault(x => x.StadiumId == stadiumId);
             var g = Guard(context, me, s, false);
-            if (g != null) return Fail<OwnerVenueDetailDto>(g.Value);
+            if (g != null) return Fail<OwnerVenueDetailDto>(g);
             var dto = BuildDetail<OwnerVenueDetailDto>(context, s!, ownerView: true);
             var owner = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
             dto.IsListed = s!.IsListed;
@@ -191,7 +194,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 : null;
 
             var allReviews = context.VenueReviews.AsNoTracking().Where(r => r.StadiumId == stadiumId).ToList();
-            var last = allReviews.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.ReviewId).Take(20).ToList();
+            var last = allReviews.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.ReviewId).Take(P.Int(ParameterKeys.Venue.ReviewsShown)).ToList();
             var reviewerIds = last.Select(r => r.PlayerId).Distinct().ToList();
             var reviewers = context.Players.AsNoTracking().Where(p => reviewerIds.Contains(p.PlayerId)).ToList()
                 .ToDictionary(p => p.PlayerId, PlayerSummaryDto.FromPlayer);
@@ -307,7 +310,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var pitch = context.Pitches.AsNoTracking().FirstOrDefault(p => p.PitchId == input.PitchId);
             if (pitch == null) return OperationResult<QuoteDto>.NotFound(VenueRules.PitchNotFound);
             if (input.Start == null)
-                return OperationResult<QuoteDto>.Ok(new QuoteDto { Available = false, Reason = VenueRules.ChooseSlot });
+                return OperationResult<QuoteDto>.Ok(new QuoteDto { Available = false, Reason = Msg.Get(VenueRules.ChooseSlot) });
 
             var stadium = context.Stadiums.AsNoTracking().First(s => s.StadiumId == pitch.StadiumId);
             var pricing = VenueRules.LoadPricing(context, stadium);
@@ -316,12 +319,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (quote.Available && !VenueRules.IsVisible(context, stadium.StadiumId))
             {
                 quote.Available = false;
-                quote.Reason = "Bu tesis şu anda rezervasyona kapalı.";
+                quote.Reason = Msg.Get(ErrorCodes.Reservation.VenueClosed);
             }
             else if (quote.Available && !pitch.IsActive)
             {
                 quote.Available = false;
-                quote.Reason = "Bu saha şu anda kullanılamıyor.";
+                quote.Reason = Msg.Get(ErrorCodes.Reservation.PitchUnavailable);
             }
             return OperationResult<QuoteDto>.Ok(quote);
         }
@@ -339,14 +342,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 ? context.Pitches.AsNoTracking().Where(p => p.PitchId == match.PitchId.Value).Select(p => (int?)p.StadiumId).FirstOrDefault()
                 : null;
             if (stadiumId == null)
-                return OperationResult<bool>.BadRequest("Bu maç anlaşmalı bir tesiste oynanmadı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.ReviewNotVenueMatch);
             if (match.IsActive == MatchStatus.Rejected)
-                return OperationResult<bool>.BadRequest("Reddedilen maç için yorum yapılamaz.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.ReviewMatchRejected);
             if (!match.MatchDate.HasValue || match.MatchDate.Value.AddMinutes(match.DurationMinutes) > DateTime.Now)
-                return OperationResult<bool>.BadRequest("Maç henüz oynanmadı, yorum yapılamaz.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.ReviewMatchNotPlayed);
             var going = context.MatchParticipants.Any(p => p.MatchId == matchId && p.PlayerId == me && p.Status == ParticipantStatus.Going);
             if (!going)
-                return OperationResult<bool>.BadRequest("Sadece maçta oynayan oyuncular tesisi değerlendirebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.ReviewNotParticipant);
 
             var existing = context.VenueReviews.FirstOrDefault(r => r.MatchId == matchId && r.PlayerId == me);
             var created = existing == null;
@@ -375,7 +378,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 {
                     var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
                     NotificationWriter.Add(context, NotificationType.VenueReview,
-                        $"{DisplayName(player)}, {stadium.StadiumName} için {rating} yıldızlı bir değerlendirme yaptı.",
+                        Msg.GetDefault(MessageKeys.Reservation.NotifVenueReview, DisplayName(player), stadium.StadiumName, rating),
                         matchId, stadium.StadiumId, new[] { stadium.OwnerPlayerId.Value });
                 }
             }
@@ -387,48 +390,143 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             catch (DbUpdateException)
             {
-                return OperationResult<bool>.BadRequest("Değerlendirme kaydedilemedi, lütfen tekrar deneyin.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.ReviewSaveFailed);
             }
-            return OperationResult<bool>.Ok(true, created ? "Değerlendirmen kaydedildi." : "Değerlendirmen güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(created ? MessageKeys.Reservation.ReviewSaved : MessageKeys.Reservation.ReviewUpdated));
         }
 
         // ------------------------------------------------------------------ Maç kurma (SaveMatch)
 
+        // Takımın (silinmemiş, işletme olmayan) üyeleri, takıma katılma sırasıyla
         private static List<int> TeamMemberIds(MatchBuddyContext context, int teamId) =>
             (from pt in context.PlayerTeam
              join p in context.Players on pt.PlayerId equals p.PlayerId
              where pt.TeamId == teamId && !p.IsDeleted && p.Role != PlayerRoles.Owner
-             select p.PlayerId).Distinct().ToList();
+             orderby pt.PlayerTeamId
+             select p.PlayerId).ToList().Distinct().ToList();
 
-        // Takım üyelerine taraflı maç daveti (mevcut davet satırı yeniden açılır). Davet edilen id'leri döner.
-        private static List<int> InviteTeam(MatchBuddyContext context, Match match, int inviterId, IEnumerable<int> memberIds, byte side, ISet<int> skip)
+        /// <summary>
+        /// Takım kadrosu kuralı (docs/venues-api.md "Ek paket" §5): takımın tüm üyeleri doğrudan maça eklenir
+        /// (Going, verilen taraf, Confirmed = false). Taraf kapasitesi (ceil(UserCount / 2)) ya da toplam kapasite
+        /// doluysa fazlası Waitlist olur (JoinedAt = ekleme sırası). Zaten Going/Waitlist olanlar atlanır; "gelemiyor"
+        /// kaydı yeniden kullanılır. Engelleme kontrolü yapılmaz (takım üyeliği önceliklidir). MatchInvite oluşturulmaz,
+        /// takım arkadaşları için JoinedMatch aktivitesi yazılmaz. Eklenen her üyeye (actor hariç) MatchJoin bildirimi
+        /// (NotifyMatchUpdates tercihi) gider. SaveChanges çağırmaz. Eklenen (Going) ve yedeğe alınan id'leri döner.
+        /// </summary>
+        private static (List<int> Going, List<int> Waitlisted) AddTeamToSquad(MatchBuddyContext context, Match match, int actorId, Player? actor, int teamId, byte side)
         {
-            var ids = memberIds.Where(id => id != inviterId && !skip.Contains(id)).Distinct().ToList();
-            if (ids.Count == 0) return ids;
-            var existing = context.MatchInvites.Where(i => i.MatchId == match.MatchId && ids.Contains(i.InviteeId)).ToList()
-                .ToDictionary(i => i.InviteeId);
+            var going = new List<int>();
+            var waitlisted = new List<int>();
+            var memberIds = TeamMemberIds(context, teamId);
+            if (memberIds.Count == 0) return (going, waitlisted);
+
+            // Veritabanındaki kayıtlar + bu context'te henüz kaydedilmemiş (kurucu gibi) kayıtlar
+            context.MatchParticipants.Where(p => p.MatchId == match.MatchId).Load();
+            var participants = context.MatchParticipants.Local.Where(p => p.MatchId == match.MatchId).ToList();
+            var sideCapacity = SideCapacity(match);
+            // Misafirler kadroya (toplam ve taraf) sayılır
+            var guests = LoadGuests(context, match.MatchId);
             var now = DateTime.Now;
-            foreach (var id in ids)
+            var order = 0;
+
+            foreach (var id in memberIds)
             {
-                if (existing.TryGetValue(id, out var row))
+                var row = participants.FirstOrDefault(p => p.PlayerId == id);
+                if (row != null && (row.Status == ParticipantStatus.Going || row.Status == ParticipantStatus.Waitlist)) continue;
+
+                var goingRows = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
+                var canGo = goingRows.Count + guests.Count < match.UserCount && SideCount(goingRows, guests, side) < sideCapacity;
+                if (row == null)
                 {
-                    row.InviterId = inviterId;
-                    row.Status = InviteStatus.Pending;
-                    row.CreatedAt = now;
-                    row.RespondedAt = null;
-                    row.Side = side;
+                    row = new MatchParticipant { MatchId = match.MatchId, PlayerId = id };
+                    context.MatchParticipants.Add(row);
+                    participants.Add(row);
                 }
-                else
-                {
-                    context.MatchInvites.Add(new MatchInvite
-                    {
-                        MatchId = match.MatchId, InviterId = inviterId, InviteeId = id,
-                        Status = InviteStatus.Pending, CreatedAt = now, Side = side,
-                    });
-                }
-                skip.Add(id);
+                row.Status = canGo ? ParticipantStatus.Going : ParticipantStatus.Waitlist;
+                row.Side = canGo ? side : null;
+                row.Confirmed = false;
+                row.JoinedAt = now.AddMilliseconds(order++);
+                row.ReminderSentAt = null;
+                row.Goals = 0;
+                row.Assists = 0;
+                (canGo ? going : waitlisted).Add(id);
             }
-            return ids;
+
+            var name = DisplayName(actor);
+            var goingRecipients = going.Where(id => id != actorId).ToList();
+            if (goingRecipients.Count > 0)
+            {
+                AddNotification(context, NotificationType.MatchJoin,
+                    Msg.GetDefault(MessageKeys.Reservation.NotifTeamSquadAdded, name, match.MatchName),
+                    match.MatchId, goingRecipients);
+            }
+            var waitRecipients = waitlisted.Where(id => id != actorId).ToList();
+            if (waitRecipients.Count > 0)
+            {
+                AddNotification(context, NotificationType.MatchJoin,
+                    Msg.GetDefault(MessageKeys.Reservation.NotifTeamSquadWaitlisted, name, match.MatchName),
+                    match.MatchId, waitRecipients);
+            }
+            return (going, waitlisted);
+        }
+
+        /// <summary>
+        /// Maç kurarken takım kuralları: ev sahibi takımın üyesi olmalıyım, rakip farklı olmalı, "rakip aranıyor" ile
+        /// rakip takım birlikte seçilemez. Hata yoksa null döner.
+        /// </summary>
+        private static OperationResult<int>? LoadTeams(MatchBuddyContext context, int creatorId, int? homeTeamId, int? awayTeamId,
+            bool lookingForOpponent, out Team? home, out Team? away)
+        {
+            home = null;
+            away = null;
+            if (homeTeamId.HasValue)
+            {
+                home = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == homeTeamId.Value);
+                if (home == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.HomeTeamNotFound);
+                var homeId = home.TeamId;
+                if (!context.PlayerTeam.Any(pt => pt.TeamId == homeId && pt.PlayerId == creatorId))
+                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.NotHomeTeamMember);
+            }
+            if (awayTeamId.HasValue)
+            {
+                if (awayTeamId == homeTeamId)
+                    return OperationResult<int>.BadRequest(ErrorCodes.Reservation.SameTeams);
+                away = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == awayTeamId.Value);
+                if (away == null) return OperationResult<int>.BadRequest(ErrorCodes.Reservation.AwayTeamNotFound);
+            }
+            if (lookingForOpponent && awayTeamId.HasValue)
+                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.OpponentFlagConflict);
+            return null;
+        }
+
+        /// <summary>
+        /// Yeni maç kaydedildikten sonra: kurucu Going (ev sahibi, onaylı), "maç kurdu" aktivitesi, seçilen takımlar
+        /// MatchTeam'e ve üyeleri doğrudan kadroya (ev sahibi Side 1, rakip Side 2). SaveChanges çağırmaz.
+        /// </summary>
+        private static void AddCreatorAndTeams(MatchBuddyContext context, Match match, Player creator, Team? home, Team? away)
+        {
+            var creatorId = creator.PlayerId;
+            context.MatchParticipants.Add(new MatchParticipant
+            {
+                MatchId = match.MatchId,
+                PlayerId = creatorId,
+                Status = ParticipantStatus.Going,
+                Side = ParticipantSide.Home,
+                Confirmed = true,
+                JoinedAt = DateTime.Now,
+            });
+            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
+
+            if (home != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
+                AddTeamToSquad(context, match, creatorId, creator, home.TeamId, ParticipantSide.Home);
+            }
+            if (away != null)
+            {
+                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
+                AddTeamToSquad(context, match, creatorId, creator, away.TeamId, ParticipantSide.Away);
+            }
         }
 
         public OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input)
@@ -440,46 +538,31 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             var creator = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == creatorId && !p.IsDeleted);
-            if (creator == null) return OperationResult<int>.NotFound("Oyuncu bulunamadı.");
-            if (creator.Role == PlayerRoles.Owner) return OperationResult<int>.Forbidden("İşletme hesapları maç kuramaz.");
+            if (creator == null) return OperationResult<int>.NotFound(ErrorCodes.Player.NotFound);
+            if (creator.Role == PlayerRoles.Owner) return OperationResult<int>.Forbidden(ErrorCodes.Reservation.OwnerCannotCreate);
 
             // Eşzamanlı rezervasyonlar bu kilit üzerinde sıraya girer
             var pitch = VenueRules.LockPitch(context, input.PitchId.Value);
             if (pitch == null) return OperationResult<int>.NotFound(VenueRules.PitchNotFound);
             var stadium = context.Stadiums.AsNoTracking().First(s => s.StadiumId == pitch.StadiumId);
             if (!VenueRules.IsVisible(context, stadium.StadiumId))
-                return OperationResult<int>.BadRequest("Bu tesis şu anda rezervasyona kapalı.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.VenueClosed);
             if (!pitch.IsActive)
-                return OperationResult<int>.BadRequest("Bu saha şu anda kullanılamıyor.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.PitchUnavailable);
 
             var duration = input.DurationMinutes ?? 60;
             var min = VenuePricing.MinUserCount();
             var max = VenuePricing.MaxUserCount(pitch.PlayersPerSide);
             if (input.UserCount < min || input.UserCount > max)
-                return OperationResult<int>.BadRequest($"Oyuncu sayısı {min} ile {max} arasında olmalıdır.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Validation.OutOfRange, Msg.Get(MessageKeys.Reservation.LabelUserCount), min, max);
             if (input.CleatCount > input.UserCount)
-                return OperationResult<int>.BadRequest("Krampon sayısı oyuncu sayısından fazla olamaz.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Reservation.CleatsExceedPlayers);
             var extrasError = VenueRules.CheckExtras(stadium, input.CleatCount, input.CameraRequested);
             if (extrasError != null) return OperationResult<int>.BadRequest(extrasError);
 
             // Takım kuralları
-            Team? home = null, away = null;
-            if (input.HomeTeamId.HasValue)
-            {
-                home = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.HomeTeamId.Value);
-                if (home == null) return OperationResult<int>.BadRequest("Ev sahibi takım bulunamadı.");
-                if (!context.PlayerTeam.Any(pt => pt.TeamId == home.TeamId && pt.PlayerId == creatorId))
-                    return OperationResult<int>.BadRequest("Ev sahibi takımın üyesi olmalısın.");
-            }
-            if (input.AwayTeamId.HasValue)
-            {
-                if (input.AwayTeamId == input.HomeTeamId)
-                    return OperationResult<int>.BadRequest("Ev sahibi ve rakip takım aynı olamaz.");
-                away = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == input.AwayTeamId.Value);
-                if (away == null) return OperationResult<int>.BadRequest("Rakip takım bulunamadı.");
-            }
-            if (input.LookingForOpponent && input.AwayTeamId.HasValue)
-                return OperationResult<int>.BadRequest("Rakip takım seçiliyken 'rakip aranıyor' işaretlenemez.");
+            var teamError = LoadTeams(context, creatorId, input.HomeTeamId, input.AwayTeamId, input.LookingForOpponent, out var home, out var away);
+            if (teamError != null) return teamError;
 
             var start = input.MatchDate.Value;
             var pricing = VenueRules.LoadPricing(context, stadium);
@@ -506,60 +589,27 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 HomeTeamId = home?.TeamId,
                 AwayTeamId = away?.TeamId,
                 LookingForOpponent = input.LookingForOpponent,
+                MinReliability = input.MinReliability is > 0 and <= 100 ? input.MinReliability : null,
                 CreatedByPlayerId = creatorId,
                 CreatedAt = DateTime.Now,
             };
             context.Matchs.Add(match);
             context.SaveChanges();
+            if (input.RepeatWeekly) MatchSeriesService.Start(context, match);
 
-            context.MatchParticipants.Add(new MatchParticipant
-            {
-                MatchId = match.MatchId,
-                PlayerId = creatorId,
-                Status = ParticipantStatus.Going,
-                Side = ParticipantSide.Home,
-                Confirmed = true,
-                JoinedAt = DateTime.Now,
-            });
-            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
-
-            // Takımlar: MatchTeam (eski ekranlar için) + üyelere taraflı davet
-            var skip = new HashSet<int> { creatorId };
-            var when = $"{start:dd.MM.yyyy HH:mm}";
-            if (home != null)
-            {
-                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = home.TeamId });
-                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, home.TeamId), ParticipantSide.Home, skip);
-                if (invited.Count > 0)
-                {
-                    NotificationWriter.Add(context, NotificationType.MatchInvite,
-                        $"{DisplayName(creator)} seni '{match.MatchName}' maçına {home.TeamName} kadrosunda davet etti ({when}).",
-                        match.MatchId, null, invited);
-                }
-            }
-            if (away != null)
-            {
-                context.MatchTeam.Add(new MatchTeam { MatchId = match.MatchId, TeamId = away.TeamId });
-                var invited = InviteTeam(context, match, creatorId, TeamMemberIds(context, away.TeamId), ParticipantSide.Away, skip);
-                if (invited.Count > 0)
-                {
-                    NotificationWriter.Add(context, NotificationType.MatchInvite,
-                        $"{DisplayName(creator)}, {away.TeamName} takımını '{match.MatchName}' maçına rakip olarak davet etti ({when}).",
-                        match.MatchId, null, invited);
-                }
-            }
+            AddCreatorAndTeams(context, match, creator, home, away);
 
             // İşletmeye rezervasyon talebi
             if (stadium.OwnerPlayerId.HasValue)
             {
                 NotificationWriter.Add(context, NotificationType.ReservationRequest,
-                    $"Yeni rezervasyon talebi: {DisplayName(creator)}, {stadium.StadiumName} - {pitch.Name} için {when} ({duration} dk). Onayınızı bekliyor.",
+                    Msg.GetDefault(MessageKeys.Reservation.NotifRequest, DisplayName(creator), stadium.StadiumName, pitch.Name, start, duration),
                     match.MatchId, stadium.StadiumId, new[] { stadium.OwnerPlayerId.Value });
             }
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<int>.Ok(match.MatchId, "Rezervasyon talebin işletmeye iletildi.");
+            return OperationResult<int>.Ok(match.MatchId, Msg.Get(MessageKeys.Reservation.RequestSent));
         }
 
         // ------------------------------------------------------------------ ClaimOpponent
@@ -574,18 +624,18 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
             if (player == null || player.Role == PlayerRoles.Owner) return OperationResult<bool>.Forbidden(OwnerCannotJoin);
             if (!match.LookingForOpponent || match.AwayTeamId.HasValue)
-                return OperationResult<bool>.BadRequest("Bu maç rakip takım aramıyor.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.NotLookingForOpponent);
             if (match.IsActive == MatchStatus.Rejected)
-                return OperationResult<bool>.BadRequest("Bu maç reddedildi, katılım kapalı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.MatchRejectedClosed);
             if (IsPast(match))
-                return OperationResult<bool>.BadRequest("Maç tarihi geçti, katılım kapalı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.MatchPastClosed);
 
             var team = context.Teams.AsNoTracking().FirstOrDefault(t => t.TeamId == teamId);
-            if (team == null) return OperationResult<bool>.NotFound("Takım bulunamadı.");
+            if (team == null) return OperationResult<bool>.NotFound(ErrorCodes.Team.NotFound);
             if (match.HomeTeamId == teamId)
-                return OperationResult<bool>.BadRequest("Ev sahibi takım rakip olarak katılamaz.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.HomeTeamCannotBeOpponent);
             if (!context.PlayerTeam.Any(pt => pt.TeamId == teamId && pt.PlayerId == me))
-                return OperationResult<bool>.Forbidden("Bu takımın üyesi değilsin.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Reservation.NotTeamMember);
 
             match.AwayTeamId = teamId;
             match.LookingForOpponent = false;
@@ -595,7 +645,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var mine = context.MatchParticipants.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
             if (mine?.Status == ParticipantStatus.Going)
             {
-                mine.Side = ParticipantSide.Away;
+                // Zaten kadrodaysam Deplasman'a geçerim; Deplasman doluysa (Going + misafir) tarafım korunur
+                if (mine.Side != ParticipantSide.Away)
+                {
+                    var awayGoing = context.MatchParticipants
+                        .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going && p.PlayerId != me).ToList();
+                    if (SideCount(awayGoing, LoadGuests(context, matchId), ParticipantSide.Away) < SideCapacity(match))
+                        mine.Side = ParticipantSide.Away;
+                }
             }
             else
             {
@@ -608,35 +665,25 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 var join = Join(context, match, me, ParticipantSide.Away);
                 if (!join.Success)
                 {
-                    return join.Status == OperationStatus.Forbidden
-                        ? OperationResult<bool>.Forbidden(join.Message)
-                        : OperationResult<bool>.BadRequest(join.Message);
+                    return OperationResult<bool>.Fail(
+                        join.Status == OperationStatus.Forbidden ? OperationStatus.Forbidden : OperationStatus.BadRequest,
+                        join.Code ?? ErrorCodes.Common.OperationFailed, join.Args);
                 }
-                var row = context.MatchParticipants.Local.FirstOrDefault(p => p.MatchId == matchId && p.PlayerId == me);
-                if (row != null && row.Status == ParticipantStatus.Going) row.Side = ParticipantSide.Away;
+                // Join tercih edilen tarafa (Deplasman) yerleştirir; Deplasman doluysa (Going + misafir)
+                // daha az kişili tarafa koyar: taraf kapasitesi aşılmasın diye burada zorlanmaz.
             }
 
-            // Takımın diğer üyelerine davet (Side 2); kadroda olanlar atlanır
-            var inSquad = context.MatchParticipants
-                .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
-                .Select(p => p.PlayerId).ToHashSet();
-            inSquad.Add(me);
-            var invited = InviteTeam(context, match, me, TeamMemberIds(context, teamId), ParticipantSide.Away, inSquad);
-            if (invited.Count > 0)
-            {
-                NotificationWriter.Add(context, NotificationType.MatchInvite,
-                    $"{DisplayName(player)}, {team.TeamName} takımıyla '{match.MatchName}' maçına rakip olarak katıldı; seni de kadroya davet ediyor ({match.MatchDate:dd.MM.yyyy HH:mm}).",
-                    matchId, null, invited);
-            }
+            // Takımın diğer üyeleri doğrudan kadroya (Side 2); kadroda olanlar atlanır
+            AddTeamToSquad(context, match, me, player, teamId, ParticipantSide.Away);
             if (match.CreatedByPlayerId.HasValue && match.CreatedByPlayerId.Value != me)
             {
                 AddNotification(context, NotificationType.MatchJoin,
-                    $"{team.TeamName} takımı '{match.MatchName}' maçına rakip olarak katıldı.", matchId, new[] { match.CreatedByPlayerId.Value });
+                    Msg.GetDefault(MessageKeys.Reservation.NotifOpponentJoined, team.TeamName, match.MatchName), matchId, new[] { match.CreatedByPlayerId.Value });
             }
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Takımın rakip olarak maça eklendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Reservation.OpponentAdded));
         }
 
         // ------------------------------------------------------------------ Rezervasyon durumu
@@ -644,7 +691,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         public OperationResult<bool> SetMatchStatus(int matchId, byte status, string? reason, int? ownerId)
         {
             if (status != MatchStatus.Pending && status != MatchStatus.Approved && status != MatchStatus.Rejected)
-                return OperationResult<bool>.BadRequest("Geçersiz durum.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.InvalidStatus);
 
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
@@ -661,9 +708,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 if (!VenueRules.MembershipActive(owner, DateTime.Now))
                     return OperationResult<bool>.Forbidden(VenueRules.MembershipInactive);
                 if (match.IsActive != MatchStatus.Pending)
-                    return OperationResult<bool>.BadRequest("Sadece onay bekleyen rezervasyonlar yanıtlanabilir.");
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.NotPending);
                 if (status == MatchStatus.Pending)
-                    return OperationResult<bool>.BadRequest("Geçersiz durum.");
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.InvalidStatus);
             }
             else if (match.IsActive == MatchStatus.Rejected && status != MatchStatus.Rejected && match.PitchId.HasValue && match.MatchDate.HasValue)
             {
@@ -677,11 +724,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
             reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
             if (reason != null && reason.Length > 200)
-                return OperationResult<bool>.BadRequest("Red sebebi en fazla 200 karakter olabilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Validation.TooLong, Msg.Get(MessageKeys.Reservation.LabelRejectReason), 200);
 
             var previous = match.IsActive;
             match.IsActive = status;
             match.RejectReason = status == MatchStatus.Rejected ? reason : null;
+            if (previous != status) MatchSeriesService.OnStatusChanged(context, match, status);
 
             if (previous != status && status != MatchStatus.Pending)
             {
@@ -689,19 +737,20 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
                     .Select(p => p.PlayerId).ToList();
                 if (match.CreatedByPlayerId.HasValue) recipients.Add(match.CreatedByPlayerId.Value);
-                var place = stadium?.StadiumName ?? "tesis";
+                var place = stadium?.StadiumName ?? Msg.GetDefault(MessageKeys.Reservation.LabelVenueFallback);
                 var text = status == MatchStatus.Approved
-                    ? $"Rezervasyon onaylandı: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}, {place}."
-                    : $"Rezervasyon reddedildi: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}, {place}." +
-                      (reason != null ? $" Sebep: {reason}" : string.Empty);
+                    ? Msg.GetDefault(MessageKeys.Reservation.NotifApproved, match.MatchName, match.MatchDate, place)
+                    : reason != null
+                        ? Msg.GetDefault(MessageKeys.Reservation.NotifRejectedWithReason, match.MatchName, match.MatchDate, place, reason)
+                        : Msg.GetDefault(MessageKeys.Reservation.NotifRejected, match.MatchName, match.MatchDate, place);
                 AddNotification(context, status == MatchStatus.Approved ? NotificationType.MatchApproval : NotificationType.MatchRejection,
                     text, matchId, recipients);
             }
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, status == MatchStatus.Approved ? "Rezervasyon onaylandı."
-                : status == MatchStatus.Rejected ? "Rezervasyon reddedildi." : "Rezervasyon beklemeye alındı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(status == MatchStatus.Approved ? MessageKeys.Reservation.Approved
+                : status == MatchStatus.Rejected ? MessageKeys.Reservation.Rejected : MessageKeys.Reservation.SetPending));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Entities.Entity;
+using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,7 +14,11 @@ namespace MatchBuddy.DataAccess.Configuration
                 .Property(b => b.GroupName)
                 .HasMaxLength(250)
                 .IsRequired();
-                        
+
+            builder.HasOne<Player>()
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByPlayerId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

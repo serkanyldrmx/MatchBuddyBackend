@@ -29,6 +29,24 @@ namespace MatchBuddy.Api.Controllers
                 : null);
         }
 
+        /// <summary>"Yedek bul" adayları (maçı yöneten). docs/reliability-api.md</summary>
+        [HttpGet("SubstituteCandidates")]
+        public IActionResult SubstituteCandidates(int matchId)
+        {
+            var result = _inviteService.GetSubstituteCandidates(User.GetPlayerId(), User.IsAdmin(), matchId);
+            return this.ToHttp(result, result.Data);
+        }
+
+        /// <summary>Seçilen oyunculara "yer açıldı" bildirimi (maç daveti olarak; ilk kabul eden yeri alır).</summary>
+        [HttpPost("CallSubstitutes")]
+        public IActionResult CallSubstitutes(InviteToMatchModel model)
+        {
+            var result = _inviteService.CallSubstitutes(User.GetPlayerId(), User.IsAdmin(), model.MatchId, model.PlayerIds);
+            return this.ToHttp(result, result.Success
+                ? new { Success = true, result.Message, result.Data.Invited, result.Data.Skipped }
+                : null);
+        }
+
         [HttpPost("InviteToTeam")]
         public IActionResult InviteToTeam(InviteToTeamModel model)
         {

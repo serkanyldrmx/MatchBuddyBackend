@@ -11,5 +11,8 @@ namespace MatchBuddy.Entities.Entity
         public int PlayerId { get; set; }
         public bool IsRead { get; set; }
         public DateTime SentAt { get; set; }
+
+        // Telefona bildirim / anlık sinyal gönderildi mi (PushDispatchService). null = sırada.
+        public DateTime? PushedAt { get; set; }
     }
 }

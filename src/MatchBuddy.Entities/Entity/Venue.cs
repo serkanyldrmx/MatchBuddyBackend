@@ -19,6 +19,8 @@ namespace MatchBuddy.Entities.Entity
         public string Url { get; set; } = string.Empty;
         public bool IsCover { get; set; }
         public int SortOrder { get; set; }
+        // Url md URL'sini tutar; eski /uploads kayıtlarında null
+        public int? MediaId { get; set; }
     }
 
     /// <summary>Tesisteki saha. Surface: 1 suni çim, 2 doğal çim, 3 parke, 4 diğer.</summary>
@@ -73,9 +75,16 @@ namespace MatchBuddy.Entities.Entity
         public int? DiscountPercent { get; set; }
         public decimal? FixedPrice { get; set; }
         public bool IsActive { get; set; }
+        // Boş saat fırsatı: tek bir boş saate indirim + oyunculara bildirim (docs/venue-growth-api.md)
+        public bool IsDeal { get; set; }
+        public DateTime? DealSentAt { get; set; }
+        public int DealNotifiedCount { get; set; }
     }
 
-    /// <summary>İşletmenin elle kapattığı aralık.</summary>
+    /// <summary>
+    /// İşletmenin elle kapattığı aralık (Kind 0) ya da uygulama dışından aldığı harici rezervasyon (Kind 1).
+    /// Kind 1'de Reason opsiyoneldir (boş metin saklanır), CustomerName ve Price zorunludur.
+    /// </summary>
     public class SlotBlock : IEntity
     {
         public int SlotBlockId { get; set; }
@@ -83,6 +92,41 @@ namespace MatchBuddy.Entities.Entity
         public DateTime StartAt { get; set; }
         public DateTime EndAt { get; set; }
         public string Reason { get; set; } = string.Empty;
+        public byte Kind { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPaid { get; set; }
+        public string? Note { get; set; }
+        // Haftalık tekrar eden telefon rezervasyonu: aynı serideki kayıtlar
+        public Guid? SeriesId { get; set; }
+    }
+
+    public static class SlotBlockKind
+    {
+        public const byte Closed = 0;
+        public const byte Manual = 1;
+    }
+
+    /// <summary>Tesis gideri (docs/venues-api.md "Ek paket" §2).</summary>
+    public class VenueExpense : IEntity
+    {
+        public int ExpenseId { get; set; }
+        public int StadiumId { get; set; }
+        public DateTime Date { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    /// <summary>Gider kategorileri (sabit liste; frontend de aynı listeyi kullanır).</summary>
+    public static class ExpenseCategories
+    {
+        public static readonly string[] All =
+        {
+            "Personel", "Kira", "Elektrik", "Su", "Doğalgaz", "Bakım-onarım", "Malzeme", "Vergi", "Reklam", "Diğer",
+        };
     }
 
     /// <summary>Tesis yorumu. Unique (MatchId, PlayerId).</summary>

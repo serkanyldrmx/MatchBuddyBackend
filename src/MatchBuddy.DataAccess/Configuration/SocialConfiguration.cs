@@ -1,4 +1,4 @@
-using MatchBuddy.Entities.Entity;
+﻿using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -57,6 +57,8 @@ namespace MatchBuddy.DataAccess.Configuration
             builder.ToTable("PlayerSettings");
             builder.HasKey(x => x.PlayerId);
             builder.Property(x => x.PlayerId).ValueGeneratedNever();
+            builder.Property(x => x.Theme).HasMaxLength(10).IsRequired().HasDefaultValue("system");
+            builder.Property(x => x.Language).HasMaxLength(10).IsRequired().HasDefaultValue("tr");
 
             // Not: bool alanlara HasDefaultValue(true) verilmez; EF 'false' değerini
             // "atanmamış" sayıp DB varsayılanını (true) yazardı. Varsayılanlar kodda.

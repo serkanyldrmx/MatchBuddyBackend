@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Entities.Entity;
+using MatchBuddy.Entities.Entity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -31,12 +31,14 @@ namespace MatchBuddy.DataAccess
         public DbSet<MatchComment> MatchComments { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMessage> GroupMessages { get; set; }
+        public DbSet<MessageReaction> MessageReactions { get; set; }
         public DbSet<GroupPlayer> GroupPlayers { get; set; }
         public DbSet<MatchTeam> MatchTeam { get; set; }
         public DbSet<PlayerTeam> PlayerTeam { get; set; }
         public DbSet<Notification> Notification { get; set; }
         public DbSet<PlayerNotification> PlayerNotification { get; set; }
         public DbSet<MatchParticipant> MatchParticipants { get; set; }
+        public DbSet<MatchGuest> MatchGuests { get; set; }
         public DbSet<MatchLike> MatchLikes { get; set; }
         public DbSet<MvpVote> MvpVotes { get; set; }
         public DbSet<PlayerRating> PlayerRatings { get; set; }
@@ -57,6 +59,17 @@ namespace MatchBuddy.DataAccess
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<SlotBlock> SlotBlocks { get; set; }
         public DbSet<VenueReview> VenueReviews { get; set; }
+        public DbSet<VenueExpense> VenueExpenses { get; set; }
+        public DbSet<Media> Media { get; set; }
+        public DbSet<SystemParameter> SystemParameters { get; set; }
+        public DbSet<ParameterAudit> ParameterAudits { get; set; }
+        public DbSet<VenueSettings> VenueSettings { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<ExternalLogin> ExternalLogins { get; set; }
+        public DbSet<AuthCode> AuthCodes { get; set; }
+        public DbSet<ReliabilityEvent> ReliabilityEvents { get; set; }
+        public DbSet<PushSubscription> PushSubscriptions { get; set; }
+        public DbSet<MatchSeries> MatchSeries { get; set; }
 
     }
 }

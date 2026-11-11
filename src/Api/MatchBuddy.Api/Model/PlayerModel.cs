@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Entities.Entity;
+using MatchBuddy.Entities.Entity;
 
 namespace MatchBuddy.Api.Model
 {
@@ -17,5 +17,8 @@ namespace MatchBuddy.Api.Model
         public int Age { get; set; }
         public byte MatchNotificationPermission { get; set; }
         public int UserScore { get; set; }
+        // Kayıtta zorunlu (KVKK): güncel kullanım koşulları/aydınlatma metni sürümü (legal.termsVersion)
+        public string? TermsVersion { get; set; }
+        public bool MarketingConsent { get; set; }
     }
 }

@@ -1,0 +1,2028 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="ADMIN_CREATE_OWNER_FAILED" xml:space="preserve">
+    <value>İşletme oluşturulamadı (kullanıcı adı kullanımda olabilir).</value>
+  </data>
+  <data name="ADMIN_INVALID_OWNER_MODEL" xml:space="preserve">
+    <value>Geçersiz işletme bilgisi (model JSON).</value>
+  </data>
+  <data name="ADMIN_NOT_AN_OWNER" xml:space="preserve">
+    <value>Seçilen hesap bir işletme değil.</value>
+  </data>
+  <data name="ADMIN_OWNER_NOT_FOUND" xml:space="preserve">
+    <value>İşletme bulunamadı.</value>
+  </data>
+  <data name="ADMIN_PHOTO_UPLOAD_FAILED" xml:space="preserve">
+    <value>{0}: {1}</value>
+    <comment>{0}: dosya adı, {1}: yükleme hata mesajı</comment>
+  </data>
+  <data name="ADMIN_USERNAME_TAKEN" xml:space="preserve">
+    <value>Bu kullanıcı adı zaten kullanılıyor.</value>
+  </data>
+  <data name="AUTH_ADMIN_ONLY" xml:space="preserve">
+    <value>Bu işlem yalnızca yöneticiler içindir.</value>
+  </data>
+  <data name="AUTH_FORBIDDEN" xml:space="preserve">
+    <value>Bu işlem için yetkiniz yok.</value>
+  </data>
+  <data name="AUTH_INVALID_CREDENTIALS" xml:space="preserve">
+    <value>Kullanıcı adı veya şifre hatalı.</value>
+  </data>
+  <data name="AUTH_PASSWORD_REQUIRED" xml:space="preserve">
+    <value>Şifre gerekli.</value>
+  </data>
+  <data name="AUTH_PASSWORD_TOO_SHORT" xml:space="preserve">
+    <value>Şifre en az {0} karakter olmalıdır.</value>
+    <comment>{0}: en az karakter sayısı</comment>
+  </data>
+  <data name="AUTH_PASSWORD_WRONG" xml:space="preserve">
+    <value>Şifre hatalı.</value>
+  </data>
+  <data name="AUTH_UNAUTHORIZED" xml:space="preserve">
+    <value>Oturumunuz sona erdi veya giriş yapmadınız. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="AUTH_USERNAME_REQUIRED" xml:space="preserve">
+    <value>Kullanıcı adı zorunludur.</value>
+  </data>
+  <data name="AUTH_USERNAME_TAKEN" xml:space="preserve">
+    <value>Bu kullanıcı adı zaten kullanılıyor.</value>
+  </data>
+  <data name="COMMENT_EMPTY" xml:space="preserve">
+    <value>Yorum boş olamaz.</value>
+  </data>
+  <data name="COMMENT_NOT_FOUND" xml:space="preserve">
+    <value>Yorum bulunamadı.</value>
+  </data>
+  <data name="COMMON_BAD_REQUEST" xml:space="preserve">
+    <value>İstek geçersiz.</value>
+  </data>
+  <data name="COMMON_CONFLICT" xml:space="preserve">
+    <value>Kayıt başka bir işlemle değiştirildi. Lütfen sayfayı yenileyip tekrar deneyin.</value>
+  </data>
+  <data name="COMMON_INTERNAL_ERROR" xml:space="preserve">
+    <value>Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="COMMON_INVALID_DATE_RANGE" xml:space="preserve">
+    <value>Bitiş tarihi başlangıçtan sonra olmalıdır.</value>
+  </data>
+  <data name="COMMON_INVALID_JSON" xml:space="preserve">
+    <value>Geçersiz JSON formatı.</value>
+  </data>
+  <data name="COMMON_LIST_OR" xml:space="preserve">
+    <value>veya</value>
+  </data>
+  <data name="COMMON_MAINTENANCE" xml:space="preserve">
+    <value>Sistem Bakımda</value>
+  </data>
+  <data name="COMMON_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Bu işlem bu adres için desteklenmiyor.</value>
+  </data>
+  <data name="COMMON_NOT_FOUND" xml:space="preserve">
+    <value>Aradığınız kaynak bulunamadı.</value>
+  </data>
+  <data name="COMMON_OPERATION_FAILED" xml:space="preserve">
+    <value>İşlem gerçekleştirilemedi.</value>
+  </data>
+  <data name="COMMON_PAYLOAD_TOO_LARGE" xml:space="preserve">
+    <value>Gönderilen veri çok büyük.</value>
+  </data>
+  <data name="COMMON_RATE_LIMITED" xml:space="preserve">
+    <value>Çok fazla istek. Lütfen biraz sonra tekrar deneyin.</value>
+  </data>
+  <data name="COMMON_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Hizmet şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="COMMON_UNSUPPORTED_MEDIA_TYPE" xml:space="preserve">
+    <value>Gönderilen içerik türü desteklenmiyor.</value>
+  </data>
+  <data name="COMMON_UPSTREAM_ERROR" xml:space="preserve">
+    <value>Dış servise ulaşılamadı. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="GROUP_NAME_INVALID" xml:space="preserve">
+    <value>Grup ismi 3 Karakterden Küçük Olamaz</value>
+  </data>
+  <data name="GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Grup bulunamadı.</value>
+  </data>
+  <data name="INVITE_ALREADY_RESPONDED" xml:space="preserve">
+    <value>Bu davet zaten yanıtlandı.</value>
+  </data>
+  <data name="INVITE_BATCH_LIMIT" xml:space="preserve">
+    <value>Tek seferde en fazla {0} oyuncu davet edilebilir.</value>
+    <comment>{0}: en fazla oyuncu sayısı</comment>
+  </data>
+  <data name="INVITE_INVALID_KIND" xml:space="preserve">
+    <value>kind 'match' veya 'team' olmalıdır.</value>
+  </data>
+  <data name="INVITE_MATCH_PAST" xml:space="preserve">
+    <value>Maç tarihi geçti, davet gönderilemez.</value>
+  </data>
+  <data name="INVITE_MATCH_REJECTED" xml:space="preserve">
+    <value>Bu maç reddedildi, davet gönderilemez.</value>
+  </data>
+  <data name="INVITE_NOT_FOUND" xml:space="preserve">
+    <value>Davet bulunamadı.</value>
+  </data>
+  <data name="INVITE_NOT_PLAYING_IN_MATCH" xml:space="preserve">
+    <value>Davet göndermek için maçta oynuyor olmalısın.</value>
+  </data>
+  <data name="INVITE_NOT_TEAM_MEMBER" xml:space="preserve">
+    <value>Davet göndermek için takımın üyesi olmalısın.</value>
+  </data>
+  <data name="INVITE_NOT_YOURS" xml:space="preserve">
+    <value>Bu davet sana gönderilmedi.</value>
+  </data>
+  <data name="INVITE_NO_PLAYERS" xml:space="preserve">
+    <value>Davet edilecek en az bir oyuncu seçmelisin.</value>
+  </data>
+  <data name="INVITE_PAST_MATCH_ACCEPT" xml:space="preserve">
+    <value>Geçmiş maçın daveti kabul edilemez.</value>
+  </data>
+  <data name="LABEL_ADMIN_DEFAULT_PITCH_NAME" xml:space="preserve">
+    <value>Saha 1</value>
+    <comment>Yeni işletmenin ilk sahasının veritabanına yazılan adı</comment>
+  </data>
+  <data name="LABEL_COMMON_VALUE" xml:space="preserve">
+    <value>değer</value>
+  </data>
+  <data name="LABEL_MATCH_GOALS_ASSISTS" xml:space="preserve">
+    <value>Gol ve asist sayıları</value>
+  </data>
+  <data name="LABEL_MATCH_GUEST_NOTE" xml:space="preserve">
+    <value>Not</value>
+  </data>
+  <data name="LABEL_MATCH_RATING_SCORE" xml:space="preserve">
+    <value>Puan</value>
+  </data>
+  <data name="LABEL_MATCH_SCORES" xml:space="preserve">
+    <value>Skorlar</value>
+  </data>
+  <data name="LABEL_MATCH_SOME_PLAYER" xml:space="preserve">
+    <value>Bir oyuncu</value>
+    <comment>Oyuncu adı bilinmediğinde bildirimlerde kullanılır</comment>
+  </data>
+  <data name="LABEL_MESSAGE_PHOTO_PREVIEW" xml:space="preserve">
+    <value>📷 Fotoğraf</value>
+    <comment>metinsiz resimli mesajın son-mesaj önizlemesi</comment>
+  </data>
+  <data name="LABEL_OSM_UNNAMED_PITCH" xml:space="preserve">
+    <value>Adsız halı saha</value>
+    <comment>OSM'de adı olmayan aday</comment>
+  </data>
+  <data name="LABEL_OWNER_CLOSED_BLOCK_REASON" xml:space="preserve">
+    <value>Kapalı</value>
+    <comment>Sebep girilmeyen kapalı blokların veritabanına yazılan varsayılan sebebi</comment>
+  </data>
+  <data name="LABEL_PLAYER_DELETED_NAME" xml:space="preserve">
+    <value>Silinmiş</value>
+    <comment>silinen hesabın adı (DB'ye yazılır)</comment>
+  </data>
+  <data name="LABEL_PLAYER_DELETED_SURNAME" xml:space="preserve">
+    <value>Kullanıcı</value>
+    <comment>silinen hesabın soyadı (DB'ye yazılır)</comment>
+  </data>
+  <data name="LABEL_RESERVATION_REJECT_REASON" xml:space="preserve">
+    <value>Red sebebi</value>
+  </data>
+  <data name="LABEL_RESERVATION_USER_COUNT" xml:space="preserve">
+    <value>Oyuncu sayısı</value>
+  </data>
+  <data name="LABEL_RESERVATION_VENUE_FALLBACK" xml:space="preserve">
+    <value>tesis</value>
+    <comment>Tesis adı bilinmiyorsa bildirimde kullanılır</comment>
+  </data>
+  <data name="LABEL_SOCIAL_REPORT_DETAILS" xml:space="preserve">
+    <value>Açıklama</value>
+    <comment>şikayet açıklaması alan adı (VALIDATION_TOO_LONG ile)</comment>
+  </data>
+  <data name="LABEL_TOURNAMENT_DESCRIPTION" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="LABEL_TOURNAMENT_NAME" xml:space="preserve">
+    <value>Turnuva adı</value>
+  </data>
+  <data name="LABEL_VENUE_ADDRESS" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="LABEL_VENUE_BLOCK_CLOSED" xml:space="preserve">
+    <value>Kapalı</value>
+    <comment>Kapalı blok için varsayılan sebep (DB'ye yazılır)</comment>
+  </data>
+  <data name="LABEL_VENUE_CAMERA_PRICE" xml:space="preserve">
+    <value>Maç kaydı ücreti</value>
+  </data>
+  <data name="LABEL_VENUE_CANCELLATION_POLICY" xml:space="preserve">
+    <value>İptal koşulları</value>
+  </data>
+  <data name="LABEL_VENUE_CITY" xml:space="preserve">
+    <value>İl</value>
+  </data>
+  <data name="LABEL_VENUE_CLEAT_COUNT" xml:space="preserve">
+    <value>Krampon sayısı</value>
+  </data>
+  <data name="LABEL_VENUE_CLEAT_RENTAL_PRICE" xml:space="preserve">
+    <value>Krampon kiralama ücreti</value>
+  </data>
+  <data name="LABEL_VENUE_COMMENT" xml:space="preserve">
+    <value>Yorum</value>
+  </data>
+  <data name="LABEL_VENUE_CONTACT_NAME" xml:space="preserve">
+    <value>Yetkili adı</value>
+  </data>
+  <data name="LABEL_VENUE_CUSTOMER_NAME" xml:space="preserve">
+    <value>Müşteri adı</value>
+  </data>
+  <data name="LABEL_VENUE_DATE" xml:space="preserve">
+    <value>Tarih</value>
+  </data>
+  <data name="LABEL_VENUE_DESCRIPTION" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="LABEL_VENUE_DISCOUNT_PERCENT" xml:space="preserve">
+    <value>İndirim yüzdesi</value>
+  </data>
+  <data name="LABEL_VENUE_DISTRICT" xml:space="preserve">
+    <value>İlçe</value>
+  </data>
+  <data name="LABEL_VENUE_EMAIL" xml:space="preserve">
+    <value>E-posta</value>
+  </data>
+  <data name="LABEL_VENUE_EXTERNAL_BOOKING" xml:space="preserve">
+    <value>Harici rezervasyon</value>
+    <comment>Finans hareketinde başlıksız harici rezervasyon</comment>
+  </data>
+  <data name="LABEL_VENUE_FEE" xml:space="preserve">
+    <value>Ücret</value>
+  </data>
+  <data name="LABEL_VENUE_FIXED_PRICE" xml:space="preserve">
+    <value>Sabit fiyat</value>
+  </data>
+  <data name="LABEL_VENUE_HOURLY_PRICE" xml:space="preserve">
+    <value>Saatlik ücret</value>
+  </data>
+  <data name="LABEL_VENUE_MATCH_NAME" xml:space="preserve">
+    <value>Maç adı</value>
+  </data>
+  <data name="LABEL_VENUE_MONTH" xml:space="preserve">
+    <value>Ay</value>
+  </data>
+  <data name="LABEL_VENUE_NAME" xml:space="preserve">
+    <value>Tesis adı</value>
+  </data>
+  <data name="LABEL_VENUE_NOTE" xml:space="preserve">
+    <value>Not</value>
+  </data>
+  <data name="LABEL_VENUE_OWNER_NAME" xml:space="preserve">
+    <value>İşletme adı</value>
+  </data>
+  <data name="LABEL_VENUE_PASSWORD" xml:space="preserve">
+    <value>Şifre</value>
+  </data>
+  <data name="LABEL_VENUE_PHONE" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="LABEL_VENUE_PITCH_NAME" xml:space="preserve">
+    <value>Saha adı</value>
+  </data>
+  <data name="LABEL_VENUE_PLAYERS_PER_SIDE" xml:space="preserve">
+    <value>Takım başına oyuncu sayısı</value>
+  </data>
+  <data name="LABEL_VENUE_RATING" xml:space="preserve">
+    <value>Puan</value>
+  </data>
+  <data name="LABEL_VENUE_REASON" xml:space="preserve">
+    <value>Sebep</value>
+  </data>
+  <data name="LABEL_VENUE_REPLY" xml:space="preserve">
+    <value>Yanıt</value>
+  </data>
+  <data name="LABEL_VENUE_SETTINGS_FREE_CANCEL" xml:space="preserve">
+    <value>Ücretsiz iptal süresi (saat)</value>
+  </data>
+  <data name="LABEL_VENUE_SETTINGS_MAX_ADVANCE" xml:space="preserve">
+    <value>En fazla ileri tarih (gün)</value>
+  </data>
+  <data name="LABEL_VENUE_SETTINGS_MIN_NOTICE" xml:space="preserve">
+    <value>En az rezervasyon bildirimi (saat)</value>
+  </data>
+  <data name="LABEL_VENUE_TITLE" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="LABEL_VENUE_USERNAME" xml:space="preserve">
+    <value>Kullanıcı adı</value>
+  </data>
+  <data name="MATCH_ALREADY_JOINED" xml:space="preserve">
+    <value>Bu maça zaten katılıyorsun.</value>
+  </data>
+  <data name="MATCH_ALREADY_WAITLISTED" xml:space="preserve">
+    <value>Zaten bu maçın yedek listesindesin.</value>
+  </data>
+  <data name="MATCH_CALENDAR_INVALID_RANGE" xml:space="preserve">
+    <value>Bitiş tarihi başlangıçtan önce olamaz.</value>
+  </data>
+  <data name="MATCH_CONFIRM_ONLY_GOING" xml:space="preserve">
+    <value>Sadece maça katılan (asil) oyuncular onay verebilir.</value>
+  </data>
+  <data name="MATCH_GUEST_NAME_LENGTH" xml:space="preserve">
+    <value>Misafir adı {0}–{1} karakter olmalıdır.</value>
+    <comment>{0}: en az, {1}: en fazla karakter</comment>
+  </data>
+  <data name="MATCH_GUEST_NOT_FOUND" xml:space="preserve">
+    <value>Misafir oyuncu bulunamadı.</value>
+  </data>
+  <data name="MATCH_INVALID_SIDE" xml:space="preserve">
+    <value>Taraf 1 (ev sahibi) veya 2 (deplasman) olmalıdır.</value>
+  </data>
+  <data name="MATCH_MVP_NOT_OPEN" xml:space="preserve">
+    <value>MVP oylaması maç oynandıktan sonra açılır.</value>
+  </data>
+  <data name="MATCH_MVP_SELF_VOTE" xml:space="preserve">
+    <value>Kendine oy veremezsin.</value>
+  </data>
+  <data name="MATCH_MVP_VOTED_NOT_PLAYED" xml:space="preserve">
+    <value>Oy verilen oyuncu bu maçta oynamadı.</value>
+  </data>
+  <data name="MATCH_MVP_VOTER_NOT_PLAYED" xml:space="preserve">
+    <value>Sadece maçta oynayan oyuncular oy verebilir.</value>
+  </data>
+  <data name="MATCH_NAME_INVALID" xml:space="preserve">
+    <value>Maç ismi 5 Karakterden Küçük Olamaz</value>
+  </data>
+  <data name="MATCH_NOT_FOUND" xml:space="preserve">
+    <value>Maç bulunamadı.</value>
+  </data>
+  <data name="MATCH_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Bu maçta kaydın bulunmuyor.</value>
+  </data>
+  <data name="MATCH_OWNER_CANNOT_CREATE" xml:space="preserve">
+    <value>İşletme hesapları maç kuramaz.</value>
+  </data>
+  <data name="MATCH_OWNER_CANNOT_JOIN" xml:space="preserve">
+    <value>İşletme hesapları maça katılamaz.</value>
+  </data>
+  <data name="MATCH_PAST_CANNOT_LEAVE" xml:space="preserve">
+    <value>Maç tarihi geçti, kadrodan ayrılamazsın.</value>
+  </data>
+  <data name="MATCH_PAST_JOIN_CLOSED" xml:space="preserve">
+    <value>Maç tarihi geçti, katılım kapalı.</value>
+  </data>
+  <data name="MATCH_PAST_ROSTER_LOCKED" xml:space="preserve">
+    <value>Maç tarihi geçti, kadro değiştirilemez.</value>
+  </data>
+  <data name="MATCH_PLAYER_NOT_IN_ROSTER" xml:space="preserve">
+    <value>Oyuncu bu maçta asil kadroda değil.</value>
+  </data>
+  <data name="MATCH_RATED_NOT_PLAYED" xml:space="preserve">
+    <value>Puanlanan oyuncular bu maçta oynamış olmalı.</value>
+  </data>
+  <data name="MATCH_RATER_NOT_PLAYED" xml:space="preserve">
+    <value>Sadece maçta oynayan oyuncular puan verebilir.</value>
+  </data>
+  <data name="MATCH_RATINGS_REQUIRED" xml:space="preserve">
+    <value>En az bir oyuncuya puan vermelisin.</value>
+  </data>
+  <data name="MATCH_RATING_NOT_OPEN" xml:space="preserve">
+    <value>Puanlama maç oynandıktan sonra açılır.</value>
+  </data>
+  <data name="MATCH_RATING_SELF" xml:space="preserve">
+    <value>Kendine puan veremezsin.</value>
+  </data>
+  <data name="MATCH_REJECTED_JOIN_CLOSED" xml:space="preserve">
+    <value>Bu maç reddedildi, katılım kapalı.</value>
+  </data>
+  <data name="MATCH_REJECTED_ROSTER_LOCKED" xml:space="preserve">
+    <value>Bu maç reddedildi, kadro değiştirilemez.</value>
+  </data>
+  <data name="MATCH_RESULT_NOT_PLAYED" xml:space="preserve">
+    <value>Maç henüz oynanmadı, sonuç girilemez.</value>
+  </data>
+  <data name="MATCH_SIDE_FULL" xml:space="preserve">
+    <value>Bu tarafta boş yer yok.</value>
+  </data>
+  <data name="MATCH_TEAM_ALREADY_ADDED" xml:space="preserve">
+    <value>Bu takım zaten maça ekli.</value>
+  </data>
+  <data name="MATCH_TIME_CONFLICT" xml:space="preserve">
+    <value>Aynı stadyumda aynı saatte başka bir maç bulunmaktadır.</value>
+  </data>
+  <data name="MEDIA_FILE_EMPTY" xml:space="preserve">
+    <value>Dosya boş.</value>
+  </data>
+  <data name="MEDIA_FILE_TOO_LARGE" xml:space="preserve">
+    <value>Dosya boyutu {0}MB'ı geçemez.</value>
+    <comment>{0}: en fazla boyut (MB)</comment>
+  </data>
+  <data name="MEDIA_FORMAT_NOT_ALLOWED" xml:space="preserve">
+    <value>Sadece JPG, JPEG veya PNG dosyaları yüklenebilir.</value>
+  </data>
+  <data name="MEDIA_INVALID_IMAGE" xml:space="preserve">
+    <value>Dosya geçerli bir resim değil.</value>
+  </data>
+  <data name="MEDIA_INVALID_KIND" xml:space="preserve">
+    <value>Geçersiz medya türü (kind: message).</value>
+  </data>
+  <data name="MEDIA_NOT_FOUND" xml:space="preserve">
+    <value>Fotoğraf bulunamadı.</value>
+  </data>
+  <data name="MEDIA_NO_FILE" xml:space="preserve">
+    <value>Fotoğraf seçilmedi.</value>
+  </data>
+  <data name="MEDIA_TOO_LARGE" xml:space="preserve">
+    <value>Fotoğraf en fazla {0} MB olabilir.</value>
+    <comment>{0}: en fazla boyut (MB)</comment>
+  </data>
+  <data name="MEDIA_TOO_MANY_PIXELS" xml:space="preserve">
+    <value>Fotoğraf çok büyük (en fazla {0} MP).</value>
+    <comment>{0}: en fazla megapiksel</comment>
+  </data>
+  <data name="MESSAGE_BLOCKED" xml:space="preserve">
+    <value>Bu oyuncuyla mesajlaşamazsın.</value>
+  </data>
+  <data name="MESSAGE_EMPTY" xml:space="preserve">
+    <value>Mesaj boş olamaz.</value>
+  </data>
+  <data name="MESSAGE_NOT_ALLOWED" xml:space="preserve">
+    <value>Bu oyuncu sadece arkadaşlarından mesaj kabul ediyor.</value>
+  </data>
+  <data name="MSG_ADMIN_MEMBERSHIP_UPDATED" xml:space="preserve">
+    <value>Üyelik güncellendi.</value>
+  </data>
+  <data name="MSG_ADMIN_OWNER_CREATED" xml:space="preserve">
+    <value>İşletme hesabı ve tesis oluşturuldu.</value>
+  </data>
+  <data name="MSG_ADMIN_VENUE_ASSIGNED" xml:space="preserve">
+    <value>Tesis işletmeye atandı.</value>
+  </data>
+  <data name="MSG_ADMIN_VENUE_LISTED" xml:space="preserve">
+    <value>Tesis yayına alındı.</value>
+  </data>
+  <data name="MSG_ADMIN_VENUE_UNLISTED" xml:space="preserve">
+    <value>Tesis yayından kaldırıldı.</value>
+  </data>
+  <data name="MSG_COMMON_ADDED" xml:space="preserve">
+    <value>Kayıt İşlemi Başarılı.</value>
+  </data>
+  <data name="MSG_COMMON_DELETED" xml:space="preserve">
+    <value>Silme İşlemi Başarılı.</value>
+  </data>
+  <data name="MSG_COMMON_GROUPS_LISTED" xml:space="preserve">
+    <value>Gruplar Listelendi</value>
+  </data>
+  <data name="MSG_COMMON_LISTED" xml:space="preserve">
+    <value>Listelendi.</value>
+  </data>
+  <data name="MSG_COMMON_PLAYERS_LISTED" xml:space="preserve">
+    <value>Oyuncular Listelendi</value>
+  </data>
+  <data name="MSG_COMMON_SAVED" xml:space="preserve">
+    <value>Kaydedildi.</value>
+  </data>
+  <data name="MSG_COMMON_UPDATED" xml:space="preserve">
+    <value>Güncelleme İşlemi Başarılı.</value>
+  </data>
+  <data name="MSG_INVITE_ALREADY_GOING" xml:space="preserve">
+    <value>Bu maça zaten katılıyorsun.</value>
+  </data>
+  <data name="MSG_INVITE_ALREADY_WAITLIST" xml:space="preserve">
+    <value>Zaten bu maçın yedek listesindesin.</value>
+  </data>
+  <data name="MSG_INVITE_DECLINED" xml:space="preserve">
+    <value>Davet reddedildi.</value>
+  </data>
+  <data name="MSG_INVITE_NONE_TO_SEND" xml:space="preserve">
+    <value>Davet gönderilecek oyuncu yok.</value>
+  </data>
+  <data name="MSG_INVITE_SENT" xml:space="preserve">
+    <value>Davetler gönderildi.</value>
+  </data>
+  <data name="MSG_INVITE_TEAM_JOINED" xml:space="preserve">
+    <value>Takıma katıldın.</value>
+  </data>
+  <data name="MSG_MATCH_ALREADY_LIKED" xml:space="preserve">
+    <value>Maç zaten beğenildi.</value>
+  </data>
+  <data name="MSG_MATCH_CONFIRMED" xml:space="preserve">
+    <value>Katılımın onaylandı.</value>
+  </data>
+  <data name="MSG_MATCH_DELETED" xml:space="preserve">
+    <value>Maç silindi.</value>
+  </data>
+  <data name="MSG_MATCH_GUEST_ADDED" xml:space="preserve">
+    <value>Misafir oyuncu eklendi.</value>
+  </data>
+  <data name="MSG_MATCH_GUEST_REMOVED" xml:space="preserve">
+    <value>Misafir oyuncu kadrodan çıkarıldı.</value>
+  </data>
+  <data name="MSG_MATCH_GUEST_UPDATED" xml:space="preserve">
+    <value>Misafir oyuncu güncellendi.</value>
+  </data>
+  <data name="MSG_MATCH_JOINED" xml:space="preserve">
+    <value>Maça katıldın.</value>
+  </data>
+  <data name="MSG_MATCH_JOINED_WAITLIST" xml:space="preserve">
+    <value>Maç dolu, yedek listesine eklendin.</value>
+  </data>
+  <data name="MSG_MATCH_LEFT" xml:space="preserve">
+    <value>Maçtan ayrıldın.</value>
+  </data>
+  <data name="MSG_MATCH_LEFT_WAITLIST" xml:space="preserve">
+    <value>Yedek listesinden çıktın.</value>
+  </data>
+  <data name="MSG_MATCH_LIKED" xml:space="preserve">
+    <value>Maç beğenildi.</value>
+  </data>
+  <data name="MSG_MATCH_MVP_VOTED" xml:space="preserve">
+    <value>MVP oyun kaydedildi.</value>
+  </data>
+  <data name="MSG_MATCH_RATINGS_SAVED" xml:space="preserve">
+    <value>Puanların kaydedildi.</value>
+  </data>
+  <data name="MSG_MATCH_RESULT_SAVED" xml:space="preserve">
+    <value>Maç sonucu kaydedildi.</value>
+  </data>
+  <data name="MSG_MATCH_SIDE_UPDATED" xml:space="preserve">
+    <value>Oyuncunun tarafı güncellendi.</value>
+  </data>
+  <data name="MSG_MATCH_UNLIKED" xml:space="preserve">
+    <value>Beğeni geri alındı.</value>
+  </data>
+  <data name="MSG_NOTIFICATION_ADDED" xml:space="preserve">
+    <value>Bildirim eklendi.</value>
+  </data>
+  <data name="MSG_NOTIFICATION_DELETED" xml:space="preserve">
+    <value>Bildirim silindi.</value>
+  </data>
+  <data name="MSG_NOTIFICATION_MARKED_READ" xml:space="preserve">
+    <value>Bildirim okundu olarak işaretlendi.</value>
+  </data>
+  <data name="MSG_NOTIFICATION_SENT" xml:space="preserve">
+    <value>Bildirim oyunculara gönderildi.</value>
+  </data>
+  <data name="MSG_NOTIFICATION_UPDATED" xml:space="preserve">
+    <value>Bildirim güncellendi.</value>
+  </data>
+  <data name="MSG_OSM_IMPORTED" xml:space="preserve">
+    <value>Tesis içe aktarıldı.</value>
+  </data>
+  <data name="MSG_OWNER_BLOCK_REMOVED" xml:space="preserve">
+    <value>Blok kaldırıldı.</value>
+  </data>
+  <data name="MSG_OWNER_CAMPAIGN_DELETED" xml:space="preserve">
+    <value>Kampanya silindi.</value>
+  </data>
+  <data name="MSG_OWNER_CAMPAIGN_SAVED" xml:space="preserve">
+    <value>Kampanya kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_COVER_UPDATED" xml:space="preserve">
+    <value>Kapak fotoğrafı güncellendi.</value>
+  </data>
+  <data name="MSG_OWNER_EXPENSE_DELETED" xml:space="preserve">
+    <value>Gider silindi.</value>
+  </data>
+  <data name="MSG_OWNER_EXPENSE_SAVED" xml:space="preserve">
+    <value>Gider kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_MANUAL_RESERVATION_SAVED" xml:space="preserve">
+    <value>Rezervasyon kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_OPENING_HOURS_SAVED" xml:space="preserve">
+    <value>Açılış saatleri kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_PAYMENT_PENDING" xml:space="preserve">
+    <value>Ödeme bekleniyor olarak işaretlendi.</value>
+  </data>
+  <data name="MSG_OWNER_PAYMENT_RECEIVED" xml:space="preserve">
+    <value>Ödeme alındı olarak işaretlendi.</value>
+  </data>
+  <data name="MSG_OWNER_PHOTO_DELETED" xml:space="preserve">
+    <value>Fotoğraf silindi.</value>
+  </data>
+  <data name="MSG_OWNER_PHOTO_UPLOADED" xml:space="preserve">
+    <value>Fotoğraf yüklendi.</value>
+  </data>
+  <data name="MSG_OWNER_PITCH_DELETED" xml:space="preserve">
+    <value>Saha silindi.</value>
+  </data>
+  <data name="MSG_OWNER_PITCH_SAVED" xml:space="preserve">
+    <value>Saha kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_PRICE_RULE_DELETED" xml:space="preserve">
+    <value>Fiyat kuralı silindi.</value>
+  </data>
+  <data name="MSG_OWNER_PRICE_RULE_SAVED" xml:space="preserve">
+    <value>Fiyat kuralı kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_REVIEW_REPLY_SAVED" xml:space="preserve">
+    <value>Yanıtınız kaydedildi.</value>
+  </data>
+  <data name="MSG_OWNER_SLOT_CLOSED" xml:space="preserve">
+    <value>Saat kapatıldı.</value>
+  </data>
+  <data name="MSG_OWNER_VENUE_UPDATED" xml:space="preserve">
+    <value>Tesis bilgileri güncellendi.</value>
+  </data>
+  <data name="MSG_PARAM_UPDATED" xml:space="preserve">
+    <value>Parametre güncellendi.</value>
+  </data>
+  <data name="MSG_RESERVATION_APPROVED" xml:space="preserve">
+    <value>Rezervasyon onaylandı.</value>
+  </data>
+  <data name="MSG_RESERVATION_OPPONENT_ADDED" xml:space="preserve">
+    <value>Takımın rakip olarak maça eklendi.</value>
+  </data>
+  <data name="MSG_RESERVATION_REJECTED" xml:space="preserve">
+    <value>Rezervasyon reddedildi.</value>
+  </data>
+  <data name="MSG_RESERVATION_REQUEST_SENT" xml:space="preserve">
+    <value>Rezervasyon talebin işletmeye iletildi.</value>
+  </data>
+  <data name="MSG_RESERVATION_REVIEW_SAVED" xml:space="preserve">
+    <value>Değerlendirmen kaydedildi.</value>
+  </data>
+  <data name="MSG_RESERVATION_REVIEW_UPDATED" xml:space="preserve">
+    <value>Değerlendirmen güncellendi.</value>
+  </data>
+  <data name="MSG_RESERVATION_SET_PENDING" xml:space="preserve">
+    <value>Rezervasyon beklemeye alındı.</value>
+  </data>
+  <data name="MSG_SOCIAL_ACCOUNT_DELETED" xml:space="preserve">
+    <value>Hesabın silindi.</value>
+  </data>
+  <data name="MSG_SOCIAL_ALREADY_FOLLOWING" xml:space="preserve">
+    <value>Bu oyuncuyu zaten takip ediyorsun.</value>
+  </data>
+  <data name="MSG_SOCIAL_BLOCKED" xml:space="preserve">
+    <value>Oyuncu engellendi.</value>
+  </data>
+  <data name="MSG_SOCIAL_FOLLOWED" xml:space="preserve">
+    <value>Takip edildi.</value>
+  </data>
+  <data name="MSG_SOCIAL_NOW_FRIENDS" xml:space="preserve">
+    <value>Artık arkadaşsınız.</value>
+  </data>
+  <data name="MSG_SOCIAL_REPORT_RECEIVED" xml:space="preserve">
+    <value>Şikayetin alındı.</value>
+  </data>
+  <data name="MSG_SOCIAL_REPORT_RESOLVED" xml:space="preserve">
+    <value>Şikayet incelendi olarak işaretlendi.</value>
+  </data>
+  <data name="MSG_SOCIAL_SETTINGS_SAVED" xml:space="preserve">
+    <value>Ayarlar kaydedildi.</value>
+  </data>
+  <data name="MSG_SOCIAL_UNBLOCKED" xml:space="preserve">
+    <value>Engel kaldırıldı.</value>
+  </data>
+  <data name="MSG_SOCIAL_UNFOLLOWED" xml:space="preserve">
+    <value>Takipten çıkıldı.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_CREATED" xml:space="preserve">
+    <value>Turnuva oluşturuldu.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_DELETED" xml:space="preserve">
+    <value>Turnuva silindi.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_FIXTURE_DATE_UPDATED" xml:space="preserve">
+    <value>Maç tarihi güncellendi.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_RESULT_SAVED" xml:space="preserve">
+    <value>Sonuç kaydedildi.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_RESULT_SAVED_FINISHED" xml:space="preserve">
+    <value>Sonuç kaydedildi. Turnuva tamamlandı, şampiyon: {0}.</value>
+    <comment>{0}: şampiyon takım adı</comment>
+  </data>
+  <data name="MSG_TOURNAMENT_STARTED" xml:space="preserve">
+    <value>Turnuva başladı.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_TEAM_REGISTERED" xml:space="preserve">
+    <value>Takım turnuvaya kaydedildi.</value>
+  </data>
+  <data name="MSG_TOURNAMENT_TEAM_WITHDRAWN" xml:space="preserve">
+    <value>Takım turnuvadan çekildi.</value>
+  </data>
+  <data name="NOTIFICATION_NOT_FOUND" xml:space="preserve">
+    <value>Bildirim bulunamadı.</value>
+  </data>
+  <data name="NOTIF_INVITE_MATCH" xml:space="preserve">
+    <value>{0} seni '{1}' maçına davet etti ({2:dd.MM.yyyy HH:mm}).</value>
+    <comment>{0}: davet eden adı, {1}: maç adı, {2}: maç tarihi (DB'ye yazılır)</comment>
+  </data>
+  <data name="NOTIF_INVITE_TEAM" xml:space="preserve">
+    <value>{0} seni '{1}' takımına davet etti.</value>
+    <comment>{0}: davet eden adı, {1}: takım adı (DB'ye yazılır)</comment>
+  </data>
+  <data name="NOTIF_MATCH_APPROVED" xml:space="preserve">
+    <value>Tebrikler! Maçınız onaylandı: '{0}' maçı, {1:dd MMMM yyyy} tarihinde, {2} ({3}) stadyumunda gerçekleşecektir.</value>
+    <comment>{0}: maç adı, {1}: maç tarihi, {2}: stadyum adı, {3}: stadyum adresi</comment>
+  </data>
+  <data name="NOTIF_MATCH_JOINED" xml:space="preserve">
+    <value>{0}, '{1}' maçına katıldı.</value>
+    <comment>{0}: oyuncu adı, {1}: maç adı</comment>
+  </data>
+  <data name="NOTIF_MATCH_JOINED_WAITLIST" xml:space="preserve">
+    <value>{0}, '{1}' maçının yedek listesine katıldı.</value>
+    <comment>{0}: oyuncu adı, {1}: maç adı</comment>
+  </data>
+  <data name="NOTIF_MATCH_REJECTED" xml:space="preserve">
+    <value>Üzgünüz! Maçınız reddedildi: '{0}' maçı, {1:dd MMMM yyyy} tarihinde, {2} ({3}) stadyumunda yapılacaktı.</value>
+    <comment>{0}: maç adı, {1}: maç tarihi, {2}: stadyum adı, {3}: stadyum adresi</comment>
+  </data>
+  <data name="NOTIF_MATCH_REMINDER" xml:space="preserve">
+    <value>Hatırlatma: '{0}' maçı {1:dd.MM.yyyy HH:mm} tarihinde {2} stadyumunda. Geleceğini onaylamayı unutma!</value>
+    <comment>{0}: maç adı, {1}: maç tarihi, {2}: stadyum adı</comment>
+  </data>
+  <data name="NOTIF_MATCH_RESULT" xml:space="preserve">
+    <value>Maç sonucu: {0}-{1} ('{2}'). MVP'ni seç ve takım arkadaşlarını puanla.</value>
+    <comment>{0}: ev sahibi skoru, {1}: deplasman skoru, {2}: maç adı</comment>
+  </data>
+  <data name="NOTIF_MATCH_TEAM_ADDED" xml:space="preserve">
+    <value>Tebrikler Takımınız Yeni Bir Maça Eklendi: {0} ({1}) - {2}, {3}. {4} takımı için yeni bir maç başlatıldı.</value>
+    <comment>{0}: maç adı, {1}: maç tarihi, {2}: stadyum adı, {3}: stadyum adresi, {4}: takım adı</comment>
+  </data>
+  <data name="NOTIF_MATCH_WAITLIST_PROMOTED" xml:space="preserve">
+    <value>Yedek listesinden asil kadroya geçtin: '{0}' maçı, {1:dd.MM.yyyy HH:mm}.</value>
+    <comment>{0}: maç adı, {1}: maç tarihi</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_APPROVED" xml:space="preserve">
+    <value>Rezervasyon onaylandı: '{0}' maçı, {1:dd.MM.yyyy HH:mm}, {2}.</value>
+    <comment>{0}: maç adı, {1}: tarih, {2}: tesis</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_OPPONENT_JOINED" xml:space="preserve">
+    <value>{0} takımı '{1}' maçına rakip olarak katıldı.</value>
+    <comment>{0}: takım adı, {1}: maç adı</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_REJECTED" xml:space="preserve">
+    <value>Rezervasyon reddedildi: '{0}' maçı, {1:dd.MM.yyyy HH:mm}, {2}.</value>
+    <comment>{0}: maç adı, {1}: tarih, {2}: tesis</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_REJECTED_WITH_REASON" xml:space="preserve">
+    <value>Rezervasyon reddedildi: '{0}' maçı, {1:dd.MM.yyyy HH:mm}, {2}. Sebep: {3}</value>
+    <comment>{0}: maç adı, {1}: tarih, {2}: tesis, {3}: sebep</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_REQUEST" xml:space="preserve">
+    <value>Yeni rezervasyon talebi: {0}, {1} - {2} için {3:dd.MM.yyyy HH:mm} ({4} dk). Onayınızı bekliyor.</value>
+    <comment>{0}: oyuncu, {1}: tesis, {2}: saha, {3}: başlangıç, {4}: süre (dk)</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_TEAM_SQUAD_ADDED" xml:space="preserve">
+    <value>{0} seni takımın '{1}' maçının kadrosuna ekledi. Gelemeyeceksen maçtan ayrıl.</value>
+    <comment>{0}: ekleyen, {1}: maç adı</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_TEAM_SQUAD_WAITLISTED" xml:space="preserve">
+    <value>{0} seni takımın '{1}' maçının kadrosuna ekledi; kadro dolu olduğu için yedek listesindesin. Gelemeyeceksen maçtan ayrıl.</value>
+    <comment>{0}: ekleyen, {1}: maç adı</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_VENUE_REVIEW" xml:space="preserve">
+    <value>{0}, {1} için {2} yıldızlı bir değerlendirme yaptı.</value>
+    <comment>{0}: oyuncu, {1}: tesis, {2}: puan</comment>
+  </data>
+  <data name="NOTIF_SOCIAL_FOLLOWED_BACK" xml:space="preserve">
+    <value>{0} seni geri takip etti. Artık arkadaşsınız.</value>
+    <comment>{0}: takip eden oyuncunun adı (DB'ye yazılır)</comment>
+  </data>
+  <data name="NOTIF_SOCIAL_NEW_FOLLOWER" xml:space="preserve">
+    <value>{0} seni takip etmeye başladı.</value>
+    <comment>{0}: takip eden oyuncunun adı (DB'ye yazılır)</comment>
+  </data>
+  <data name="NOTIF_TOURNAMENT_FINISHED" xml:space="preserve">
+    <value>'{0}' turnuvası tamamlandı. Şampiyon: {1}!</value>
+    <comment>{0}: turnuva adı, {1}: şampiyon takım adı</comment>
+  </data>
+  <data name="NOTIF_TOURNAMENT_RESULT" xml:space="preserve">
+    <value>'{0}': {1} {2}-{3} {4}</value>
+    <comment>{0}: turnuva adı, {1}: ev sahibi takım, {2}: ev skoru, {3}: deplasman skoru, {4}: deplasman takımı</comment>
+  </data>
+  <data name="NOTIF_TOURNAMENT_STARTED" xml:space="preserve">
+    <value>'{0}' turnuvası başladı! Fikstür yayınlandı, ilk maçlar {1:dd.MM.yyyy HH:mm}.</value>
+    <comment>{0}: turnuva adı, {1}: başlangıç tarihi (DateTime)</comment>
+  </data>
+  <data name="NOTIF_VENUE_STADIUM_ADDED" xml:space="preserve">
+    <value>Tebrikler yeni bir stadyum ekledi: {0} - {1}</value>
+    <comment>{0}: stadyum adı, {1}: adres</comment>
+  </data>
+  <data name="OSM_ALL_MIRRORS_FAILED" xml:space="preserve">
+    <value>OpenStreetMap sunucularının hiçbiri yanıt vermedi. Biraz sonra tekrar deneyin ya da daha küçük bir alan seçin.</value>
+  </data>
+  <data name="OSM_ALREADY_IMPORTED" xml:space="preserve">
+    <value>Bu OpenStreetMap kaydı zaten içe aktarılmış.</value>
+  </data>
+  <data name="OSM_AREA_REQUIRED" xml:space="preserve">
+    <value>city ya da south/west/north/east verilmelidir.</value>
+  </data>
+  <data name="OSM_CITY_NOT_FOUND" xml:space="preserve">
+    <value>Şehir bulunamadı.</value>
+  </data>
+  <data name="OSM_INVALID_BOUNDS" xml:space="preserve">
+    <value>Geçersiz alan (en fazla {0}° x {0}°, south &lt; north, west &lt; east).</value>
+    <comment>{0}: en büyük derece</comment>
+  </data>
+  <data name="OSM_INVALID_RESPONSE" xml:space="preserve">
+    <value>Harita servisinden geçersiz yanıt alındı.</value>
+  </data>
+  <data name="OSM_SERVICE_ERROR" xml:space="preserve">
+    <value>Harita servisi hata döndü ({0}).</value>
+    <comment>{0}: HTTP durum kodu</comment>
+  </data>
+  <data name="OSM_UNREACHABLE" xml:space="preserve">
+    <value>Harita servisine ulaşılamadı. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="OWNER_BLOCK_CLOSED_CONFLICT" xml:space="preserve">
+    <value>Bu aralık kapalı (bakım/blok) olarak işaretli.</value>
+  </data>
+  <data name="OWNER_BLOCK_HAS_MANUAL" xml:space="preserve">
+    <value>Bu aralıkta bir harici rezervasyon var.</value>
+  </data>
+  <data name="OWNER_BLOCK_MANUAL_CONFLICT" xml:space="preserve">
+    <value>Bu aralıkta başka bir harici rezervasyon var.</value>
+  </data>
+  <data name="OWNER_BLOCK_NOT_FOUND" xml:space="preserve">
+    <value>Blok bulunamadı.</value>
+  </data>
+  <data name="OWNER_BLOCK_PAYMENT_ONLY_MANUAL" xml:space="preserve">
+    <value>Ödeme durumu sadece harici rezervasyonlar için değiştirilebilir.</value>
+  </data>
+  <data name="OWNER_BLOCK_RESERVATION_CONFLICT" xml:space="preserve">
+    <value>Bu aralıkta bekleyen ya da onaylı bir rezervasyon var.</value>
+  </data>
+  <data name="OWNER_CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Kampanya bulunamadı.</value>
+  </data>
+  <data name="OWNER_EXPENSE_NOT_FOUND" xml:space="preserve">
+    <value>Gider bulunamadı.</value>
+  </data>
+  <data name="OWNER_LAST_PHOTO_CANNOT_DELETE" xml:space="preserve">
+    <value>Tesisin son fotoğrafı silinemez.</value>
+  </data>
+  <data name="OWNER_PHOTO_LIMIT_REACHED" xml:space="preserve">
+    <value>Bir tesise en fazla {0} fotoğraf eklenebilir.</value>
+    <comment>{0}: en fazla fotoğraf sayısı</comment>
+  </data>
+  <data name="OWNER_PHOTO_NOT_FOUND" xml:space="preserve">
+    <value>Fotoğraf bulunamadı.</value>
+  </data>
+  <data name="OWNER_PHOTO_REQUIRED" xml:space="preserve">
+    <value>Fotoğraf seçilmedi.</value>
+  </data>
+  <data name="OWNER_PITCH_HAS_RESERVATIONS" xml:space="preserve">
+    <value>Bu sahada gelecekte bekleyen ya da onaylı rezervasyon var. Sahayı silmek yerine pasife alabilirsiniz.</value>
+  </data>
+  <data name="OWNER_PITCH_NOT_IN_VENUE" xml:space="preserve">
+    <value>Saha bu tesise ait değil.</value>
+  </data>
+  <data name="OWNER_PRICE_RULE_NOT_FOUND" xml:space="preserve">
+    <value>Fiyat kuralı bulunamadı.</value>
+  </data>
+  <data name="OWNER_REVIEW_NOT_FOUND" xml:space="preserve">
+    <value>Yorum bulunamadı.</value>
+  </data>
+  <data name="PARAMDESC_BOOKING_DEFAULTFREECANCELLATIONHOURS" xml:space="preserve">
+    <value>Maçtan kaç saat öncesine kadar ücretsiz iptal yapılabileceği (tesis ayarı yoksa; bilgilendirme amaçlı).</value>
+  </data>
+  <data name="PARAMDESC_BOOKING_DEFAULTMAXADVANCEDAYS" xml:space="preserve">
+    <value>En fazla kaç gün sonrasına rezervasyon yapılabileceği (tesis ayarı yoksa).</value>
+  </data>
+  <data name="PARAMDESC_BOOKING_DEFAULTMINNOTICEHOURS" xml:space="preserve">
+    <value>Rezervasyonun maç saatinden en az kaç saat önce yapılması gerektiği (tesis ayarı yoksa).</value>
+  </data>
+  <data name="PARAMDESC_MATCH_LEADERBOARDMAX" xml:space="preserve">
+    <value>Liderlik tablosunda istenebilecek en fazla satır.</value>
+  </data>
+  <data name="PARAMDESC_MATCH_MAXPLAYERSTAT" xml:space="preserve">
+    <value>Bir oyuncunun bir maçtaki en fazla gol/asist sayısı.</value>
+  </data>
+  <data name="PARAMDESC_MATCH_MAXSCORE" xml:space="preserve">
+    <value>Maç sonucunda bir takımın en fazla gol sayısı.</value>
+  </data>
+  <data name="PARAMDESC_MATCH_RATINGMAX" xml:space="preserve">
+    <value>Oyuncu puanlamasında en yüksek puan (en düşük 1).</value>
+  </data>
+  <data name="PARAMDESC_MATCH_REMINDERLEADHOURS" xml:space="preserve">
+    <value>Maç hatırlatmasının maçtan kaç saat önce gönderileceği.</value>
+  </data>
+  <data name="PARAMDESC_MEDIA_CLEANUPBATCHSIZE" xml:space="preserve">
+    <value>Medya temizliğinin bir turda işleyeceği en fazla kayıt sayısı.</value>
+  </data>
+  <data name="PARAMDESC_MEDIA_DELETEDPURGEDAYS" xml:space="preserve">
+    <value>Silinmiş medya satırlarının veritabanından tamamen kaldırılacağı süre (gün).</value>
+  </data>
+  <data name="PARAMDESC_MEDIA_MAXMEGAPIXELS" xml:space="preserve">
+    <value>Yüklenebilecek bir fotoğrafın en fazla piksel sayısı (megapiksel).</value>
+  </data>
+  <data name="PARAMDESC_MEDIA_MAXUPLOADMB" xml:space="preserve">
+    <value>Yüklenebilecek bir fotoğrafın en büyük boyutu (MB).</value>
+  </data>
+  <data name="PARAMDESC_MEDIA_PENDINGCLEANUPHOURS" xml:space="preserve">
+    <value>Hiçbir kayda bağlanmayan (bekleyen) medyanın silinmeden önce bekleyeceği süre (saat).</value>
+  </data>
+  <data name="PARAMDESC_OSM_DUPLICATERADIUSMETERS" xml:space="preserve">
+    <value>Aday sahanın mevcut bir tesise "zaten var" sayılacağı uzaklık (metre).</value>
+  </data>
+  <data name="PARAMDESC_OSM_MAXBOXDEGREES" xml:space="preserve">
+    <value>OpenStreetMap aramasında alanın en büyük kenarı (derece).</value>
+  </data>
+  <data name="PARAMDESC_OSM_MAXRESULTS" xml:space="preserve">
+    <value>OpenStreetMap saha aramasında dönecek en fazla aday.</value>
+  </data>
+  <data name="PARAMDESC_OSM_OVERPASSTIMEOUTSECONDS" xml:space="preserve">
+    <value>Overpass sorgusu için sunucu tarafı zaman aşımı (saniye).</value>
+  </data>
+  <data name="PARAMDESC_RATELIMIT_AUTHPERMINUTE" xml:space="preserve">
+    <value>Giriş/kayıt uç noktaları için IP başına dakikadaki en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_RATELIMIT_UPLOADPERMINUTE" xml:space="preserve">
+    <value>Fotoğraf yükleme için kullanıcı başına dakikadaki en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_SECURITY_PASSWORDMINLENGTH" xml:space="preserve">
+    <value>Oyuncu ve işletme şifrelerinin en az uzunluğu.</value>
+  </data>
+  <data name="PARAMDESC_SECURITY_TEMPPASSWORDLENGTH" xml:space="preserve">
+    <value>Yöneticinin ürettiği geçici işletme şifresinin uzunluğu.</value>
+  </data>
+  <data name="PARAMDESC_SOCIAL_FEEDMAXTAKE" xml:space="preserve">
+    <value>Akış ve keşfet listelerinde tek istekte dönebilecek en fazla kayıt.</value>
+  </data>
+  <data name="PARAMDESC_SOCIAL_MAXINVITEBATCH" xml:space="preserve">
+    <value>Tek seferde davet edilebilecek en fazla oyuncu sayısı.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_KNOCKOUTMINTEAMSTOSTART" xml:space="preserve">
+    <value>Eleme usulü turnuvanın başlatılması için gereken en az takım.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_LEAGUEMINTEAMSTOSTART" xml:space="preserve">
+    <value>Lig usulü turnuvanın başlatılması için gereken en az takım.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_MAXSCORE" xml:space="preserve">
+    <value>Turnuva maçı sonucunda bir takımın en fazla gol sayısı.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_MAXTEAMS" xml:space="preserve">
+    <value>Turnuva oluştururken seçilebilecek en büyük takım kapasitesi.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_MINTEAMS" xml:space="preserve">
+    <value>Turnuva oluştururken seçilebilecek en küçük takım kapasitesi.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_POINTSDRAW" xml:space="preserve">
+    <value>Lig puan durumunda beraberlik puanı.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_POINTSWIN" xml:space="preserve">
+    <value>Lig puan durumunda galibiyet puanı.</value>
+  </data>
+  <data name="PARAMDESC_TOURNAMENT_ROUNDINTERVALDAYS" xml:space="preserve">
+    <value>Turnuva turları arasındaki gün sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_ALLOWEDDURATIONS" xml:space="preserve">
+    <value>Rezervasyonda seçilebilecek maç süreleri (dakika, JSON dizi).</value>
+  </data>
+  <data name="PARAMDESC_VENUE_BLOCKMAXDAYS" xml:space="preserve">
+    <value>Tek bir saat bloğunun en uzun süresi ve blok listesinin varsayılan aralığı (gün).</value>
+  </data>
+  <data name="PARAMDESC_VENUE_BOOKINGMINPLAYERSPERSIDE" xml:space="preserve">
+    <value>Rezervasyonda takım başına en az oyuncu sayısı (toplam en az × 2).</value>
+  </data>
+  <data name="PARAMDESC_VENUE_CALENDARMAXDAYS" xml:space="preserve">
+    <value>İşletme takviminde sorgulanabilecek en uzun aralık (gün).</value>
+  </data>
+  <data name="PARAMDESC_VENUE_CREATEOWNERMAXPHOTOS" xml:space="preserve">
+    <value>Yönetici işletme oluştururken yüklenebilecek en fazla fotoğraf sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEFAULTMEMBERSHIPDAYS" xml:space="preserve">
+    <value>Yeni işletme üyeliğinin varsayılan süresi (gün; 0 = süresiz). Bitiş tarihi verilmezse kullanılır.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_EXTRAPLAYERSALLOWED" xml:space="preserve">
+    <value>Rezervasyonda saha kapasitesinin (takım başı × 2) üzerine eklenebilecek oyuncu sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_MAXDISCOUNTPERCENT" xml:space="preserve">
+    <value>Kampanyalarda izin verilen en yüksek indirim yüzdesi.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_MAXPHOTOS" xml:space="preserve">
+    <value>Bir tesise eklenebilecek en fazla fotoğraf sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_MAXPRICE" xml:space="preserve">
+    <value>Saatlik ücret, kampanya, blok ve ekstra ücretleri için izin verilen en yüksek tutar (TL).</value>
+  </data>
+  <data name="PARAMDESC_VENUE_PLAYERSPERSIDEMAX" xml:space="preserve">
+    <value>Bir sahada takım başına en fazla oyuncu sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_PLAYERSPERSIDEMIN" xml:space="preserve">
+    <value>Bir sahada takım başına en az oyuncu sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_REVIEWSSHOWN" xml:space="preserve">
+    <value>Tesis detayında gösterilen son değerlendirme sayısı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_SLOTSTEPMINUTES" xml:space="preserve">
+    <value>Rezervasyon başlangıç saatlerinin dakika aralığı (ör. 30 → :00 ve :30).</value>
+  </data>
+  <data name="PARAM_INVALID_JSON" xml:space="preserve">
+    <value>Parametre değeri geçerli bir JSON olmalıdır.</value>
+  </data>
+  <data name="PARAM_INVALID_LIST" xml:space="preserve">
+    <value>'{0}' parametresi virgülle ayrılmış sayı listesi olmalıdır (ör. 5,6,7).</value>
+    <comment>{0}: anahtar</comment>
+  </data>
+  <data name="PARAM_INVALID_TYPE" xml:space="preserve">
+    <value>'{0}' parametresi için değer {1} türünde olmalıdır.</value>
+    <comment>{0}: anahtar, {1}: tür</comment>
+  </data>
+  <data name="PARAM_NOT_FOUND" xml:space="preserve">
+    <value>Parametre bulunamadı.</value>
+  </data>
+  <data name="PARAM_OUT_OF_RANGE" xml:space="preserve">
+    <value>'{0}' parametresi {1} ile {2} arasında olmalıdır.</value>
+    <comment>{0}: anahtar, {1}: en az, {2}: en fazla</comment>
+  </data>
+  <data name="PARAM_VALUE_REQUIRED" xml:space="preserve">
+    <value>Parametre değeri boş olamaz.</value>
+  </data>
+  <data name="PLAYER_INVALID_DATA" xml:space="preserve">
+    <value>Geçersiz oyuncu bilgisi.</value>
+  </data>
+  <data name="PLAYER_NAME_INVALID" xml:space="preserve">
+    <value>Oyuncu ismi 3 Karakterden Küçük Olamaz</value>
+  </data>
+  <data name="PLAYER_NOT_FOUND" xml:space="preserve">
+    <value>Oyuncu bulunamadı.</value>
+  </data>
+  <data name="RESERVATION_AWAY_TEAM_NOT_FOUND" xml:space="preserve">
+    <value>Rakip takım bulunamadı.</value>
+  </data>
+  <data name="RESERVATION_CLEATS_EXCEED_PLAYERS" xml:space="preserve">
+    <value>Krampon sayısı oyuncu sayısından fazla olamaz.</value>
+  </data>
+  <data name="RESERVATION_HOME_TEAM_CANNOT_BE_OPPONENT" xml:space="preserve">
+    <value>Ev sahibi takım rakip olarak katılamaz.</value>
+  </data>
+  <data name="RESERVATION_HOME_TEAM_NOT_FOUND" xml:space="preserve">
+    <value>Ev sahibi takım bulunamadı.</value>
+  </data>
+  <data name="RESERVATION_INVALID_STATUS" xml:space="preserve">
+    <value>Geçersiz durum.</value>
+  </data>
+  <data name="RESERVATION_MATCH_PAST_CLOSED" xml:space="preserve">
+    <value>Maç tarihi geçti, katılım kapalı.</value>
+  </data>
+  <data name="RESERVATION_MATCH_REJECTED_CLOSED" xml:space="preserve">
+    <value>Bu maç reddedildi, katılım kapalı.</value>
+  </data>
+  <data name="RESERVATION_NOT_HOME_TEAM_MEMBER" xml:space="preserve">
+    <value>Ev sahibi takımın üyesi olmalısın.</value>
+  </data>
+  <data name="RESERVATION_NOT_LOOKING_FOR_OPPONENT" xml:space="preserve">
+    <value>Bu maç rakip takım aramıyor.</value>
+  </data>
+  <data name="RESERVATION_NOT_PENDING" xml:space="preserve">
+    <value>Sadece onay bekleyen rezervasyonlar yanıtlanabilir.</value>
+  </data>
+  <data name="RESERVATION_NOT_TEAM_MEMBER" xml:space="preserve">
+    <value>Bu takımın üyesi değilsin.</value>
+  </data>
+  <data name="RESERVATION_OPPONENT_FLAG_CONFLICT" xml:space="preserve">
+    <value>Rakip takım seçiliyken 'rakip aranıyor' işaretlenemez.</value>
+  </data>
+  <data name="RESERVATION_OWNER_CANNOT_CREATE" xml:space="preserve">
+    <value>İşletme hesapları maç kuramaz.</value>
+  </data>
+  <data name="RESERVATION_PITCH_UNAVAILABLE" xml:space="preserve">
+    <value>Bu saha şu anda kullanılamıyor.</value>
+  </data>
+  <data name="RESERVATION_REVIEW_MATCH_NOT_PLAYED" xml:space="preserve">
+    <value>Maç henüz oynanmadı, yorum yapılamaz.</value>
+  </data>
+  <data name="RESERVATION_REVIEW_MATCH_REJECTED" xml:space="preserve">
+    <value>Reddedilen maç için yorum yapılamaz.</value>
+  </data>
+  <data name="RESERVATION_REVIEW_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Sadece maçta oynayan oyuncular tesisi değerlendirebilir.</value>
+  </data>
+  <data name="RESERVATION_REVIEW_NOT_VENUE_MATCH" xml:space="preserve">
+    <value>Bu maç anlaşmalı bir tesiste oynanmadı.</value>
+  </data>
+  <data name="RESERVATION_REVIEW_SAVE_FAILED" xml:space="preserve">
+    <value>Değerlendirme kaydedilemedi, lütfen tekrar deneyin.</value>
+  </data>
+  <data name="RESERVATION_SAME_TEAMS" xml:space="preserve">
+    <value>Ev sahibi ve rakip takım aynı olamaz.</value>
+  </data>
+  <data name="RESERVATION_VENUE_CLOSED" xml:space="preserve">
+    <value>Bu tesis şu anda rezervasyona kapalı.</value>
+  </data>
+  <data name="SOCIAL_CANNOT_BLOCK_SELF" xml:space="preserve">
+    <value>Kendini engelleyemezsin.</value>
+  </data>
+  <data name="SOCIAL_CANNOT_FOLLOW_SELF" xml:space="preserve">
+    <value>Kendini takip edemezsin.</value>
+  </data>
+  <data name="SOCIAL_CANNOT_REPORT_SELF" xml:space="preserve">
+    <value>Kendini şikayet edemezsin.</value>
+  </data>
+  <data name="SOCIAL_FOLLOW_BLOCKED" xml:space="preserve">
+    <value>Bu oyuncuyu takip edemezsin.</value>
+  </data>
+  <data name="SOCIAL_INVALID_LANGUAGE" xml:space="preserve">
+    <value>Dil şunlardan biri olmalıdır: {0}.</value>
+    <comment>{0}: desteklenen diller</comment>
+  </data>
+  <data name="SOCIAL_INVALID_REPORT_REASON" xml:space="preserve">
+    <value>Geçersiz şikayet nedeni. Geçerli değerler: {0}.</value>
+    <comment>{0}: virgülle ayrılmış geçerli nedenler</comment>
+  </data>
+  <data name="SOCIAL_INVALID_SETTING_CHOICE" xml:space="preserve">
+    <value>{0} 0, 1 veya 2 olmalıdır.</value>
+    <comment>{0}: alan adı (messagePermission / profileVisibility)</comment>
+  </data>
+  <data name="SOCIAL_INVALID_THEME" xml:space="preserve">
+    <value>Tema şunlardan biri olmalıdır: {0}.</value>
+    <comment>{0}: izinli değerler</comment>
+  </data>
+  <data name="SOCIAL_LIST_PRIVATE" xml:space="preserve">
+    <value>Bu oyuncunun listesi gizli.</value>
+  </data>
+  <data name="SOCIAL_OWNER_CANNOT_FOLLOW" xml:space="preserve">
+    <value>İşletme hesapları takip yapamaz.</value>
+  </data>
+  <data name="SOCIAL_OWNER_NOT_FOLLOWABLE" xml:space="preserve">
+    <value>İşletme hesapları takip edilemez.</value>
+  </data>
+  <data name="SOCIAL_REPORT_NOT_FOUND" xml:space="preserve">
+    <value>Şikayet bulunamadı.</value>
+  </data>
+  <data name="SOCIAL_SETTINGS_REQUIRED" xml:space="preserve">
+    <value>Ayarlar boş olamaz.</value>
+  </data>
+  <data name="TEAM_IN_TOURNAMENT" xml:space="preserve">
+    <value>Takım bir turnuvada yer alıyor.</value>
+  </data>
+  <data name="TEAM_NAME_INVALID" xml:space="preserve">
+    <value>Takım ismi 3 Karakterden Küçük Olamaz</value>
+  </data>
+  <data name="TEAM_NOT_FOUND" xml:space="preserve">
+    <value>Takım bulunamadı.</value>
+  </data>
+  <data name="TEAM_OWNER_CANNOT_CREATE" xml:space="preserve">
+    <value>İşletme hesapları takım kuramaz.</value>
+  </data>
+  <data name="TEAM_OWNER_NOT_ALLOWED" xml:space="preserve">
+    <value>İşletme hesapları takıma eklenemez.</value>
+  </data>
+  <data name="TEAM_PLAYER_ALREADY_IN_TEAM" xml:space="preserve">
+    <value>Oyuncu zaten bu takımda.</value>
+  </data>
+  <data name="TEAM_PLAYER_IDS_OR_TEAM_ID_REQUIRED" xml:space="preserve">
+    <value>PlayerId veya TeamId null olamaz.</value>
+  </data>
+  <data name="TOURNAMENT_ALREADY_STARTED" xml:space="preserve">
+    <value>Turnuva zaten başladı.</value>
+  </data>
+  <data name="TOURNAMENT_BYE_HAS_NO_DATE" xml:space="preserve">
+    <value>Bay geçilen maçın tarihi olmaz.</value>
+  </data>
+  <data name="TOURNAMENT_DELETE_FORBIDDEN" xml:space="preserve">
+    <value>Turnuvayı sadece düzenleyen silebilir.</value>
+  </data>
+  <data name="TOURNAMENT_DELETE_ONLY_REGISTRATION" xml:space="preserve">
+    <value>Sadece kayıt aşamasındaki turnuva silinebilir.</value>
+  </data>
+  <data name="TOURNAMENT_DRAW_WINNER_REQUIRED" xml:space="preserve">
+    <value>Elemede beraberlikte kazanan takım (winnerTeamId) seçilmeli.</value>
+  </data>
+  <data name="TOURNAMENT_FIXTURE_DATE_FORBIDDEN" xml:space="preserve">
+    <value>Maç tarihini sadece turnuvanın yöneticisi değiştirebilir.</value>
+  </data>
+  <data name="TOURNAMENT_FIXTURE_NOT_FOUND" xml:space="preserve">
+    <value>Fikstür bulunamadı.</value>
+  </data>
+  <data name="TOURNAMENT_FIXTURE_TEAMS_UNDETERMINED" xml:space="preserve">
+    <value>Bu maçın iki takımı da henüz belli değil.</value>
+  </data>
+  <data name="TOURNAMENT_FULL" xml:space="preserve">
+    <value>Turnuva kontenjanı dolu.</value>
+  </data>
+  <data name="TOURNAMENT_INPUT_REQUIRED" xml:space="preserve">
+    <value>Turnuva bilgileri boş olamaz.</value>
+  </data>
+  <data name="TOURNAMENT_INVALID_FORMAT" xml:space="preserve">
+    <value>format 1 (lig) veya 2 (eleme) olmalıdır.</value>
+  </data>
+  <data name="TOURNAMENT_KNOCKOUT_MIN_TEAMS" xml:space="preserve">
+    <value>Eleme başlatmak için en az {0} takım gerekli.</value>
+    <comment>{0}: en az takım sayısı</comment>
+  </data>
+  <data name="TOURNAMENT_LEAGUE_MIN_TEAMS" xml:space="preserve">
+    <value>Lig başlatmak için en az {0} takım gerekli.</value>
+    <comment>{0}: en az takım sayısı</comment>
+  </data>
+  <data name="TOURNAMENT_MATCH_DATE_REQUIRED" xml:space="preserve">
+    <value>Maç tarihi gerekli.</value>
+  </data>
+  <data name="TOURNAMENT_NAME_REQUIRED" xml:space="preserve">
+    <value>Turnuva adı boş olamaz.</value>
+  </data>
+  <data name="TOURNAMENT_NOT_FOUND" xml:space="preserve">
+    <value>Turnuva bulunamadı.</value>
+  </data>
+  <data name="TOURNAMENT_REGISTER_NOT_TEAM_MEMBER" xml:space="preserve">
+    <value>Takımı kaydetmek için takımın üyesi olmalısın.</value>
+  </data>
+  <data name="TOURNAMENT_REGISTRATION_CLOSED" xml:space="preserve">
+    <value>Bu turnuvanın kayıtları kapandı.</value>
+  </data>
+  <data name="TOURNAMENT_RESULT_FORBIDDEN" xml:space="preserve">
+    <value>Sonucu sadece turnuvanın yöneticisi girebilir.</value>
+  </data>
+  <data name="TOURNAMENT_RESULT_NOT_ONGOING" xml:space="preserve">
+    <value>Sonuç sadece devam eden turnuvaya girilebilir.</value>
+  </data>
+  <data name="TOURNAMENT_SCORES_REQUIRED" xml:space="preserve">
+    <value>İki takımın skoru da girilmeli.</value>
+  </data>
+  <data name="TOURNAMENT_SCORE_OUT_OF_RANGE" xml:space="preserve">
+    <value>Skor {0}–{1} arasında olmalıdır.</value>
+    <comment>{0}: en az skor, {1}: en fazla skor</comment>
+  </data>
+  <data name="TOURNAMENT_STADIUM_NOT_FOUND" xml:space="preserve">
+    <value>Halı saha bulunamadı.</value>
+  </data>
+  <data name="TOURNAMENT_START_DATE_IN_PAST" xml:space="preserve">
+    <value>Başlangıç tarihi geçmişte olamaz.</value>
+  </data>
+  <data name="TOURNAMENT_START_DATE_REQUIRED" xml:space="preserve">
+    <value>Başlangıç tarihi gerekli.</value>
+  </data>
+  <data name="TOURNAMENT_START_FORBIDDEN" xml:space="preserve">
+    <value>Turnuvayı sadece düzenleyen başlatabilir.</value>
+  </data>
+  <data name="TOURNAMENT_TEAM_ALREADY_REGISTERED" xml:space="preserve">
+    <value>Takım bu turnuvaya zaten kayıtlı.</value>
+  </data>
+  <data name="TOURNAMENT_TEAM_COUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>Takım sayısı {0}–{1} arasında olmalıdır.</value>
+    <comment>{0}: en az takım, {1}: en fazla takım</comment>
+  </data>
+  <data name="TOURNAMENT_TEAM_NOT_REGISTERED" xml:space="preserve">
+    <value>Takım bu turnuvaya kayıtlı değil.</value>
+  </data>
+  <data name="TOURNAMENT_WINNER_LOCKED" xml:space="preserve">
+    <value>Üst tur maçı oynandığı için kazanan değiştirilemez.</value>
+  </data>
+  <data name="TOURNAMENT_WINNER_NOT_IN_FIXTURE" xml:space="preserve">
+    <value>Kazanan takım bu maçta oynamıyor.</value>
+  </data>
+  <data name="TOURNAMENT_WITHDRAW_AFTER_START" xml:space="preserve">
+    <value>Turnuva başladıktan sonra takım çekilemez.</value>
+  </data>
+  <data name="TOURNAMENT_WITHDRAW_FORBIDDEN" xml:space="preserve">
+    <value>Takımı çekmek için takımın üyesi ya da turnuvanın yöneticisi olmalısın.</value>
+  </data>
+  <data name="VALIDATION_BODY_REQUIRED" xml:space="preserve">
+    <value>İstek gövdesi boş olamaz.</value>
+  </data>
+  <data name="VALIDATION_FAILED" xml:space="preserve">
+    <value>Gönderilen bilgiler geçersiz. Lütfen işaretli alanları kontrol edin.</value>
+  </data>
+  <data name="VALIDATION_INVALID_EMAIL" xml:space="preserve">
+    <value>Geçerli bir e-posta adresi girin.</value>
+  </data>
+  <data name="VALIDATION_INVALID_FORMAT" xml:space="preserve">
+    <value>Gönderilen değer okunamadı (geçersiz biçim).</value>
+  </data>
+  <data name="VALIDATION_INVALID_VALUE" xml:space="preserve">
+    <value>'{0}' değeri {1} alanı için geçersiz.</value>
+    <comment>{0}: değer, {1}: alan adı</comment>
+  </data>
+  <data name="VALIDATION_MUST_BE_NUMBER" xml:space="preserve">
+    <value>{0} alanı sayı olmalıdır.</value>
+    <comment>{0}: alan adı</comment>
+  </data>
+  <data name="VALIDATION_NEGATIVE_NOT_ALLOWED" xml:space="preserve">
+    <value>{0} negatif olamaz.</value>
+    <comment>{0}: alan adı</comment>
+  </data>
+  <data name="VALIDATION_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} {1} ile {2} arasında olmalıdır.</value>
+    <comment>{0}: alan adı, {1}: en az, {2}: en fazla</comment>
+  </data>
+  <data name="VALIDATION_REQUIRED" xml:space="preserve">
+    <value>{0} alanı zorunludur.</value>
+    <comment>{0}: alan adı</comment>
+  </data>
+  <data name="VALIDATION_TOO_LONG" xml:space="preserve">
+    <value>{0} en fazla {1} karakter olabilir.</value>
+    <comment>{0}: alan adı, {1}: en fazla</comment>
+  </data>
+  <data name="VALIDATION_TOO_SHORT" xml:space="preserve">
+    <value>{0} en az {1} karakter olmalıdır.</value>
+    <comment>{0}: alan adı, {1}: en az</comment>
+  </data>
+  <data name="VALIDATION_UNKNOWN_VALUE_INVALID" xml:space="preserve">
+    <value>Girilen değer geçersiz.</value>
+  </data>
+  <data name="VALIDATION_VALUE_INVALID" xml:space="preserve">
+    <value>'{0}' değeri geçersiz.</value>
+    <comment>{0}: değer</comment>
+  </data>
+  <data name="VALIDATION_VALUE_MISSING" xml:space="preserve">
+    <value>Bir değer girilmelidir.</value>
+  </data>
+  <data name="VENUE_ADDRESS_EMPTY" xml:space="preserve">
+    <value>Adres boş olamaz.</value>
+  </data>
+  <data name="VENUE_AMOUNT_MUST_BE_POSITIVE" xml:space="preserve">
+    <value>Tutar 0'dan büyük olmalıdır.</value>
+  </data>
+  <data name="VENUE_AMOUNT_TOO_LARGE" xml:space="preserve">
+    <value>Tutar en fazla {0:0} olabilir.</value>
+    <comment>{0}: en fazla tutar</comment>
+  </data>
+  <data name="VENUE_AMOUNT_TOO_MANY_DECIMALS" xml:space="preserve">
+    <value>Tutar en fazla 2 ondalık basamak içerebilir.</value>
+  </data>
+  <data name="VENUE_AND_OWNER_REQUIRED" xml:space="preserve">
+    <value>Tesis ve işletme seçilmelidir.</value>
+  </data>
+  <data name="VENUE_BLOCK_TOO_LONG" xml:space="preserve">
+    <value>Tek blok en fazla {0} gün olabilir.</value>
+    <comment>{0}: gün</comment>
+  </data>
+  <data name="VENUE_BOOKING_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>Bu tesiste en fazla {0} gün sonrasına rezervasyon yapılabilir.</value>
+    <comment>{0}: gün</comment>
+  </data>
+  <data name="VENUE_BOOKING_TOO_SOON" xml:space="preserve">
+    <value>Bu tesiste rezervasyon en az {0} saat önceden yapılmalıdır.</value>
+    <comment>{0}: saat</comment>
+  </data>
+  <data name="VENUE_CALENDAR_RANGE_TOO_LONG" xml:space="preserve">
+    <value>Takvim aralığı en fazla {0} gün olabilir.</value>
+    <comment>{0}: gün</comment>
+  </data>
+  <data name="VENUE_CAMPAIGN_EMPTY" xml:space="preserve">
+    <value>Kampanya boş olamaz.</value>
+  </data>
+  <data name="VENUE_CAMPAIGN_TITLE_EMPTY" xml:space="preserve">
+    <value>Kampanya başlığı boş olamaz.</value>
+  </data>
+  <data name="VENUE_CANDIDATE_EMPTY" xml:space="preserve">
+    <value>Aday bilgileri boş olamaz.</value>
+  </data>
+  <data name="VENUE_CHOOSE_SLOT" xml:space="preserve">
+    <value>Lütfen bir saha ve saat seçin.</value>
+  </data>
+  <data name="VENUE_CLOSED_AT_TIME" xml:space="preserve">
+    <value>Tesis bu saatte kapalı.</value>
+  </data>
+  <data name="VENUE_DISCOUNT_OR_FIXED_PRICE" xml:space="preserve">
+    <value>İndirim yüzdesi ya da sabit fiyattan tam olarak biri girilmelidir.</value>
+  </data>
+  <data name="VENUE_DURATION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Süre {0} ile {1} dakika arasında olmalıdır.</value>
+    <comment>{0}: en az, {1}: en fazla (dakika)</comment>
+  </data>
+  <data name="VENUE_END_DATE_BEFORE_START" xml:space="preserve">
+    <value>Bitiş tarihi başlangıçtan önce olamaz.</value>
+  </data>
+  <data name="VENUE_END_TIME_BEFORE_START" xml:space="preserve">
+    <value>Bitiş zamanı başlangıçtan sonra olmalıdır.</value>
+  </data>
+  <data name="VENUE_EXPENSE_INFO_EMPTY" xml:space="preserve">
+    <value>Gider bilgileri boş olamaz.</value>
+  </data>
+  <data name="VENUE_EXPENSE_MUST_BE_SELECTED" xml:space="preserve">
+    <value>Gider seçilmelidir.</value>
+  </data>
+  <data name="VENUE_FIELD_MUST_BE_ENTERED" xml:space="preserve">
+    <value>{0} girilmelidir.</value>
+    <comment>{0}: alan adı</comment>
+  </data>
+  <data name="VENUE_FIELD_REQUIRED" xml:space="preserve">
+    <value>{0} zorunludur.</value>
+    <comment>{0}: alan adı</comment>
+  </data>
+  <data name="VENUE_INFO_EMPTY" xml:space="preserve">
+    <value>Tesis bilgileri boş olamaz.</value>
+  </data>
+  <data name="VENUE_INFO_REQUIRED" xml:space="preserve">
+    <value>Tesis bilgileri gerekli.</value>
+  </data>
+  <data name="VENUE_INVALID_BLOCK_KIND" xml:space="preserve">
+    <value>Geçersiz tür (0 = kapalı/bakım, 1 = harici rezervasyon).</value>
+  </data>
+  <data name="VENUE_INVALID_DATE" xml:space="preserve">
+    <value>Tarih geçersiz.</value>
+  </data>
+  <data name="VENUE_INVALID_DAYS_MASK" xml:space="preserve">
+    <value>En az bir gün seçilmelidir (daysMask 1–127).</value>
+  </data>
+  <data name="VENUE_INVALID_DURATION" xml:space="preserve">
+    <value>Maç süresi {0} dakika olmalıdır.</value>
+    <comment>{0}: izin verilen süreler (ör. "60, 90 veya 120")</comment>
+  </data>
+  <data name="VENUE_INVALID_EXPENSE_CATEGORY" xml:space="preserve">
+    <value>Kategori şunlardan biri olmalıdır: {0}.</value>
+    <comment>{0}: virgülle ayrılmış kategori listesi</comment>
+  </data>
+  <data name="VENUE_INVALID_HOUR_RANGE" xml:space="preserve">
+    <value>Saat aralığı geçersiz (fromHour 0–23, toHour 1–24, fromHour &lt; toHour).</value>
+  </data>
+  <data name="VENUE_INVALID_LOCATION" xml:space="preserve">
+    <value>Geçersiz konum.</value>
+  </data>
+  <data name="VENUE_INVALID_LOCATION_FORMAT" xml:space="preserve">
+    <value>Konum "enlem, boylam" biçiminde olmalıdır (ör. 41.0, 29.0).</value>
+  </data>
+  <data name="VENUE_INVALID_START_MINUTE" xml:space="preserve">
+    <value>Başlangıç saati {0} dakikalık aralıklarla seçilmelidir (ör. :00, :30).</value>
+    <comment>{0}: aralık (dakika)</comment>
+  </data>
+  <data name="VENUE_INVALID_SURFACE" xml:space="preserve">
+    <value>Zemin 1 (suni çim), 2 (doğal çim), 3 (parke) veya 4 (diğer) olmalıdır.</value>
+  </data>
+  <data name="VENUE_INVALID_YEAR" xml:space="preserve">
+    <value>Yıl geçersiz.</value>
+  </data>
+  <data name="VENUE_LOCATION_REQUIRED" xml:space="preserve">
+    <value>Konum zorunludur ("enlem, boylam" biçiminde, ör. 41.0, 29.0).</value>
+  </data>
+  <data name="VENUE_MATCH_AND_TEAM_REQUIRED" xml:space="preserve">
+    <value>Maç ve takım seçilmelidir.</value>
+  </data>
+  <data name="VENUE_MEMBERSHIP_INACTIVE" xml:space="preserve">
+    <value>Üyeliğiniz aktif değil.</value>
+  </data>
+  <data name="VENUE_MUST_BE_SELECTED" xml:space="preserve">
+    <value>Tesis seçilmelidir.</value>
+  </data>
+  <data name="VENUE_NOT_FOUND" xml:space="preserve">
+    <value>Tesis bulunamadı.</value>
+  </data>
+  <data name="VENUE_NOT_YOURS" xml:space="preserve">
+    <value>Bu tesis size ait değil.</value>
+  </data>
+  <data name="VENUE_NO_CAMERA" xml:space="preserve">
+    <value>Bu tesiste maç kaydı (kamera) hizmeti yok.</value>
+  </data>
+  <data name="VENUE_NO_CLEAT_RENTAL" xml:space="preserve">
+    <value>Bu tesiste krampon kiralama yok.</value>
+  </data>
+  <data name="VENUE_NUMBER_OR_STRING_EXPECTED" xml:space="preserve">
+    <value>Metin ya da sayı bekleniyordu.</value>
+  </data>
+  <data name="VENUE_OPENING_HOURS_INVALID_DAYS" xml:space="preserve">
+    <value>dayOfWeek 0 (Pazartesi) … 6 (Pazar) arasında ve her gün bir kez olmalıdır.</value>
+  </data>
+  <data name="VENUE_OPENING_HOURS_INVALID_TIME" xml:space="preserve">
+    <value>Açılış ve kapanış saatleri "HH:mm" biçiminde olmalıdır.</value>
+  </data>
+  <data name="VENUE_OPENING_HOURS_SEVEN_DAYS" xml:space="preserve">
+    <value>7 günün açılış saatleri gönderilmelidir.</value>
+  </data>
+  <data name="VENUE_OWNER_INFO_REQUIRED" xml:space="preserve">
+    <value>İşletme hesabı bilgileri gerekli.</value>
+  </data>
+  <data name="VENUE_OWNER_MUST_BE_SELECTED" xml:space="preserve">
+    <value>İşletme seçilmelidir.</value>
+  </data>
+  <data name="VENUE_OWNER_NOT_FOUND" xml:space="preserve">
+    <value>İşletme bulunamadı.</value>
+  </data>
+  <data name="VENUE_PAST_SLOT" xml:space="preserve">
+    <value>Geçmiş bir saat seçilemez.</value>
+  </data>
+  <data name="VENUE_PHOTO_LIMIT_EXCEEDED" xml:space="preserve">
+    <value>En fazla {0} fotoğraf yüklenebilir.</value>
+    <comment>{0}: en fazla fotoğraf</comment>
+  </data>
+  <data name="VENUE_PHOTO_REQUIRED" xml:space="preserve">
+    <value>En az {0} fotoğraf zorunludur.</value>
+    <comment>{0}: en az fotoğraf</comment>
+  </data>
+  <data name="VENUE_PITCH_INFO_EMPTY" xml:space="preserve">
+    <value>Saha bilgileri boş olamaz.</value>
+  </data>
+  <data name="VENUE_PITCH_MUST_BE_SELECTED" xml:space="preserve">
+    <value>Saha seçilmelidir.</value>
+  </data>
+  <data name="VENUE_PITCH_NAME_EMPTY" xml:space="preserve">
+    <value>Saha adı boş olamaz.</value>
+  </data>
+  <data name="VENUE_PITCH_NOT_FOUND" xml:space="preserve">
+    <value>Saha bulunamadı.</value>
+  </data>
+  <data name="VENUE_PITCH_REQUIRED" xml:space="preserve">
+    <value>Lütfen bir saha seçin.</value>
+  </data>
+  <data name="VENUE_PRICE_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} 0'dan büyük ve en fazla {1:0} olmalıdır.</value>
+    <comment>{0}: alan adı, {1}: en fazla</comment>
+  </data>
+  <data name="VENUE_PRICE_RULE_EMPTY" xml:space="preserve">
+    <value>Fiyat kuralı boş olamaz.</value>
+  </data>
+  <data name="VENUE_REPLY_EMPTY" xml:space="preserve">
+    <value>Yanıt boş olamaz.</value>
+  </data>
+  <data name="VENUE_RESERVATION_REQUIRED" xml:space="preserve">
+    <value>Rezervasyon seçilmelidir.</value>
+  </data>
+  <data name="VENUE_REVIEW_EMPTY" xml:space="preserve">
+    <value>Değerlendirme boş olamaz.</value>
+  </data>
+  <data name="VENUE_SETTINGS_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} {1} ile {2} arasında olmalıdır.</value>
+    <comment>{0}: alan adı, {1}: en az, {2}: en fazla</comment>
+  </data>
+  <data name="VENUE_SLOT_TAKEN" xml:space="preserve">
+    <value>Bu saat dolu.</value>
+  </data>
+  <data name="VENUE_START_END_DATE_REQUIRED" xml:space="preserve">
+    <value>Başlangıç ve bitiş tarihi gerekli.</value>
+  </data>
+  <data name="VENUE_START_END_TIME_REQUIRED" xml:space="preserve">
+    <value>Başlangıç ve bitiş zamanı gerekli.</value>
+  </data>
+  <data name="VENUE_START_TIME_REQUIRED" xml:space="preserve">
+    <value>Başlangıç zamanı gerekli.</value>
+  </data>
+  <data name="VENUE_USERNAME_TAKEN" xml:space="preserve">
+    <value>Bu kullanıcı adı zaten kullanılıyor.</value>
+  </data>
+  <data name="AUTH_REFRESH_INVALID" xml:space="preserve">
+    <value>Oturumunuz sona erdi. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="AUTH_REFRESH_REUSED" xml:space="preserve">
+    <value>Güvenliğiniz için oturumunuz kapatıldı. Lütfen tekrar giriş yapın.</value>
+  </data>
+  <data name="AUTH_PASSWORD_TOO_WEAK" xml:space="preserve">
+    <value>Şifre en az bir harf ve bir rakam içermelidir.</value>
+  </data>
+  <data name="AUTH_PASSWORD_NOT_SET" xml:space="preserve">
+    <value>Hesabınızın henüz bir şifresi yok. "Şifremi unuttum" ile şifre belirleyebilirsiniz.</value>
+  </data>
+  <data name="AUTH_IDENTIFIER_REQUIRED" xml:space="preserve">
+    <value>Kullanıcı adı, e-posta ya da telefon numarası girin.</value>
+  </data>
+  <data name="AUTH_INVALID_CHANNEL" xml:space="preserve">
+    <value>Gönderim yöntemi e-posta ya da SMS olmalıdır.</value>
+  </data>
+  <data name="AUTH_CODE_REQUIRED" xml:space="preserve">
+    <value>Doğrulama kodunu girin.</value>
+  </data>
+  <data name="AUTH_CODE_INVALID" xml:space="preserve">
+    <value>Kod hatalı ya da süresi dolmuş.</value>
+  </data>
+  <data name="AUTH_CODE_ATTEMPTS_EXCEEDED" xml:space="preserve">
+    <value>Çok fazla hatalı deneme yapıldı. Lütfen yeni bir kod isteyin.</value>
+  </data>
+  <data name="AUTH_CODE_RESEND_COOLDOWN" xml:space="preserve">
+    <value>Yeni kod istemek için {0} saniye bekleyin.</value>
+  </data>
+  <data name="AUTH_EMAIL_MISSING" xml:space="preserve">
+    <value>Hesabınızda kayıtlı bir e-posta adresi yok.</value>
+  </data>
+  <data name="AUTH_EMAIL_ALREADY_CONFIRMED" xml:space="preserve">
+    <value>E-posta adresiniz zaten doğrulanmış.</value>
+  </data>
+  <data name="AUTH_PROVIDER_NOT_CONFIGURED" xml:space="preserve">
+    <value>{0} ile giriş şu anda kullanılamıyor.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNKNOWN" xml:space="preserve">
+    <value>Bilinmeyen giriş sağlayıcısı.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNAVAILABLE" xml:space="preserve">
+    <value>Giriş sağlayıcısına şu anda ulaşılamıyor. Lütfen biraz sonra tekrar deneyin.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_REQUIRED" xml:space="preserve">
+    <value>Sağlayıcıdan giriş bilgisi alınamadı.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_INVALID" xml:space="preserve">
+    <value>Sağlayıcı girişi doğrulanamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_NOT_FOUND" xml:space="preserve">
+    <value>Bu giriş yöntemi hesabınıza bağlı değil.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_LAST_METHOD" xml:space="preserve">
+    <value>Bu, hesabınıza girmenin tek yolu. Kaldırmadan önce bir şifre belirleyin.</value>
+  </data>
+  <data name="AUTH_TERMS_REQUIRED" xml:space="preserve">
+    <value>Devam etmek için kullanım koşullarını ve aydınlatma metnini kabul etmelisiniz.</value>
+  </data>
+  <data name="AUTH_TERMS_VERSION_MISMATCH" xml:space="preserve">
+    <value>Kullanım koşulları güncellendi. Lütfen sayfayı yenileyip güncel metni kabul edin.</value>
+  </data>
+  <data name="LABEL_AUTH_DEFAULT_PLAYER_NAME" xml:space="preserve">
+    <value>Oyuncu</value>
+  </data>
+  <data name="MAIL_GREETING" xml:space="preserve">
+    <value>Merhaba {0},</value>
+  </data>
+  <data name="MAIL_FOOTER" xml:space="preserve">
+    <value>MatchBuddy — halı saha maçını kolayca kur.</value>
+  </data>
+  <data name="MAIL_IGNORE_NOTICE" xml:space="preserve">
+    <value>Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz; hesabınızda bir değişiklik yapılmadı.</value>
+  </data>
+  <data name="MAIL_RESET_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy şifre sıfırlama kodunuz</value>
+  </data>
+  <data name="MAIL_RESET_BODY" xml:space="preserve">
+    <value>Şifrenizi sıfırlamak için aşağıdaki kodu kullanın. Kod {0} dakika geçerlidir.</value>
+  </data>
+  <data name="MAIL_VERIFY_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy e-posta doğrulama</value>
+  </data>
+  <data name="MAIL_VERIFY_BODY" xml:space="preserve">
+    <value>E-posta adresinizi doğrulamak için aşağıdaki kodu uygulamaya girin ya da butona tıklayın. Kod {0} dakika geçerlidir.</value>
+  </data>
+  <data name="MAIL_VERIFY_BUTTON" xml:space="preserve">
+    <value>E-postamı doğrula</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_SUBJECT" xml:space="preserve">
+    <value>MatchBuddy şifreniz değiştirildi</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_BODY" xml:space="preserve">
+    <value>Hesabınızın şifresi {0} tarihinde değiştirildi ve diğer cihazlardaki oturumlar kapatıldı. Bu değişikliği siz yapmadıysanız hemen "Şifremi unuttum" ile yeni şifre alın.</value>
+  </data>
+  <data name="SMS_RESET_BODY" xml:space="preserve">
+    <value>MatchBuddy şifre sıfırlama kodunuz: {0}. Kod {1} dakika geçerlidir. Kimseyle paylaşmayın.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT" xml:space="preserve">
+    <value>Çıkış yapıldı.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT_ALL" xml:space="preserve">
+    <value>Tüm cihazlardan çıkış yapıldı.</value>
+  </data>
+  <data name="MSG_AUTH_RESET_REQUESTED" xml:space="preserve">
+    <value>Bilgiler bir hesapla eşleşiyorsa doğrulama kodu gönderildi.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_RESET" xml:space="preserve">
+    <value>Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_CHANGED" xml:space="preserve">
+    <value>Şifreniz değiştirildi.</value>
+  </data>
+  <data name="MSG_AUTH_EMAIL_VERIFIED" xml:space="preserve">
+    <value>E-posta adresiniz doğrulandı.</value>
+  </data>
+  <data name="MSG_AUTH_VERIFICATION_SENT" xml:space="preserve">
+    <value>Doğrulama kodu e-posta adresinize gönderildi.</value>
+  </data>
+  <data name="MSG_AUTH_TERMS_ACCEPTED" xml:space="preserve">
+    <value>Teşekkürler, onayınız kaydedildi.</value>
+  </data>
+  <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
+    <value>Giriş yöntemi hesabınızdan kaldırıldı.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_ACCESSTOKENMINUTES" xml:space="preserve">
+    <value>Erişim anahtarının (access token) geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_LEGACYACCESSTOKENMINUTES" xml:space="preserve">
+    <value>Eski giriş uç noktasının (PlayerLogin) verdiği anahtarın süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_REFRESHTOKENDAYS" xml:space="preserve">
+    <value>"Beni hatırla" seçiliyken oturumun açık kalacağı gün sayısı.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_SESSIONREFRESHTOKENHOURS" xml:space="preserve">
+    <value>"Beni hatırla" seçili değilken oturumun en uzun süresi, saat.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_REFRESHREUSEGRACESECONDS" xml:space="preserve">
+    <value>Aynı anda gelen yenileme isteklerine tanınan tolerans, saniye.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODETTLMINUTES" xml:space="preserve">
+    <value>Şifre sıfırlama kodunun geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODEMAXATTEMPTS" xml:space="preserve">
+    <value>Bir kod için izin verilen en fazla hatalı deneme.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_CODERESENDCOOLDOWNSECONDS" xml:space="preserve">
+    <value>Yeni kod istemek için beklenecek süre, saniye.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_EMAILVERIFICATIONTTLMINUTES" xml:space="preserve">
+    <value>E-posta doğrulama kodunun geçerlilik süresi, dakika.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDRESETPERMINUTE" xml:space="preserve">
+    <value>Şifre sıfırlama: IP başına dakikada en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDRESETPERIDENTIFIERPERHOUR" xml:space="preserve">
+    <value>Şifre sıfırlama: hesap başına saatte en fazla istek.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_PASSWORDREQUIRELETTERANDDIGIT" xml:space="preserve">
+    <value>Şifrede en az bir harf ve bir rakam zorunlu olsun mu.</value>
+  </data>
+  <data name="PARAMDESC_AUTH_FACEBOOKEMAILTRUSTED" xml:space="preserve">
+    <value>Facebook'tan gelen e-posta doğrulanmış sayılsın mı (aynı e-postalı hesaba otomatik bağlanır).</value>
+  </data>
+  <data name="PARAMDESC_LEGAL_TERMSVERSION" xml:space="preserve">
+    <value>Güncel kullanım koşulları / aydınlatma metni sürümü. Değişirse kullanıcılardan yeniden onay istenir.</value>
+  </data>
+  <data name="MATCH_ORGANIZER_ONLY" xml:space="preserve">
+    <value>Bu işlemi yalnızca maçı kuran yapabilir.</value>
+  </data>
+  <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
+    <value>Takım dengelemek için {0} ile {1} arasında oyuncu gerekir.</value>
+  </data>
+  <data name="RELIABILITY_INVALID_REASON" xml:space="preserve">
+    <value>Geçersiz mazeret seçimi.</value>
+  </data>
+  <data name="RELIABILITY_NOTE_TOO_LONG" xml:space="preserve">
+    <value>Not en fazla {0} karakter olabilir.</value>
+  </data>
+  <data name="RELIABILITY_TOO_LOW" xml:space="preserve">
+    <value>Bu maç için en az {0} güvenilirlik puanı gerekiyor; senin puanın {1}.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_STARTED" xml:space="preserve">
+    <value>Gelmeyenler maç başladıktan sonra işaretlenebilir.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_WINDOW_CLOSED" xml:space="preserve">
+    <value>Gelmeyenler maçtan sonraki {0} saat içinde işaretlenebilir; süre doldu.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Yalnızca maç kadrosundaki oyuncular işaretlenebilir.</value>
+  </data>
+  <data name="RELIABILITY_NO_PENALTY" xml:space="preserve">
+    <value>Bu oyuncunun bu maç için geri alınacak bir cezası yok.</value>
+  </data>
+  <data name="RELIABILITY_CANNOT_EXCUSE_SELF" xml:space="preserve">
+    <value>Kendi mazeretini kabul edemezsin.</value>
+  </data>
+  <data name="RELIABILITY_MIN_OUT_OF_RANGE" xml:space="preserve">
+    <value>En düşük güvenilirlik puanı 1 ile 100 arasında olmalıdır.</value>
+  </data>
+  <data name="MSG_RELIABILITY_LEFT_WITH_PENALTY" xml:space="preserve">
+    <value>Maçtan çekildin. Güvenilirlik puanından {0} düştü (yeni puan: {1}). Kurucu mazeretini kabul ederse iade edilir.</value>
+  </data>
+  <data name="MSG_RELIABILITY_NOSHOWS_SAVED" xml:space="preserve">
+    <value>Gelmeyenler kaydedildi ({0} kişi).</value>
+  </data>
+  <data name="MSG_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>{0} için mazeret kabul edildi, puanı iade edildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW" xml:space="preserve">
+    <value>{0}, "{1}" maçından son dakika çekildi. Mazeret: {2}. Kabul edersen puanı iade edilir.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW_NO_REASON" xml:space="preserve">
+    <value>{0}, "{1}" maçından son dakika çekildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>"{0}" maçı için mazeretin kabul edildi; {1} puan iade edildi.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_NOSHOW" xml:space="preserve">
+    <value>"{0}" maçına gelmedin olarak işaretlendin; güvenilirlik puanından {1} düştü. Bir yanlışlık varsa kurucuyla iletişime geç.</value>
+  </data>
+  <data name="LABEL_EXCUSE_EMERGENCY" xml:space="preserve">
+    <value>Acil durum</value>
+  </data>
+  <data name="LABEL_EXCUSE_HEALTH" xml:space="preserve">
+    <value>Sağlık</value>
+  </data>
+  <data name="LABEL_EXCUSE_BEREAVEMENT" xml:space="preserve">
+    <value>Vefat / taziye</value>
+  </data>
+  <data name="LABEL_EXCUSE_WORK" xml:space="preserve">
+    <value>İş</value>
+  </data>
+  <data name="LABEL_EXCUSE_TRANSPORT" xml:space="preserve">
+    <value>Ulaşım</value>
+  </data>
+  <data name="LABEL_EXCUSE_OTHER" xml:space="preserve">
+    <value>Diğer</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NEWPLAYERMATCHCOUNT" xml:space="preserve">
+    <value>Bu sayıdan az maç tamamlayan oyuncu "yeni oyuncu" sayılır; puan sınırına takılmaz.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LEVELGOOD" xml:space="preserve">
+    <value>Bu puan ve üstü "Güvenilir" (yeşil) rozetidir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LEVELMEDIUM" xml:space="preserve">
+    <value>Bu puan ve üstü "Orta" (sarı), altı "Riskli" (kırmızı) rozetidir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_ATTENDBONUS" xml:space="preserve">
+    <value>Katıldığı her maç için eklenen puan (100'ü geçmez).</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LATECANCELHOURS" xml:space="preserve">
+    <value>Maça bu kadar saatten az kala çekilmek "geç iptal" sayılır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_LATECANCELPENALTY" xml:space="preserve">
+    <value>Geç iptalde düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_VERYLATECANCELHOURS" xml:space="preserve">
+    <value>Maça bu kadar saatten az kala çekilmek "çok geç iptal" sayılır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_VERYLATECANCELPENALTY" xml:space="preserve">
+    <value>Çok geç iptalde düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NOSHOWPENALTY" xml:space="preserve">
+    <value>Maça gelmeyen (kurucunun işaretlediği) oyuncudan düşülen puan.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_NOSHOWMARKWINDOWHOURS" xml:space="preserve">
+    <value>Kurucu gelmeyenleri maçtan sonra bu kadar saat içinde işaretleyebilir; süre bitince katılanlara puan eklenir.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_ORGANIZERLATECANCELPENALTY" xml:space="preserve">
+    <value>Başkalarının katıldığı maçı son dakika iptal eden kurucudan düşülen puan.</value>
+  </data>
+  <data name="INVITE_NO_OPEN_SPOT" xml:space="preserve">
+    <value>Maçta boş yer yok; yedek çağırmaya gerek yok.</value>
+  </data>
+  <data name="NOTIF_INVITE_SUBSTITUTE" xml:space="preserve">
+    <value>{0}: '{1}' maçında ({2:dd.MM.yyyy HH:mm}) yer açıldı. İlk katılan yeri alır!</value>
+  </data>
+  <data name="MSG_INVITE_SUBSTITUTE_SENT" xml:space="preserve">
+    <value>{0} oyuncuya haber verildi. İlk katılan yeri alır.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTECANDIDATELIMIT" xml:space="preserve">
+    <value>Yedek bul listesinde gösterilecek en fazla aday.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
+    <value>Yedek adayları için kaç gün geriye kadar birlikte oynanan maçlara bakılır.</value>
+  </data>
+  <data name="OWNER_DEAL_LIMIT" xml:space="preserve">
+    <value>Bir tesis için günde en fazla {0} boş saat ilanı verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_NOT_FUTURE" xml:space="preserve">
+    <value>İlan yalnızca ileri bir saat için verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_TOO_FAR" xml:space="preserve">
+    <value>İlan en fazla {0} gün sonrası için verilebilir.</value>
+  </data>
+  <data name="OWNER_DEAL_CROSSES_MIDNIGHT" xml:space="preserve">
+    <value>İlan gece yarısını geçemez; saati iki ilana bölün.</value>
+  </data>
+  <data name="OWNER_REPEAT_ONLY_NEW_MANUAL" xml:space="preserve">
+    <value>Haftalık tekrar yalnızca yeni harici rezervasyonda seçilebilir.</value>
+  </data>
+  <data name="MATCH_NOT_REPEATING" xml:space="preserve">
+    <value>Bu maç haftalık tekrar etmiyor.</value>
+  </data>
+  <data name="LABEL_DEAL_TITLE" xml:space="preserve">
+    <value>Son dakika fırsatı</value>
+  </data>
+  <data name="LABEL_REPEAT_WEEKS" xml:space="preserve">
+    <value>Tekrar haftası</value>
+  </data>
+  <data name="MSG_DEAL_SENT" xml:space="preserve">
+    <value>İlan yayında. {0} oyuncuya bildirim gitti.</value>
+  </data>
+  <data name="NOTIF_SLOT_DEAL" xml:space="preserve">
+    <value>{0}: {1:dd.MM HH:mm} {2} boş, %{3} indirimli! Hemen maçını kur.</value>
+  </data>
+  <data name="MSG_SERIES_SAVED" xml:space="preserve">
+    <value>{0} haftalık rezervasyon eklendi.{1:' Dolu olduğu için atlanan hafta: '0;;''}</value>
+  </data>
+  <data name="MSG_SERIES_REMOVED" xml:space="preserve">
+    <value>{0} rezervasyon silindi.</value>
+  </data>
+  <data name="MSG_REPEAT_STOPPED" xml:space="preserve">
+    <value>Haftalık tekrar durduruldu. Oluşmuş haftalar yerinde kalır.</value>
+  </data>
+  <data name="NOTIF_SERIES_INVITE" xml:space="preserve">
+    <value>'{0}' haftalık maçı {1:dd.MM HH:mm}: bu hafta da geliyor musun?</value>
+  </data>
+  <data name="NOTIF_SERIES_CREATED" xml:space="preserve">
+    <value>'{0}' haftalık maçın {1:dd.MM HH:mm} için oluşturuldu; geçen haftaki oyunculara davet gitti.</value>
+  </data>
+  <data name="NOTIF_SERIES_SKIPPED" xml:space="preserve">
+    <value>'{0}' haftalık maçın {1:dd.MM HH:mm} saati dolu ya da kapalı olduğu için bu hafta oluşturulamadı.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_AUTO" xml:space="preserve">
+    <value>Haftalık rezervasyon: '{0}' {1:dd.MM HH:mm} {2} otomatik onaylandı.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_PENDING" xml:space="preserve">
+    <value>Haftalık rezervasyon talebi: '{0}' {1:dd.MM HH:mm} {2}. Onayınızı bekliyor.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXPERDAY" xml:space="preserve">
+    <value>Bir tesisin günde verebileceği en fazla boş saat ilanı.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXDAYSAHEAD" xml:space="preserve">
+    <value>Boş saat ilanının en fazla kaç gün sonrası için verilebileceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALAUDIENCEDAYS" xml:space="preserve">
+    <value>İlan bildirimi için oyuncuların kaç gün içinde o tesiste / yakında oynamış olması gerektiği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXRECIPIENTS" xml:space="preserve">
+    <value>Bir ilanın en fazla kaç oyuncuya bildirim olarak gideceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_REPEATMAXWEEKS" xml:space="preserve">
+    <value>Haftalık harici rezervasyonda en fazla kaç hafta seçilebileceği.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
+    <value>Haftalık sabit maçta bir sonraki haftanın kaç gün önceden oluşturulacağı.</value>
+  </data>
+  <data name="GROUP_NOT_MEMBER" xml:space="preserve">
+    <value>Bu grubun üyesi değilsiniz.</value>
+  </data>
+  <data name="GROUP_CREATOR_ONLY" xml:space="preserve">
+    <value>Bu işlemi yalnızca grubu kuran kişi yapabilir.</value>
+  </data>
+  <data name="GROUP_NO_PLAYERS" xml:space="preserve">
+    <value>Eklenecek oyuncu seçin.</value>
+  </data>
+  <data name="MESSAGE_TOO_LONG" xml:space="preserve">
+    <value>Mesaj en fazla {0} karakter olabilir.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NAME_REQUIRED" xml:space="preserve">
+    <value>Saha adı {0}-{1} karakter olmalı.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NOT_FOUND" xml:space="preserve">
+    <value>Seçilen saha bulunamadı.</value>
+  </data>
+  <data name="EXTERNAL_DATE_REQUIRED" xml:space="preserve">
+    <value>Maç tarihi ve saati seçin.</value>
+  </data>
+  <data name="EXTERNAL_PAST_DATE" xml:space="preserve">
+    <value>Geçmiş bir saate maç kurulamaz.</value>
+  </data>
+  <data name="EXTERNAL_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>Maç en fazla {0} gün sonrasına kurulabilir.</value>
+  </data>
+  <data name="EXTERNAL_INVALID_PRICE" xml:space="preserve">
+    <value>Saha ücreti 0 ile {0} arasında olmalı.</value>
+  </data>
+  <data name="EXTERNAL_NOT_EXTERNAL_MATCH" xml:space="preserve">
+    <value>Bu maç anlaşmalı bir tesiste; saat değişikliği için yeni rezervasyon yapın.</value>
+  </data>
+  <data name="EXTERNAL_MATCH_CLOSED" xml:space="preserve">
+    <value>Oynanmış ya da iptal edilmiş maç düzenlenemez.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_CREATED" xml:space="preserve">
+    <value>Maç oluşturuldu. Saha rezervasyonunu sen yaptığın için onay beklemez.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>Maç bilgileri güncellendi.</value>
+  </data>
+  <data name="NOTIF_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>"{0}" maçının bilgileri değişti: {1:dd.MM.yyyy HH:mm}, {2}.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBERS_ADDED" xml:space="preserve">
+    <value>{0} kişi gruba eklendi.</value>
+  </data>
+  <data name="MSG_GROUP_LEFT" xml:space="preserve">
+    <value>Gruptan ayrıldın.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBER_REMOVED" xml:space="preserve">
+    <value>Üye gruptan çıkarıldı.</value>
+  </data>
+  <data name="MSG_GROUP_RENAMED" xml:space="preserve">
+    <value>Grup adı güncellendi.</value>
+  </data>
+  <data name="MESSAGE_NOT_FOUND" xml:space="preserve">
+    <value>Mesaj bulunamadı.</value>
+  </data>
+  <data name="MESSAGE_NOT_YOURS" xml:space="preserve">
+    <value>Yalnızca kendi mesajını silebilirsin.</value>
+  </data>
+  <data name="MESSAGE_REPLY_INVALID" xml:space="preserve">
+    <value>Yanıtlanan mesaj bu konuşmada değil.</value>
+  </data>
+  <data name="MESSAGE_INVALID_REACTION" xml:space="preserve">
+    <value>Bu tepki kullanılamaz.</value>
+  </data>
+  <data name="MESSAGE_ALREADY_DELETED" xml:space="preserve">
+    <value>Bu mesaj zaten silinmiş.</value>
+  </data>
+  <data name="SHARE_NOT_FOUND" xml:space="preserve">
+    <value>Davet linki geçersiz ya da maç silinmiş.</value>
+  </data>
+  <data name="EXTERNAL_LINK_NO_VENUES" xml:space="preserve">
+    <value>Bağlanacak harici saha seçin.</value>
+  </data>
+  <data name="EXTERNAL_LINK_TARGET_INVALID" xml:space="preserve">
+    <value>Hedef tesis bulunamadı ya da harici bir saha.</value>
+  </data>
+  <data name="LABEL_MESSAGE_DELETED" xml:space="preserve">
+    <value>🚫 Bu mesaj silindi</value>
+  </data>
+  <data name="MSG_MESSAGE_DELETED" xml:space="preserve">
+    <value>Mesaj silindi.</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dd MMMM dddd, HH:mm}
+📍 {2}
+🔥 {3} kişi eksik, gel!
+
+👉 {4}</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT_FULL" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dd MMMM dddd, HH:mm}
+📍 {2}
+
+👉 {3}</value>
+  </data>
+  <data name="SHARE_OG_TITLE" xml:space="preserve">
+    <value>⚽ {0} · {1} kişi eksik</value>
+  </data>
+  <data name="SHARE_OG_TITLE_FULL" xml:space="preserve">
+    <value>⚽ {0}</value>
+  </data>
+  <data name="SHARE_OG_DESCRIPTION" xml:space="preserve">
+    <value>📅 {0:dd MMMM dddd, HH:mm} · 📍 {1}</value>
+  </data>
+  <data name="SHARE_OG_PER_PLAYER" xml:space="preserve">
+    <value>Kişi başı {0:0.##} ₺</value>
+  </data>
+  <data name="SHARE_NOT_FOUND_TITLE" xml:space="preserve">
+    <value>MatchBuddy · Maç bulunamadı</value>
+  </data>
+  <data name="MSG_EXTERNAL_LINKED" xml:space="preserve">
+    <value>{0} saha bağlandı, {1} maç taşındı.</value>
+  </data>
+</root>

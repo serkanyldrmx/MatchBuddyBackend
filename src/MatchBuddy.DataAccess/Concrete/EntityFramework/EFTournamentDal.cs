@@ -12,9 +12,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
     /// </summary>
     public class EFTournamentDal : ITournamentDal
     {
-        private const string TournamentNotFound = "Turnuva bulunamadı.";
-        private const string FixtureNotFound = "Fikstür bulunamadı.";
-        private const string TeamNotFound = "Takım bulunamadı.";
+        private const string TournamentNotFound = ErrorCodes.Tournament.NotFound;
+        private const string FixtureNotFound = ErrorCodes.Tournament.FixtureNotFound;
+        private const string TeamNotFound = ErrorCodes.Team.NotFound;
         private const int MembersPreview = 6;
 
         // ------------------------------------------------------------------ Okuma
@@ -205,7 +205,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             if (input.StadiumId.HasValue && !context.Stadiums.Any(s => s.StadiumId == input.StadiumId.Value))
-                return OperationResult<int>.NotFound("Halı saha bulunamadı.");
+                return OperationResult<int>.NotFound(ErrorCodes.Tournament.StadiumNotFound);
 
             var tournament = new Tournament
             {
@@ -222,7 +222,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.Tournaments.Add(tournament);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<int>.Ok(tournament.TournamentId, "Turnuva oluşturuldu.");
+            return OperationResult<int>.Ok(tournament.TournamentId, Msg.Get(MessageKeys.Tournament.Created));
         }
 
         public OperationResult<bool> RegisterTeam(int me, int tournamentId, int teamId)
@@ -234,20 +234,20 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             if (!context.Teams.Any(x => x.TeamId == teamId)) return OperationResult<bool>.NotFound(TeamNotFound);
             if (!context.PlayerTeam.Any(pt => pt.TeamId == teamId && pt.PlayerId == me))
-                return OperationResult<bool>.Forbidden("Takımı kaydetmek için takımın üyesi olmalısın.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.RegisterNotTeamMember);
             if (t.Status != TournamentStatus.Registration)
-                return OperationResult<bool>.BadRequest("Bu turnuvanın kayıtları kapandı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.RegistrationClosed);
 
             var registered = context.TournamentTeams.Where(x => x.TournamentId == tournamentId).Select(x => x.TeamId).ToList();
             if (registered.Contains(teamId))
-                return OperationResult<bool>.BadRequest("Takım bu turnuvaya zaten kayıtlı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.TeamAlreadyRegistered);
             if (registered.Count >= t.MaxTeams)
-                return OperationResult<bool>.BadRequest("Turnuva kontenjanı dolu.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.Full);
 
             context.TournamentTeams.Add(new TournamentTeam { TournamentId = tournamentId, TeamId = teamId, JoinedAt = DateTime.Now });
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Takım turnuvaya kaydedildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Tournament.TeamRegistered));
         }
 
         public OperationResult<bool> WithdrawTeam(int me, bool isAdmin, int tournamentId, int teamId)
@@ -258,16 +258,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var t = LockTournament(context, tournamentId);
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             var row = context.TournamentTeams.FirstOrDefault(x => x.TournamentId == tournamentId && x.TeamId == teamId);
-            if (row == null) return OperationResult<bool>.NotFound("Takım bu turnuvaya kayıtlı değil.");
+            if (row == null) return OperationResult<bool>.NotFound(ErrorCodes.Tournament.TeamNotRegistered);
             if (!CanManage(t, me, isAdmin) && !context.PlayerTeam.Any(pt => pt.TeamId == teamId && pt.PlayerId == me))
-                return OperationResult<bool>.Forbidden("Takımı çekmek için takımın üyesi ya da turnuvanın yöneticisi olmalısın.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.WithdrawForbidden);
             if (t.Status != TournamentStatus.Registration)
-                return OperationResult<bool>.BadRequest("Turnuva başladıktan sonra takım çekilemez.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.WithdrawAfterStart);
 
             context.TournamentTeams.Remove(row);
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Takım turnuvadan çekildi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Tournament.TeamWithdrawn));
         }
 
         public OperationResult<bool> Start(int me, bool isAdmin, int tournamentId)
@@ -278,9 +278,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var t = LockTournament(context, tournamentId);
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             if (!CanManage(t, me, isAdmin))
-                return OperationResult<bool>.Forbidden("Turnuvayı sadece düzenleyen başlatabilir.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.StartForbidden);
             if (t.Status != TournamentStatus.Registration)
-                return OperationResult<bool>.BadRequest("Turnuva zaten başladı.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.AlreadyStarted);
 
             var teamIds = context.TournamentTeams
                 .Where(x => x.TournamentId == tournamentId)
@@ -291,12 +291,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             List<TournamentFixture> fixtures;
             if (t.Format == TournamentFormat.League)
             {
-                if (teamIds.Count < 3) return OperationResult<bool>.BadRequest("Lig başlatmak için en az 3 takım gerekli.");
+                var minLeague = P.Int(ParameterKeys.Tournament.LeagueMinTeamsToStart);
+                if (teamIds.Count < minLeague) return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.LeagueMinTeams, minLeague);
                 fixtures = TournamentScheduler.League(teamIds, t.StartDate);
             }
             else
             {
-                if (teamIds.Count < 2) return OperationResult<bool>.BadRequest("Eleme başlatmak için en az 2 takım gerekli.");
+                var minKnockout = P.Int(ParameterKeys.Tournament.KnockoutMinTeamsToStart);
+                if (teamIds.Count < minKnockout) return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.KnockoutMinTeams, minKnockout);
                 TournamentScheduler.Shuffle(teamIds, Random.Shared);
                 fixtures = TournamentScheduler.Knockout(teamIds, t.StartDate);
             }
@@ -306,12 +308,12 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             t.Status = TournamentStatus.Ongoing;
 
             NotificationWriter.Add(context, NotificationType.TournamentUpdate,
-                $"'{t.Name}' turnuvası başladı! Fikstür yayınlandı, ilk maçlar {t.StartDate:dd.MM.yyyy HH:mm}.",
+                Msg.GetDefault(MessageKeys.Tournament.NotifStarted, t.Name, t.StartDate),
                 null, null, MembersOf(context, teamIds));
 
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Turnuva başladı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Tournament.Started));
         }
 
         public OperationResult<bool> SubmitResult(int me, bool isAdmin, int fixtureId, int homeScore, int awayScore, int? winnerTeamId)
@@ -325,29 +327,29 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var t = LockTournament(context, tournamentId.Value);
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             if (!CanManage(t, me, isAdmin))
-                return OperationResult<bool>.Forbidden("Sonucu sadece turnuvanın yöneticisi girebilir.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.ResultForbidden);
             if (t.Status != TournamentStatus.Ongoing)
-                return OperationResult<bool>.BadRequest("Sonuç sadece devam eden turnuvaya girilebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.ResultNotOngoing);
 
             var fixtures = context.TournamentFixtures.Where(f => f.TournamentId == t.TournamentId).ToList();
             var fixture = fixtures.Single(f => f.FixtureId == fixtureId);
             if (fixture.Status == FixtureStatus.Bye || fixture.HomeTeamId is not int home || fixture.AwayTeamId is not int away)
-                return OperationResult<bool>.BadRequest("Bu maçın iki takımı da henüz belli değil.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.FixtureTeamsUndetermined);
 
             int? winner = homeScore > awayScore ? home : awayScore > homeScore ? away : null;
             var knockout = t.Format == TournamentFormat.Knockout;
             if (knockout && winner == null)
             {
                 if (winnerTeamId == null)
-                    return OperationResult<bool>.BadRequest("Elemede beraberlikte kazanan takım (winnerTeamId) seçilmeli.");
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.DrawWinnerRequired);
                 if (winnerTeamId != home && winnerTeamId != away)
-                    return OperationResult<bool>.BadRequest("Kazanan takım bu maçta oynamıyor.");
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.WinnerNotInFixture);
                 winner = winnerTeamId;
             }
 
             if (knockout && fixture.Status == FixtureStatus.Played && fixture.WinnerTeamId != winner
                 && !TournamentScheduler.CanChangeWinner(fixtures, fixture))
-                return OperationResult<bool>.BadRequest("Üst tur maçı oynandığı için kazanan değiştirilemez.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.WinnerLocked);
 
             fixture.HomeScore = homeScore;
             fixture.AwayScore = awayScore;
@@ -359,7 +361,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .Where(x => x.TeamId == home || x.TeamId == away)
                 .ToDictionary(x => x.TeamId, x => x.TeamName);
             NotificationWriter.Add(context, NotificationType.TournamentUpdate,
-                $"'{t.Name}': {teamNames.GetValueOrDefault(home)} {homeScore}-{awayScore} {teamNames.GetValueOrDefault(away)}",
+                Msg.GetDefault(MessageKeys.Tournament.NotifResult, t.Name, teamNames.GetValueOrDefault(home), homeScore, awayScore, teamNames.GetValueOrDefault(away)),
                 null, null, MembersOf(context, new[] { home, away }));
 
             // Bitiş kontrolü
@@ -377,7 +379,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 champion = TournamentScheduler.Standings(names, fixtures).FirstOrDefault()?.Team.TeamId;
             }
 
-            var message = "Sonuç kaydedildi.";
+            var message = Msg.Get(MessageKeys.Tournament.ResultSaved);
             if (champion is int championId)
             {
                 t.Status = TournamentStatus.Finished;
@@ -396,9 +398,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 var allTeams = context.TournamentTeams.Where(x => x.TournamentId == t.TournamentId).Select(x => x.TeamId).ToList();
                 var championName = context.Teams.AsNoTracking().Where(x => x.TeamId == championId).Select(x => x.TeamName).FirstOrDefault();
                 NotificationWriter.Add(context, NotificationType.TournamentUpdate,
-                    $"'{t.Name}' turnuvası tamamlandı. Şampiyon: {championName}!",
+                    Msg.GetDefault(MessageKeys.Tournament.NotifFinished, t.Name, championName),
                     null, null, MembersOf(context, allTeams));
-                message = $"Sonuç kaydedildi. Turnuva tamamlandı, şampiyon: {championName}.";
+                message = Msg.Get(MessageKeys.Tournament.ResultSavedFinished, championName);
             }
 
             context.SaveChanges();
@@ -416,14 +418,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var t = LockTournament(context, fixture.TournamentId);
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             if (!CanManage(t, me, isAdmin))
-                return OperationResult<bool>.Forbidden("Maç tarihini sadece turnuvanın yöneticisi değiştirebilir.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.FixtureDateForbidden);
             if (fixture.Status == FixtureStatus.Bye)
-                return OperationResult<bool>.BadRequest("Bay geçilen maçın tarihi olmaz.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.ByeHasNoDate);
 
             fixture.MatchDate = matchDate;
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Maç tarihi güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Tournament.FixtureDateUpdated));
         }
 
         public OperationResult<bool> Delete(int me, bool isAdmin, int tournamentId)
@@ -434,14 +436,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var t = LockTournament(context, tournamentId);
             if (t == null) return OperationResult<bool>.NotFound(TournamentNotFound);
             if (!CanManage(t, me, isAdmin))
-                return OperationResult<bool>.Forbidden("Turnuvayı sadece düzenleyen silebilir.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Tournament.DeleteForbidden);
             if (t.Status != TournamentStatus.Registration)
-                return OperationResult<bool>.BadRequest("Sadece kayıt aşamasındaki turnuva silinebilir.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Tournament.DeleteOnlyRegistration);
 
             context.Tournaments.Remove(t); // TournamentTeams / Fixtures cascade
             context.SaveChanges();
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Turnuva silindi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Tournament.Deleted));
         }
 
         private static List<int> MembersOf(MatchBuddyContext context, IEnumerable<int> teamIds)

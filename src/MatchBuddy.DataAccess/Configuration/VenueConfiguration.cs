@@ -82,8 +82,29 @@ namespace MatchBuddy.DataAccess.Configuration
             builder.ToTable("SlotBlocks");
             builder.HasKey(x => x.SlotBlockId);
             builder.Property(x => x.Reason).HasMaxLength(100).IsRequired();
+            builder.Property(x => x.Kind).HasDefaultValue((byte)0);
+            builder.Property(x => x.CustomerName).HasMaxLength(80);
+            builder.Property(x => x.CustomerPhone).HasMaxLength(30);
+            builder.Property(x => x.Price).HasColumnType("decimal(10,2)");
+            builder.Property(x => x.IsPaid).HasDefaultValue(false);
+            builder.Property(x => x.Note).HasMaxLength(200);
             builder.HasIndex(x => new { x.PitchId, x.StartAt });
             builder.HasOne<Pitch>().WithMany().HasForeignKey(x => x.PitchId).OnDelete(DeleteBehavior.Cascade);
+        }
+    }
+
+    public class VenueExpenseConfiguration : IEntityTypeConfiguration<VenueExpense>
+    {
+        public void Configure(EntityTypeBuilder<VenueExpense> builder)
+        {
+            builder.ToTable("VenueExpenses");
+            builder.HasKey(x => x.ExpenseId);
+            builder.Property(x => x.Date).HasColumnType("date");
+            builder.Property(x => x.Category).HasMaxLength(40).IsRequired();
+            builder.Property(x => x.Amount).HasColumnType("decimal(12,2)");
+            builder.Property(x => x.Description).HasMaxLength(200);
+            builder.HasIndex(x => new { x.StadiumId, x.Date });
+            builder.HasOne<Stadium>().WithMany().HasForeignKey(x => x.StadiumId).OnDelete(DeleteBehavior.Cascade);
         }
     }
 

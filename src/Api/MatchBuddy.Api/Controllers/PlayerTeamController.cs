@@ -36,11 +36,11 @@ namespace MatchBuddy.Api.Controllers
             // İşletme hesapları takıma eklenemez
             if (_socialService.OwnerIds(new[] { playerTeamModel.PlayerId }).Count > 0)
             {
-                return BadRequest(new { Success = false, Message = "İşletme hesapları takıma eklenemez." });
+                return this.BadRequestError(ErrorCodes.Team.OwnerNotAllowed);
             }
             if (_teamService.IsPlayerInTeam(playerTeamModel.TeamId, playerTeamModel.PlayerId))
             {
-                return BadRequest(new { Success = false, Message = "Oyuncu zaten bu takımda." });
+                return this.BadRequestError(ErrorCodes.Team.PlayerAlreadyInTeam);
             }
 
             var playerTeam = new PlayerTeam()
@@ -53,7 +53,7 @@ namespace MatchBuddy.Api.Controllers
             {
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
     }
 }

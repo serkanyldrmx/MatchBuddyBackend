@@ -52,6 +52,18 @@ namespace MatchBuddy.DataAccess.Configuration
             builder.HasIndex(s => s.OwnerPlayerId);
             builder.HasIndex(s => s.OsmId);
 
+            // Harici (anlaşmasız) saha: oyuncunun eklediği yer (docs/external-venues-api.md)
+            builder.Property(s => s.IsExternal).HasDefaultValue(false);
+            builder.HasIndex(s => new { s.CreatedByPlayerId, s.IsExternal });
+            builder.HasOne<Stadium>()
+                .WithMany()
+                .HasForeignKey(s => s.LinkedStadiumId)
+                .OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne<Player>()
+                .WithMany()
+                .HasForeignKey(s => s.CreatedByPlayerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // İşletme hesabı: NoAction (çoklu cascade yolu olmasın)
             builder.HasOne<Player>()
                 .WithMany()

@@ -1,4 +1,4 @@
-﻿using MatchBuddy.Api.Model;
+using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
@@ -22,11 +22,11 @@ namespace MatchBuddy.Api.Controllers
 
         // Yorum ekle: yorumu yazan her zaman token sahibidir
         [HttpPost("SaveMatchComment")]
-        public IActionResult SaveMatchComment(MatchCommentModel matchCommentModel)
+        public IActionResult SaveMatchComment(MatchCommentModel matchCommentModel, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             if (string.IsNullOrWhiteSpace(matchCommentModel.Comment))
             {
-                return BadRequest(new { Success = false, Message = "Yorum boş olamaz." });
+                return this.BadRequestError(ErrorCodes.Comment.Empty);
             }
 
             var matchComment = new MatchComment()
@@ -38,19 +38,20 @@ namespace MatchBuddy.Api.Controllers
             var result = _matchCommentsService.Add(matchComment);
             if (result.Success)
             {
+                _ = realtime.MatchCommentAsync(matchComment.MatchId); // anlık: maçı açık tutanlar yenilesin
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         // Yorum sil: sadece yorumun sahibi veya admin
         [HttpPost("DeleteMatchComment")]
-        public IActionResult DeleteMatchComment(int commentId)
+        public IActionResult DeleteMatchComment(int commentId, [FromServices] MatchBuddy.Api.Hubs.RealtimeNotifier realtime)
         {
             var comment = _matchCommentsService.GetComment(commentId);
             if (comment == null)
             {
-                return NotFound(new { Success = false, Message = "Yorum bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Comment.NotFound);
             }
             if (!User.IsSelfOrAdmin(comment.playerId))
             {
@@ -60,9 +61,10 @@ namespace MatchBuddy.Api.Controllers
             var result = _matchCommentsService.Delete(comment);
             if (result.Success)
             {
+                _ = realtime.MatchCommentAsync(comment.MatchId);
                 return Ok(result);
             }
-            return BadRequest(result);
+            return this.ToHttp(result);
         }
 
         [Authorize(Roles = Roles.Admin)]

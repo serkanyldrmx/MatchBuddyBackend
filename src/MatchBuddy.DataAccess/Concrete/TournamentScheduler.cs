@@ -12,10 +12,10 @@ namespace MatchBuddy.DataAccess.Concrete
     public static class TournamentScheduler
     {
         public const int MinScore = 0;
-        public const int MaxScore = 50;
+        public static int MaxScore => P.Int(ParameterKeys.Tournament.MaxScore);
 
         /// <summary>Tur r'nin tarihi: StartDate + 7*(r-1) gün (saat StartDate'inki).</summary>
-        public static DateTime RoundDate(DateTime startDate, int round) => startDate.AddDays(7 * (round - 1));
+        public static DateTime RoundDate(DateTime startDate, int round) => startDate.AddDays(P.Int(ParameterKeys.Tournament.RoundIntervalDays) * (round - 1));
 
         /// <summary>Lig tur sayısı: çift n için n-1, tek n için n (her turda bir takım bay).</summary>
         public static int LeagueRoundCount(int teamCount) =>
@@ -257,8 +257,8 @@ namespace MatchBuddy.DataAccess.Concrete
             row.Played++;
             row.GoalsFor += scored;
             row.GoalsAgainst += conceded;
-            if (scored > conceded) { row.Won++; row.Points += 3; }
-            else if (scored == conceded) { row.Drawn++; row.Points += 1; }
+            if (scored > conceded) { row.Won++; row.Points += P.Int(ParameterKeys.Tournament.PointsWin); }
+            else if (scored == conceded) { row.Drawn++; row.Points += P.Int(ParameterKeys.Tournament.PointsDraw); }
             else row.Lost++;
         }
     }

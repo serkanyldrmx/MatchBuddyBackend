@@ -1,4 +1,4 @@
-using MatchBuddy.Core.Entities;
+﻿using MatchBuddy.Core.Entities;
 
 namespace MatchBuddy.Entities.Entity
 {
@@ -62,6 +62,14 @@ namespace MatchBuddy.Entities.Entity
         public bool NotifyMatchReminder { get; set; } = true;
         public bool NotifyMatchResult { get; set; } = true;
         public bool NotifyMatchUpdates { get; set; } = true;
+        // İşletmelerin "boş saat / indirim" bildirimleri
+        public bool NotifyDeals { get; set; } = true;
+
+        // Arayüz tercihleri (docs/platform-api.md): "system" | "light" | "dark"
+        public string Theme { get; set; } = PlayerThemes.System;
+
+        // Arayüz dili (BCP-47 kısa kod). Varsayılan "tr"; istemci Accept-Language başlığında gönderir.
+        public string Language { get; set; } = "tr";
 
         public static PlayerSettings Defaults(int playerId) => new() { PlayerId = playerId };
     }

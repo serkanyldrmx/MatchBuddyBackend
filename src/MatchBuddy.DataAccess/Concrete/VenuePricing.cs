@@ -10,9 +10,10 @@ namespace MatchBuddy.DataAccess.Concrete
     /// </summary>
     public static class VenuePricing
     {
-        public static readonly int[] AllowedDurations = { 60, 90, 120 };
-        public const int MinPlayersPerSide = 4;   // userCount en az 2 × 4
-        public const int ExtraPlayers = 4;        // userCount en çok PlayersPerSide * 2 + 4
+        // Sistem parametreleri (docs/platform-api.md): venue.allowedDurations, venue.bookingMinPlayersPerSide, venue.extraPlayersAllowed
+        public static IReadOnlyList<int> AllowedDurations => P.Ints(ParameterKeys.Venue.AllowedDurations);
+        public static int MinPlayersPerSide => P.Int(ParameterKeys.Venue.BookingMinPlayersPerSide); // userCount en az 2 × bu
+        public static int ExtraPlayers => P.Int(ParameterKeys.Venue.ExtraPlayersAllowed);           // userCount en çok PlayersPerSide * 2 + bu
 
         // Varsayılan açılış saatleri (kayıt ve Stadiums.OpeningTime/ClosingTime yoksa): 09:00–00:00
         public static readonly TimeSpan DefaultOpen = new(9, 0, 0);
@@ -217,7 +218,11 @@ namespace MatchBuddy.DataAccess.Concrete
             return Round2(total);
         }
 
-        /// <summary>Kişi başı = ceil(toplam / oyuncu sayısı).</summary>
+        /// <summary>Krampon ücreti (adet × çift ücreti). Kişi başına bölünmez; yalnızca kiralayan öder.</summary>
+        public static decimal CleatTotal(Stadium? stadium, int cleatCount) =>
+            cleatCount > 0 && stadium != null ? Round2(cleatCount * (stadium.CleatRentalPrice ?? 0m)) : 0m;
+
+        /// <summary>Kişi başı = ceil(toplam / oyuncu sayısı). Krampon ücreti toplamdan önceden düşülmelidir.</summary>
         public static decimal PerPlayer(decimal total, int userCount) =>
             userCount <= 0 ? Math.Ceiling(total) : Math.Ceiling(total / userCount);
 

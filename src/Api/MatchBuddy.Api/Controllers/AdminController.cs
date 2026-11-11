@@ -4,6 +4,7 @@ using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
+using MatchBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,15 @@ namespace MatchBuddy.Api.Controllers
         private readonly ISocialService _socialService;
         private readonly IVenueService _venueService;
         private readonly OsmService _osmService;
+        private readonly IMediaService _mediaService;
 
-        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService)
+        private readonly MatchBuddy.Business.Auth.IAuthService _auth;
+
+        public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService, IMediaService mediaService,
+            MatchBuddy.Business.Auth.IAuthService auth)
         {
+            _auth = auth;
+            _mediaService = mediaService;
             _socialService = socialService;
             _venueService = venueService;
             _osmService = osmService;
@@ -37,6 +44,24 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult ResolveReport(ReportIdModel model)
         {
             return this.ToHttp(_socialService.ResolveReport(model.ReportId));
+        }
+
+        // ------------------------------------------------------------------ Harici saha satış listesi (docs/engagement-api.md §4)
+
+        /// <summary>Oyuncuların telefonla ayarladığı, anlaşmamız olmayan sahalar: en çok maç yapılan önce.</summary>
+        [HttpGet("ExternalVenueLeads")]
+        public ActionResult<List<ExternalVenueLeadDto>> ExternalVenueLeads([FromQuery] string? q) => _venueService.ExternalLeads(q);
+
+        /// <summary>Bağlanabilecek tesisler (harici olmayan; işletmeli ya da aday).</summary>
+        [HttpGet("ExternalVenueLeads/Targets")]
+        public ActionResult<List<LinkTargetDto>> ExternalVenueLinkTargets([FromQuery] string? q) => _venueService.LinkTargets(q);
+
+        /// <summary>Harici sahaları mevcut bir tesise ya da yeni aday tesise bağla; maçları taşınır. Yanıt: { success, message, stadiumId }.</summary>
+        [HttpPost("ExternalVenueLeads/Link")]
+        public IActionResult LinkExternalVenues(LinkExternalInput input)
+        {
+            var result = _venueService.LinkExternal(input);
+            return result.Success ? Ok(new { Success = true, result.Message, StadiumId = result.Data }) : this.ToHttp(result);
         }
 
         // ------------------------------------------------------------------ İşletmeler
@@ -57,6 +82,8 @@ namespace MatchBuddy.Api.Controllers
         public IActionResult ResetOwnerPassword(ResetOwnerPasswordModel model)
         {
             var res = _venueService.ResetOwnerPassword(model.OwnerId);
+            // Şifre değişti: işletmenin açık oturumları (refresh token) kapanır
+            if (res.Success) _auth.RevokeAllSessions(model.OwnerId, MatchBuddy.Entities.Entity.RevokeReasons.PasswordReset);
             return res.Success
                 ? Ok(new { success = true, userName = res.Data!.UserName, password = res.Data.Password })
                 : this.ToHttp(res);
@@ -64,8 +91,9 @@ namespace MatchBuddy.Api.Controllers
 
         // multipart: model (JSON) + photos (1–10 dosya). Hata: 400 { success:false, message, field }
         [HttpPost("CreateOwner")]
-        [RequestSizeLimit(60 * 1024 * 1024)]
-        public IActionResult CreateOwner([FromForm] string? model, [FromForm] List<IFormFile>? photos)
+        [RequestSizeLimit(110 * 1024 * 1024)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 110 * 1024 * 1024)]
+        public async Task<IActionResult> CreateOwner([FromForm] string? model, [FromForm] List<IFormFile>? photos, CancellationToken ct)
         {
             CreateOwnerInput? input;
             try
@@ -75,27 +103,44 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz işletme bilgisi (model JSON).", Field = "model" });
+                return this.FieldError("model", ErrorCodes.Admin.InvalidOwnerModel);
             }
 
             photos ??= new List<IFormFile>();
             var invalid = _venueService.ValidateCreateOwner(input, photos.Count);
-            if (invalid != null) return BadRequest(new { Success = false, Message = invalid.Value.Message, Field = invalid.Value.Field });
+            if (invalid != null) return this.FieldError(invalid.Value.Field, invalid.Value.Error.Code, invalid.Value.Error.Args);
 
+            // Medya hattı (kind venues); yükleyen admin. Hata olursa yüklenenler geri silinir.
+            var uploaded = new List<MediaDto>();
             foreach (var photo in photos)
             {
-                var error = ImageUploads.Validate(photo);
-                if (error != null) return BadRequest(new { Success = false, Message = $"{photo.FileName}: {error}", Field = "photos" });
+                var upload = await _mediaService.UploadAsync(photo, MediaKind.VenuePhoto, User.GetPlayerId(), ct);
+                if (!upload.Success)
+                {
+                    foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
+                    return this.FieldError("photos", ErrorCodes.Admin.PhotoUploadFailed, photo.FileName, upload.Message);
+                }
+                uploaded.Add(upload.Data);
             }
 
-            var urls = photos.Select(p => ImageUploads.Save(p, "venues")).ToList();
-            var result = _venueService.CreateOwner(input!, urls);
+            var result = _venueService.CreateOwner(input!, uploaded.Select(m => m.Url).ToList());
             if (!result.Success)
             {
-                urls.ForEach(ImageUploads.Delete);
-                return BadRequest(new { Success = false, result.Message, Field = "owner.userName" });
+                foreach (var m in uploaded) await _mediaService.DeleteAsync(m.MediaId, CancellationToken.None);
+                return this.Error(StatusCodes.Status400BadRequest, result.Code ?? ErrorCodes.Common.OperationFailed, result.Message,
+                    new Dictionary<string, string[]> { ["owner.userName"] = new[] { result.Message } });
             }
+            _mediaService.LinkStadiumPhotos(result.Data.StadiumId, uploaded);
             return Ok(new { Success = true, result.Message, result.Data.OwnerId, result.Data.StadiumId });
+        }
+
+        // Tek seferlik geçiş: /uploads/... profil ve tesis fotoğraflarını medya hattından geçirir.
+        // İdempotent (ikinci çalıştırmada /uploads kaydı kalmaz); eski dosyalar silinmez.
+        [HttpPost("Media/MigrateLegacy")]
+        public async Task<IActionResult> MigrateLegacyMedia(CancellationToken ct)
+        {
+            var r = await _mediaService.MigrateLegacyAsync(ct);
+            return Ok(new { Success = true, r.MigratedAvatars, r.MigratedVenuePhotos, r.Missing });
         }
 
         [HttpPost("UpdateMembership")]
@@ -117,18 +162,19 @@ namespace MatchBuddy.Api.Controllers
             {
                 if (south.HasValue && west.HasValue && north.HasValue && east.HasValue)
                 {
-                    if (south >= north || west >= east || north - south > 2 || east - west > 2)
-                        return BadRequest(new { Success = false, Message = "Geçersiz alan (en fazla 2° x 2°, south < north, west < east)." });
+                    var maxDeg = (double)P.Dec(ParameterKeys.Osm.MaxBoxDegrees);
+                    if (south >= north || west >= east || north - south > maxDeg || east - west > maxDeg)
+                        return this.BadRequestError(ErrorCodes.Osm.InvalidBounds, maxDeg);
                     box = new OsmService.BBox(south.Value, west.Value, north.Value, east.Value);
                 }
                 else if (!string.IsNullOrWhiteSpace(city))
                 {
                     box = await _osmService.CityBoundsAsync(city, ct);
-                    if (box == null) return NotFound(new { Success = false, Message = "Şehir bulunamadı." });
+                    if (box == null) return this.NotFoundError(ErrorCodes.Osm.CityNotFound);
                 }
                 else
                 {
-                    return BadRequest(new { Success = false, Message = "city ya da south/west/north/east verilmelidir." });
+                    return this.BadRequestError(ErrorCodes.Osm.AreaRequired);
                 }
 
                 var candidates = await _osmService.PitchesAsync(box, ct);
@@ -137,11 +183,9 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (Exception ex) when (ex is OsmService.OsmUnavailableException or FormatException or KeyNotFoundException or InvalidOperationException)
             {
-                return StatusCode(StatusCodes.Status502BadGateway, new
-                {
-                    Success = false,
-                    Message = ex is OsmService.OsmUnavailableException ? ex.Message : "Harita servisinden geçersiz yanıt alındı.",
-                });
+                return ex is OsmService.OsmUnavailableException osm
+                    ? this.Error(StatusCodes.Status502BadGateway, osm.Code, osm.Message)
+                    : this.Error(StatusCodes.Status502BadGateway, ErrorCodes.Osm.InvalidResponse, Msg.Get(ErrorCodes.Osm.InvalidResponse));
             }
         }
 

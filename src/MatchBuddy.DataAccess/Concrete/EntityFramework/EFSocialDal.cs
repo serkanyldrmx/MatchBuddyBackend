@@ -1,4 +1,4 @@
-using MatchBuddy.Core.Utilities.Results;
+﻿using MatchBuddy.Core.Utilities.Results;
 using MatchBuddy.DataAccess.Abstract;
 using MatchBuddy.Entities.DTOs;
 using MatchBuddy.Entities.Entity;
@@ -8,9 +8,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 {
     public class EFSocialDal : ISocialDal
     {
-        public const string MessageNotAllowed = "Bu oyuncu sadece arkadaşlarından mesaj kabul ediyor.";
-        public const string MessageBlocked = "Bu oyuncuyla mesajlaşamazsın.";
-        private const string PlayerNotFound = "Oyuncu bulunamadı.";
+        public const string MessageNotAllowed = ErrorCodes.Message.NotAllowed;
+        public const string MessageBlocked = ErrorCodes.Message.Blocked;
+        private const string PlayerNotFound = ErrorCodes.Player.NotFound;
 
         // ------------------------------------------------------------------
         // Yardımcılar
@@ -97,7 +97,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         public OperationResult<bool> Follow(int me, int targetPlayerId)
         {
-            if (me == targetPlayerId) return OperationResult<bool>.BadRequest("Kendini takip edemezsin.");
+            if (me == targetPlayerId) return OperationResult<bool>.BadRequest(ErrorCodes.Social.CannotFollowSelf);
 
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
@@ -106,16 +106,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (target == null) return OperationResult<bool>.NotFound(PlayerNotFound);
             // Takip mantığı işletmelere uygulanmaz (docs/venues-api.md)
             if (context.Players.Any(p => p.PlayerId == me && p.Role == PlayerRoles.Owner))
-                return OperationResult<bool>.Forbidden("İşletme hesapları takip yapamaz.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Social.OwnerCannotFollow);
             if (target.Role == PlayerRoles.Owner)
-                return OperationResult<bool>.BadRequest("İşletme hesapları takip edilemez.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Social.OwnerNotFollowable);
             if (IsBlockedEither(context, me, targetPlayerId))
-                return OperationResult<bool>.Forbidden("Bu oyuncuyu takip edemezsin.");
+                return OperationResult<bool>.Forbidden(ErrorCodes.Social.FollowBlocked);
 
             var followsMe = context.Follows.Any(f => f.FollowerId == targetPlayerId && f.FolloweeId == me);
             if (context.Follows.Any(f => f.FollowerId == me && f.FolloweeId == targetPlayerId))
             {
-                return OperationResult<bool>.Ok(followsMe, "Bu oyuncuyu zaten takip ediyorsun.");
+                return OperationResult<bool>.Ok(followsMe, Msg.Get(MessageKeys.Social.AlreadyFollowing));
             }
 
             context.Follows.Add(new Follow { FollowerId = me, FolloweeId = targetPlayerId, CreatedAt = DateTime.Now });
@@ -124,8 +124,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var actor = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == me);
             NotificationWriter.Add(context, NotificationType.NewFollower,
                 followsMe
-                    ? $"{ParticipationCore.DisplayName(actor)} seni geri takip etti. Artık arkadaşsınız."
-                    : $"{ParticipationCore.DisplayName(actor)} seni takip etmeye başladı.",
+                    ? Msg.GetDefault(MessageKeys.Social.NotifFollowedBack, ParticipationCore.DisplayName(actor))
+                    : Msg.GetDefault(MessageKeys.Social.NotifNewFollower, ParticipationCore.DisplayName(actor)),
                 null, null, new[] { targetPlayerId });
 
             try
@@ -136,17 +136,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             catch (DbUpdateException)
             {
                 // Eşzamanlı aynı takip isteği: unique index -> zaten takip ediliyor
-                return OperationResult<bool>.Ok(followsMe, "Bu oyuncuyu zaten takip ediyorsun.");
+                return OperationResult<bool>.Ok(followsMe, Msg.Get(MessageKeys.Social.AlreadyFollowing));
             }
 
-            return OperationResult<bool>.Ok(followsMe, followsMe ? "Artık arkadaşsınız." : "Takip edildi.");
+            return OperationResult<bool>.Ok(followsMe, Msg.Get(followsMe ? MessageKeys.Social.NowFriends : MessageKeys.Social.Followed));
         }
 
         public OperationResult<bool> Unfollow(int me, int targetPlayerId)
         {
             using var context = new MatchBuddyContext();
             context.Follows.Where(f => f.FollowerId == me && f.FolloweeId == targetPlayerId).ExecuteDelete();
-            return OperationResult<bool>.Ok(true, "Takipten çıkıldı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.Unfollowed));
         }
 
         private OperationResult<List<SocialPlayerDto>> FollowList(int me, int playerId, bool followers)
@@ -161,7 +161,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 if (target == null || graph.IsBlocked(playerId))
                     return OperationResult<List<SocialPlayerDto>>.NotFound(PlayerNotFound);
                 if (!CanSeeDetails(me, playerId, LoadSettings(context, playerId), graph.IFollow(playerId)))
-                    return OperationResult<List<SocialPlayerDto>>.Forbidden("Bu oyuncunun listesi gizli.");
+                    return OperationResult<List<SocialPlayerDto>>.Forbidden(ErrorCodes.Social.ListPrivate);
             }
 
             var rows = followers
@@ -327,7 +327,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         public OperationResult<bool> Block(int me, int targetPlayerId)
         {
-            if (me == targetPlayerId) return OperationResult<bool>.BadRequest("Kendini engelleyemezsin.");
+            if (me == targetPlayerId) return OperationResult<bool>.BadRequest(ErrorCodes.Social.CannotBlockSelf);
 
             using var context = new MatchBuddyContext();
             using var transaction = context.Database.BeginTransaction();
@@ -357,14 +357,14 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 .ExecuteUpdate(s => s.SetProperty(i => i.Status, InviteStatus.Declined).SetProperty(i => i.RespondedAt, now));
 
             transaction.Commit();
-            return OperationResult<bool>.Ok(true, "Oyuncu engellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.Blocked));
         }
 
         public OperationResult<bool> Unblock(int me, int targetPlayerId)
         {
             using var context = new MatchBuddyContext();
             context.Blocks.Where(b => b.BlockerId == me && b.BlockedId == targetPlayerId).ExecuteDelete();
-            return OperationResult<bool>.Ok(true, "Engel kaldırıldı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.Unblocked));
         }
 
         public List<PlayerSummaryDto> GetBlocked(int me)
@@ -381,7 +381,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         public OperationResult<bool> Report(int me, int targetPlayerId, string reason, string? details)
         {
-            if (me == targetPlayerId) return OperationResult<bool>.BadRequest("Kendini şikayet edemezsin.");
+            if (me == targetPlayerId) return OperationResult<bool>.BadRequest(ErrorCodes.Social.CannotReportSelf);
 
             using var context = new MatchBuddyContext();
             if (ActivePlayer(context, targetPlayerId) == null) return OperationResult<bool>.NotFound(PlayerNotFound);
@@ -396,7 +396,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 CreatedAt = DateTime.Now,
             });
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Şikayetin alındı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.ReportReceived));
         }
 
         // ------------------------------------------------------------------
@@ -426,6 +426,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     NotifyMatchReminder = settings.NotifyMatchReminder,
                     NotifyMatchResult = settings.NotifyMatchResult,
                     NotifyMatchUpdates = settings.NotifyMatchUpdates,
+                    NotifyDeals = settings.NotifyDeals,
+                    Theme = settings.Theme,
+                    Language = settings.Language,
                 });
             }
             else
@@ -438,6 +441,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 existing.NotifyMatchReminder = settings.NotifyMatchReminder;
                 existing.NotifyMatchResult = settings.NotifyMatchResult;
                 existing.NotifyMatchUpdates = settings.NotifyMatchUpdates;
+                existing.NotifyDeals = settings.NotifyDeals;
+                existing.Theme = settings.Theme;
+                existing.Language = settings.Language;
             }
             context.SaveChanges();
         }
@@ -466,12 +472,22 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                     m.MessageId,
                     m.SendingDate,
                     m.MatchMessage,
-                    Mine = m.SendPlayerId == me
+                    HasImage = m.ImageUrl != null,
+                    Mine = m.SendPlayerId == me,
+                    Read = m.ReadAt != null,
+                    m.IsDeleted
                 })
                 .ToList()
                 .Where(m => m.Other.HasValue && m.Other.Value != me)
                 .GroupBy(m => m.Other!.Value)
                 .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.SendingDate).ThenByDescending(m => m.MessageId).First());
+
+            // Kişi başına okunmamış (bana gelen, okunmadı)
+            var unread = context.Messages.AsNoTracking()
+                .Where(m => m.RecipientPlayerId == me && m.ReadAt == null && !m.IsDeleted && m.SendPlayerId != null)
+                .GroupBy(m => m.SendPlayerId!.Value)
+                .Select(g => new { PlayerId = g.Key, Count = g.Count() })
+                .ToDictionary(x => x.PlayerId, x => x.Count);
 
             // + karşılıklı takipleştiklerim (işletmeler için takip mantığı yok: sadece yazıştıkları)
             var meIsOwner = context.Players.Any(p => p.PlayerId == me && p.Role == PlayerRoles.Owner);
@@ -490,8 +506,18 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 Player = ToSocial(p, graph),
                 LastMessage = lastMessages.TryGetValue(p.PlayerId, out var m)
-                    ? new LastMessageDto { Text = m.MatchMessage, SendingDate = m.SendingDate, Mine = m.Mine }
+                    ? new LastMessageDto
+                    {
+                        // Resimli ve metinsiz mesaj: "📷 Fotoğraf" (docs/media-api.md)
+                        Text = m.IsDeleted ? Msg.Get(MessageKeys.Message.LabelDeleted)
+                            : m.HasImage && string.IsNullOrWhiteSpace(m.MatchMessage) ? Msg.Get(MessageKeys.Message.LabelPhotoPreview) : m.MatchMessage,
+                        SendingDate = m.SendingDate,
+                        Mine = m.Mine,
+                        HasImage = m.HasImage,
+                        Read = m.Mine && m.Read,
+                    }
                     : null,
+                UnreadCount = unread.TryGetValue(p.PlayerId, out var u) ? u : 0,
             }).ToList();
 
             // Son mesaj tarihi azalan; mesajı olmayanlar sonda, ada göre
@@ -612,18 +638,26 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             context.PlayerSettings.Where(s => s.PlayerId == playerId).ExecuteDelete();
             context.MatchInvites.Where(i => i.InviterId == playerId || i.InviteeId == playerId).ExecuteDelete();
             context.TeamInvites.Where(i => i.InviterId == playerId || i.InviteeId == playerId).ExecuteDelete();
+            // Oturumlar, sosyal giriş bağlantıları ve tek kullanımlık kodlar (docs/auth-api.md)
+            context.RefreshTokens.Where(t => t.PlayerId == playerId).ExecuteDelete();
+            context.ExternalLogins.Where(l => l.PlayerId == playerId).ExecuteDelete();
+            context.AuthCodes.Where(c => c.PlayerId == playerId).ExecuteDelete();
 
             // Anonimleştirme (geçmiş maç kayıtları korunur)
-            player.PlayerName = "Silinmiş";
-            player.PlayerSurname = "Kullanıcı";
+            player.PlayerName = Msg.GetDefault(MessageKeys.Player.LabelDeletedName);
+            player.PlayerSurname = Msg.GetDefault(MessageKeys.Player.LabelDeletedSurname);
             player.UserName = $"silinmis_{playerId}";
             player.Email = string.Empty;
             player.PhoneNumber = string.Empty;
             player.Address = string.Empty;
             player.ProfilePictureUrl = null;
+            player.ProfileMediaId = null; // medya dosyaları API katmanında (MediaService) silinir
             player.Password = randomPasswordHash;
             player.IsDeleted = true;
             player.DeletedAt = now;
+            player.EmailConfirmed = false;
+            player.PhoneConfirmed = false;
+            player.MarketingConsent = false;
 
             context.SaveChanges();
             transaction.Commit();
@@ -705,10 +739,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var report = context.Reports.FirstOrDefault(r => r.ReportId == reportId);
-            if (report == null) return OperationResult<bool>.NotFound("Şikayet bulunamadı.");
+            if (report == null) return OperationResult<bool>.NotFound(ErrorCodes.Social.ReportNotFound);
             report.Status = ReportStatus.Reviewed;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Şikayet incelendi olarak işaretlendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.ReportResolved));
         }
     }
 }

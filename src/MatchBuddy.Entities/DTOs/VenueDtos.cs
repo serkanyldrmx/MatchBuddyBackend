@@ -1,4 +1,4 @@
-﻿namespace MatchBuddy.Entities.DTOs
+namespace MatchBuddy.Entities.DTOs
 {
     // Anlaşmalı tesis paketi DTO'ları (docs/venues-api.md). JSON camelCase.
 
@@ -86,6 +86,8 @@
         public decimal? FixedPrice { get; set; }
         public int? PitchId { get; set; }
         public bool IsActive { get; set; }
+        /// <summary>Boş saat fırsatı (tek saat, bildirimli).</summary>
+        public bool IsDeal { get; set; }
     }
 
     public class VenueOwnerRefDto
@@ -187,7 +189,12 @@
         public decimal PitchTotal { get; set; }
         public decimal ExtrasTotal { get; set; }
         public decimal Total { get; set; }
+        /// <summary>Kişi başı pay (krampon hariç).</summary>
         public decimal PerPlayer { get; set; }
+        /// <summary>Krampon toplamı (yalnızca kiralayanlar öder, kişi başına bölünmez).</summary>
+        public decimal CleatTotal { get; set; }
+        /// <summary>Bir çift krampon ücreti (tesis kiralamıyorsa null).</summary>
+        public decimal? CleatPrice { get; set; }
     }
 
     public class ReviewInput
@@ -212,6 +219,64 @@
         public int? HomeTeamId { get; set; }
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
+        /// <summary>En düşük güvenilirlik puanı (null = sınır yok) — docs/reliability-api.md</summary>
+        public int? MinReliability { get; set; }
+        /// <summary>Her hafta aynı gün ve saatte tekrar et (docs/venue-growth-api.md).</summary>
+        public bool RepeatWeekly { get; set; }
+    }
+
+    /// <summary>
+    /// Harici (anlaşmasız) sahada maç: oyuncu sahayı telefonla kendisi ayarlar, işletme onayı yoktur
+    /// (docs/external-venues-api.md). Saha ya önceki bir harici saham (ExternalVenueId) ya da yeni (VenueName...).
+    /// </summary>
+    public class ExternalMatchInput
+    {
+        public string? MatchName { get; set; }
+        public string? Description { get; set; }
+        public int UserCount { get; set; }
+        public DateTime? MatchDate { get; set; }
+        public int? DurationMinutes { get; set; }
+        public int? ExternalVenueId { get; set; }
+        public string? VenueName { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        /// <summary>"lat, lon" (isteğe bağlı)</summary>
+        public string? Location { get; set; }
+        /// <summary>Sahaya ödenecek toplam ücret (isteğe bağlı; kişi başı payı hesaplamak için)</summary>
+        public decimal? TotalPrice { get; set; }
+        public int? HomeTeamId { get; set; }
+        public int? AwayTeamId { get; set; }
+        public bool LookingForOpponent { get; set; }
+        public int? MinReliability { get; set; }
+    }
+
+    /// <summary>Oyuncunun daha önce eklediği harici saha (tekrar seçebilsin diye).</summary>
+    public class ExternalVenueDto
+    {
+        public int StadiumId { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
+        public int MatchCount { get; set; }
+        public DateTime? LastMatchDate { get; set; }
+    }
+
+    /// <summary>Harici sahadaki maçın tarih / süre / ücret düzenlemesi (kurucu; işletme onayı olmadığı için serbest).</summary>
+    public class UpdateExternalMatchInput
+    {
+        public int MatchId { get; set; }
+        public DateTime? MatchDate { get; set; }
+        public int? DurationMinutes { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public string? VenueName { get; set; }
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
     }
 
     public class MatchVenueDto
@@ -224,6 +289,13 @@
         public byte Surface { get; set; }
         public string? CoverPhotoUrl { get; set; }
         public string? CancellationPolicy { get; set; }
+        // Harici (anlaşmasız) saha: tesis sayfası yok; adres / telefon / konum burada
+        public bool IsExternal { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
+        public string? Phone { get; set; }
+        public string? Location { get; set; }
     }
 
     public class MyReviewDto
@@ -293,6 +365,56 @@
         public decimal? TotalPrice { get; set; }
         public DateTime? CreatedAt { get; set; }
         public string? RejectReason { get; set; }
+        /// <summary>Haftalık sabit maç serisi aktif mi.</summary>
+        public bool RepeatWeekly { get; set; }
+        /// <summary>Kurucunun güvenilirliği: işletme onaylamadan önce görür.</summary>
+        public OrganizerReliabilityDto? CreatorReliability { get; set; }
+    }
+
+    public class OrganizerReliabilityDto
+    {
+        public int Score { get; set; }
+        public string Level { get; set; } = "new";
+        public int CompletedMatches { get; set; }
+        /// <summary>Son 10 maçında son dakika çekilme / gelmeme.</summary>
+        public int LateCancels { get; set; }
+        public int NoShows { get; set; }
+        /// <summary>Kurucu olarak son 180 günde: geçmiş (onaylı) rezervasyonları ve son dakika iptal ettikleri.</summary>
+        public int PastReservations { get; set; }
+        public int OrganizerLateCancels { get; set; }
+    }
+
+    // ------------------------------------------------------------------ Büyüme araçları (docs/venue-growth-api.md)
+
+    public class SlotDealInput
+    {
+        public int PitchId { get; set; }
+        public DateTime? Start { get; set; }
+        public int DurationMinutes { get; set; }
+        public int DiscountPercent { get; set; }
+    }
+
+    public class SlotDealResultDto
+    {
+        public int CampaignId { get; set; }
+        public int Notified { get; set; }
+    }
+
+    public class SlotDealAudienceDto
+    {
+        public int Count { get; set; }
+        public int SentToday { get; set; }
+        public int DailyLimit { get; set; }
+    }
+
+    public class OwnerCustomerDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public int Bookings { get; set; }
+        public DateTime LastAt { get; set; }
+        public decimal? LastPrice { get; set; }
+        public string? LastTitle { get; set; }
     }
 
     public class OwnerDashboardDto
@@ -325,12 +447,20 @@
 
     public class CalendarBlockItemDto
     {
+        // Öğe ayırıcı ("match" | "block"); bloğun türü (0 kapalı, 1 harici rezervasyon) BlockKind'da
         public string Kind { get; set; } = "block";
+        public byte BlockKind { get; set; }
         public int SlotBlockId { get; set; }
         public int PitchId { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPaid { get; set; }
+        public string? Note { get; set; }
+        public Guid? SeriesId { get; set; }
     }
 
     public class OwnerCalendarDto
@@ -445,7 +575,16 @@
         public string? PitchName { get; set; }
         public DateTime StartAt { get; set; }
         public DateTime EndAt { get; set; }
+        // 0 = kapalı/bakım, 1 = harici rezervasyon (BlockKind aynı değer, Calendar ile simetri için)
+        public byte Kind { get; set; }
+        public byte BlockKind => Kind;
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool IsPaid { get; set; }
+        public string? Note { get; set; }
+        public Guid? SeriesId { get; set; }
     }
 
     public class BlockSaveInput
@@ -454,12 +593,163 @@
         public int PitchId { get; set; }
         public DateTime? StartAt { get; set; }
         public DateTime? EndAt { get; set; }
+        public int Kind { get; set; }
         public string? Reason { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public decimal? Price { get; set; }
+        public bool? IsPaid { get; set; }
+        public string? Note { get; set; }
+        /// <summary>Yeni harici rezervasyon: kaç hafta (1 = tek sefer). Dolu haftalar atlanır.</summary>
+        public int? RepeatWeeks { get; set; }
+    }
+
+    public class BlockPaidInput
+    {
+        public int SlotBlockId { get; set; }
+        public bool IsPaid { get; set; }
+    }
+
+    // ------------------------------------------------------------------ Ek paket: harici rezervasyon fiyatı, giderler, finans
+
+    public class OwnerQuoteInput
+    {
+        public int PitchId { get; set; }
+        public DateTime? Start { get; set; }
+        public int DurationMinutes { get; set; } = 60;
+    }
+
+    public class OwnerQuoteDto
+    {
+        public decimal PitchTotal { get; set; }
+        public List<QuoteLineDto> Lines { get; set; } = new();
+    }
+
+    public class VenueExpenseDto
+    {
+        public int ExpenseId { get; set; }
+        public int StadiumId { get; set; }
+        // "yyyy-MM-dd"
+        public string Date { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ExpenseSaveInput
+    {
+        public int? ExpenseId { get; set; }
+        public int StadiumId { get; set; }
+        public DateTime? Date { get; set; }
+        public string? Category { get; set; }
+        public decimal Amount { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class ExpenseIdInput
+    {
+        public int ExpenseId { get; set; }
+    }
+
+    public class FinanceIncomeDto
+    {
+        public decimal Matches { get; set; }
+        public decimal Manual { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class FinancePeriodDto
+    {
+        public decimal Income { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+    }
+
+    public class FinanceCountsDto
+    {
+        public int Matches { get; set; }
+        public int ManualBookings { get; set; }
+        public double HoursSold { get; set; }
+    }
+
+    public class FinanceDailyDto
+    {
+        // "yyyy-MM-dd"
+        public string Date { get; set; } = string.Empty;
+        public decimal Income { get; set; }
+        public decimal Expense { get; set; }
+    }
+
+    public class FinancePitchDto
+    {
+        public int PitchId { get; set; }
+        public string? Name { get; set; }
+        public decimal Income { get; set; }
+        public double Hours { get; set; }
+    }
+
+    public class FinanceSourceDto
+    {
+        public string Source { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
+    public class FinanceCategoryDto
+    {
+        public string Category { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+    }
+
+    public class FinanceMonthDto
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public decimal Income { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+    }
+
+    public class FinanceTransactionDto
+    {
+        public DateTime Date { get; set; }
+        // "income" | "expense"
+        public string Type { get; set; } = string.Empty;
+        // "match" | "manual" | "expense"
+        public string Source { get; set; } = string.Empty;
+        public string? Title { get; set; }
+        public string? Category { get; set; }
+        public string? PitchName { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsPaid { get; set; }
+        public int RefId { get; set; }
+    }
+
+    public class OwnerFinanceDto
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public FinanceIncomeDto Income { get; set; } = new();
+        public decimal Receivable { get; set; }
+        public decimal ExpectedIncome { get; set; }
+        public decimal Expenses { get; set; }
+        public decimal Net { get; set; }
+        public double MarginPercent { get; set; }
+        public FinancePeriodDto Previous { get; set; } = new();
+        public FinanceCountsDto Counts { get; set; } = new();
+        public List<FinanceDailyDto> Daily { get; set; } = new();
+        public List<FinancePitchDto> IncomeByPitch { get; set; } = new();
+        public List<FinanceSourceDto> IncomeBySource { get; set; } = new();
+        public List<FinanceCategoryDto> ExpenseByCategory { get; set; } = new();
+        public List<FinanceMonthDto> Monthly { get; set; } = new();
+        public List<FinanceTransactionDto> Transactions { get; set; } = new();
     }
 
     public class BlockIdInput
     {
         public int SlotBlockId { get; set; }
+        /// <summary>Haftalık seride bu ve sonraki haftaları da sil.</summary>
+        public bool AllFollowing { get; set; }
     }
 
     public class ReviewReplyInput

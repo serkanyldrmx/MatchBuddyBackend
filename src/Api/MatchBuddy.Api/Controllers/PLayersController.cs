@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
 using MatchBuddy.Api.Services;
@@ -23,9 +23,17 @@ namespace MatchBuddy.Api.Controllers
         private readonly IMatchParticipationService _participationService;
         private readonly ISocialService _socialService;
 
+        private readonly IMediaService _mediaService;
+        private readonly MatchBuddy.Business.Auth.IAuthService _auth;
+        private readonly AuthSessionIssuer _issuer;
+
         public PLayersController(IPlayerService playerService, IJwtTokenService tokenService, ILogger<PLayersController> logger,
-            IMatchParticipationService participationService, ISocialService socialService)
+            IMatchParticipationService participationService, ISocialService socialService, IMediaService mediaService,
+            MatchBuddy.Business.Auth.IAuthService auth, AuthSessionIssuer issuer)
         {
+            _auth = auth;
+            _issuer = issuer;
+            _mediaService = mediaService;
             _socialService = socialService;
             _playerService = playerService;
             _tokenService = tokenService;
@@ -40,7 +48,7 @@ namespace MatchBuddy.Api.Controllers
             var result = _participationService.GetPlayerStats(playerId);
             if (!result.Success || result.Data == null)
             {
-                return NotFound(new { Success = false, Message = result.Message });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
             return result.Data;
         }
@@ -68,7 +76,7 @@ namespace MatchBuddy.Api.Controllers
             var player = _playerService.GetPlayerInfo(playerId).Data;
             if (player == null)
             {
-                return NotFound(new { Success = false, Message = "Oyuncu bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
 
             return User.IsSelfOrAdmin(playerId) ? PlayerDto.From(player) : PublicPlayerDto.From(player);
@@ -78,7 +86,7 @@ namespace MatchBuddy.Api.Controllers
         [AllowAnonymous]
         [EnableRateLimiting("auth")]
         [HttpPost("SavePlayer")]
-        public IActionResult SavePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture)
+        public async Task<IActionResult> SavePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture, CancellationToken ct)
         {
             PlayerModel? playerData;
             try
@@ -90,11 +98,18 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz oyuncu bilgisi." });
+                return this.BadRequestError(ErrorCodes.Player.InvalidData);
             }
             if (playerData == null)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz oyuncu bilgisi." });
+                return this.BadRequestError(ErrorCodes.Player.InvalidData);
+            }
+
+            // KVKK: güncel kullanım koşulları + aydınlatma metni kabul edilmeden kayıt olunmaz (docs/auth-api.md)
+            var consentError = _auth.ValidateRegistrationConsent(playerData.TermsVersion);
+            if (consentError != null)
+            {
+                return this.FieldError("termsVersion", consentError.Code, consentError.Args);
             }
 
             var player = new Player
@@ -113,28 +128,35 @@ namespace MatchBuddy.Api.Controllers
                 IsAdmin = 0,
                 ProfilePictureUrl = ""
             };
+            _auth.ApplyRegistrationConsent(player, playerData.MarketingConsent);
 
-            var imageUrl = UploadProfilePicture(profilePicture, out var errorMessage);
-            if (!string.IsNullOrEmpty(errorMessage))
+            // Profil fotoğrafı medya hattından geçer (docs/media-api.md); oyuncu henüz yok: sahibi kayıttan sonra yazılır
+            MediaDto? avatar = null;
+            if (profilePicture != null)
             {
-                return BadRequest(new { Success = false, Message = errorMessage });
-            }
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                player.ProfilePictureUrl = imageUrl;
+                var upload = await _mediaService.UploadAsync(profilePicture, MediaKind.Avatar, null, ct);
+                if (!upload.Success) return this.ToHttp(upload);
+                avatar = upload.Data;
+                player.ProfilePictureUrl = avatar.Url;
+                player.ProfileMediaId = avatar.MediaId;
             }
 
             var result = _playerService.Add(player);
             if (result.Success)
             {
-                return Ok(result);
+                if (avatar != null) _mediaService.MarkAttached(avatar.MediaId, player.PlayerId);
+                // E-posta doğrulama kodu (yumuşak zorunluluk: giriş yine çalışır)
+                if (!string.IsNullOrWhiteSpace(player.Email))
+                    _auth.SendEmailVerification(player.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
+                return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
             }
-            return BadRequest(result);
+            if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
+            return this.ToHttp(result);
         }
 
         // Profil güncelle: sadece kendi profilini (admin herkesinkini)
         [HttpPost("UpdatePlayer")]
-        public IActionResult UpdatePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture)
+        public async Task<IActionResult> UpdatePlayer([FromForm] string playerModel, [FromForm] IFormFile? profilePicture, CancellationToken ct)
         {
             PlayerModel? playerData;
             try
@@ -146,11 +168,11 @@ namespace MatchBuddy.Api.Controllers
             }
             catch (JsonException)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz JSON formatı." });
+                return this.BadRequestError(ErrorCodes.Common.InvalidJson);
             }
             if (playerData == null)
             {
-                return BadRequest(new { Success = false, Message = "Geçersiz JSON formatı." });
+                return this.BadRequestError(ErrorCodes.Common.InvalidJson);
             }
 
             if (!User.IsSelfOrAdmin(playerData.PlayerId))
@@ -161,13 +183,13 @@ namespace MatchBuddy.Api.Controllers
             var existingPlayer = _playerService.GetPlayerInfo(playerData.PlayerId).Data;
             if (existingPlayer == null)
             {
-                return NotFound(new { Success = false, Message = "Oyuncu bulunamadı." });
+                return this.NotFoundError(ErrorCodes.Player.NotFound);
             }
 
             if (!string.IsNullOrWhiteSpace(playerData.UserName) &&
                 _playerService.IsUserNameTaken(playerData.UserName, existingPlayer.PlayerId))
             {
-                return BadRequest(new { Success = false, Message = "Bu kullanıcı adı zaten kullanılıyor." });
+                return this.BadRequestError(ErrorCodes.Auth.UserNameTaken);
             }
 
             existingPlayer.PlayerName = playerData.PlayerName;
@@ -176,6 +198,10 @@ namespace MatchBuddy.Api.Controllers
             existingPlayer.Weight = playerData.Weight;
             existingPlayer.Address = playerData.Address;
             existingPlayer.Age = playerData.Age;
+            // E-posta değişirse doğrulama sıfırlanır ve yeni adrese kod gönderilir
+            var emailChanged = !string.Equals((existingPlayer.Email ?? string.Empty).Trim(), (playerData.Email ?? string.Empty).Trim(),
+                StringComparison.OrdinalIgnoreCase);
+            if (emailChanged) existingPlayer.EmailConfirmed = false;
             existingPlayer.Email = playerData.Email;
             existingPlayer.PhoneNumber = playerData.PhoneNumber;
             existingPlayer.UserName = playerData.UserName;
@@ -187,31 +213,48 @@ namespace MatchBuddy.Api.Controllers
             }
 
             // Şifre boş gönderildiyse mevcut şifre korunur
+            var passwordChanged = false;
             if (!string.IsNullOrEmpty(playerData.Password))
             {
-                if (playerData.Password.Length < 6)
+                var policy = MatchBuddy.Business.Auth.PasswordPolicy.Validate(playerData.Password);
+                if (policy != null)
                 {
-                    return BadRequest(new { Success = false, Message = "Şifre en az 6 karakter olmalıdır." });
+                    return this.BadRequestError(policy.Code, policy.Args);
                 }
                 existingPlayer.Password = PasswordHasher.Hash(playerData.Password);
+                existingPlayer.HasPassword = true;
+                passwordChanged = true;
             }
 
-            var imageUrl = UploadProfilePicture(profilePicture, out var errorMessage);
-            if (!string.IsNullOrEmpty(errorMessage))
+            // Yeni profil fotoğrafı: medya hattı; başarılı güncellemeden sonra eskisi (medya ya da /uploads dosyası) silinir
+            MediaDto? avatar = null;
+            var oldMediaId = existingPlayer.ProfileMediaId;
+            var oldUrl = existingPlayer.ProfilePictureUrl;
+            if (profilePicture != null)
             {
-                return BadRequest(new { Success = false, Message = errorMessage });
-            }
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                existingPlayer.ProfilePictureUrl = imageUrl;
+                var upload = await _mediaService.UploadAsync(profilePicture, MediaKind.Avatar, User.GetPlayerId(), ct);
+                if (!upload.Success) return this.ToHttp(upload);
+                avatar = upload.Data;
+                existingPlayer.ProfilePictureUrl = avatar.Url;
+                existingPlayer.ProfileMediaId = avatar.MediaId;
             }
 
             var result = _playerService.Update(existingPlayer);
             if (result.Success)
             {
-                return Ok(result);
+                if (avatar != null)
+                {
+                    _mediaService.MarkAttached(avatar.MediaId);
+                    await _mediaService.DeleteImageAsync(oldMediaId, oldUrl, CancellationToken.None);
+                }
+                // Şifre değişti → tüm refresh token'lar iptal (docs/auth-api.md). Tercihen /api/Auth/ChangePassword kullanılmalı.
+                if (passwordChanged) _auth.OnPasswordChangedExternally(existingPlayer.PlayerId);
+                if (emailChanged && !string.IsNullOrWhiteSpace(existingPlayer.Email))
+                    _auth.SendEmailVerification(existingPlayer.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
+                return Ok(new { result.Success, result.Message, existingPlayer.ProfilePictureUrl });
             }
-            return BadRequest(result);
+            if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
+            return this.ToHttp(result);
         }
 
         // Giriş: başarılıysa JWT ve şifresiz profil döner, değilse 401
@@ -230,17 +273,13 @@ namespace MatchBuddy.Api.Controllers
             if (!result.Success || result.Data == null)
             {
                 _logger.LogWarning("Başarısız giriş denemesi: {UserName}", loginModel.UserName);
-                return Unauthorized(new { Success = false, Message = "Kullanıcı adı veya şifre hatalı." });
+                return this.UnauthorizedError(ErrorCodes.Auth.InvalidCredentials);
             }
 
-            var (token, expiresAt) = _tokenService.CreateToken(result.Data);
-            return new LoginResponse
-            {
-                Token = token,
-                ExpiresAt = expiresAt,
-                Player = PlayerDto.From(result.Data),
-                Role = result.Data.Role,
-            };
+            // ESKİ uç nokta (geriye uyumluluk): /api/Auth/Login ile aynı; access token eski süreyle
+            // (auth.legacyAccessTokenMinutes, varsayılan 120 dk), refresh çerezi de yazılır. docs/auth-api.md.
+            return _issuer.SignIn(HttpContext, result.Data, rememberMe: true,
+                accessMinutes: P.Int(ParameterKeys.Auth.LegacyAccessTokenMinutes));
         }
 
         // Öneri servisinin kullandığı oyuncu geçmişi: sadece kendisi veya admin
@@ -252,21 +291,6 @@ namespace MatchBuddy.Api.Controllers
                 return Forbid();
             }
             return _playerService.AISortByPlayer(playerId).Data;
-        }
-
-        // Doğrulama ve kayıt: Services/ImageUploads (tesis fotoğrafları da aynı kontrolleri kullanır)
-        private static string? UploadProfilePicture(IFormFile? profilePicture, out string errorMessage)
-        {
-            errorMessage = "";
-            if (profilePicture == null) return null;
-
-            var error = ImageUploads.Validate(profilePicture);
-            if (error != null)
-            {
-                errorMessage = error;
-                return null;
-            }
-            return ImageUploads.Save(profilePicture);
         }
     }
 }

@@ -11,6 +11,9 @@ namespace MatchBuddy.Business.Concrete
 {
     public class PlayerManager :IPlayerService
     {
+        /// <summary>Kayıt ve profil güncellemede en kısa şifre uzunluğu.</summary>
+        public static int MinPasswordLength => P.Int(ParameterKeys.Security.PasswordMinLength);
+
         IPlayerDal _playerDal;
         public PlayerManager(IPlayerDal playerDal)
         {
@@ -26,15 +29,20 @@ namespace MatchBuddy.Business.Concrete
             }
             if (string.IsNullOrWhiteSpace(player.UserName))
             {
-                return new ErrorResult("Kullanıcı adı zorunludur.");
+                return new ErrorResult(ErrorCodes.Auth.UserNameRequired);
             }
-            if (string.IsNullOrEmpty(player.Password) || player.Password.Length < 6)
+            if (string.IsNullOrEmpty(player.Password) || player.Password.Length < MinPasswordLength)
             {
-                return new ErrorResult("Şifre en az 6 karakter olmalıdır.");
+                return new ErrorResult(ErrorCodes.Auth.PasswordTooShort, MinPasswordLength);
+            }
+            var policy = MatchBuddy.Business.Auth.PasswordPolicy.Validate(player.Password);
+            if (policy != null)
+            {
+                return new ErrorResult(policy.Code, policy.Args);
             }
             if (IsUserNameTaken(player.UserName))
             {
-                return new ErrorResult("Bu kullanıcı adı zaten kullanılıyor.");
+                return new ErrorResult(ErrorCodes.Auth.UserNameTaken);
             }
             // Yeni kayıtlar asla admin olarak oluşturulamaz, şifre hash'lenerek saklanır
             player.IsAdmin = 0;
@@ -81,14 +89,14 @@ namespace MatchBuddy.Business.Concrete
         {
             if (string.IsNullOrWhiteSpace(playerLogin.UserName) || string.IsNullOrEmpty(playerLogin.Password))
             {
-                return new ErrorDataResult<Player>("Kullanıcı adı veya şifre hatalı.");
+                return new ErrorDataResult<Player>(ErrorCodes.Auth.InvalidCredentials);
             }
 
             var player = _playerDal.Get(p => p.UserName == playerLogin.UserName);
             // Silinmiş hesap giriş yapamaz
             if (player == null || player.IsDeleted || !PasswordHasher.Verify(playerLogin.Password, player.Password, out var needsRehash))
             {
-                return new ErrorDataResult<Player>("Kullanıcı adı veya şifre hatalı.");
+                return new ErrorDataResult<Player>(ErrorCodes.Auth.InvalidCredentials);
             }
 
             // Eski düz metin şifreyi ilk başarılı girişte hash'li hale getir

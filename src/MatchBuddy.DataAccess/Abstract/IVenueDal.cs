@@ -15,6 +15,14 @@ namespace MatchBuddy.DataAccess.Abstract
 
         // ---- Maç kurma / rakip / durum
         OperationResult<int> CreateReservation(int creatorId, SaveMatchInput input);
+        // Harici (anlaşmasız) saha (docs/external-venues-api.md)
+        OperationResult<int> CreateExternalMatch(int creatorId, ExternalMatchInput input);
+        OperationResult<bool> UpdateExternalMatch(int actorId, bool isAdmin, UpdateExternalMatchInput input);
+        List<ExternalVenueDto> MyExternalVenues(int me);
+        // Admin: harici sahalardan satış listesi (docs/engagement-api.md §4)
+        List<ExternalVenueLeadDto> ExternalLeads(string? query);
+        List<LinkTargetDto> LinkTargets(string? query);
+        OperationResult<int> LinkExternal(LinkExternalInput input);
         OperationResult<bool> ClaimOpponent(int me, int matchId, int teamId);
         // ownerId null = admin (geçersiz kılma: her durumdan her duruma)
         // status: 2 onay, 3 red (admin için 1 = tekrar beklemeye de alınabilir)
@@ -30,6 +38,8 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId);
         // Yazmadan önce yetki/üyelik kontrolü (dosya diske yazılmadan önce)
         OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> GetSettings(int me, int stadiumId);
+        OperationResult<VenueSettingsDto> SaveSettings(int me, VenueSettingsInput input);
         OperationResult<VenuePhotoDto> AddPhoto(int me, int stadiumId, string url);
         // Data = silinen dosyanın url'i
         OperationResult<string> DeletePhoto(int me, int photoId);
@@ -47,7 +57,16 @@ namespace MatchBuddy.DataAccess.Abstract
         OperationResult<bool> DeleteCampaign(int me, int campaignId);
         OperationResult<List<SlotBlockDto>> Blocks(int me, int stadiumId, DateTime from, DateTime to);
         OperationResult<int> SaveBlock(int me, BlockSaveInput input);
-        OperationResult<bool> DeleteBlock(int me, int slotBlockId);
+        OperationResult<bool> DeleteBlock(int me, int slotBlockId, bool allFollowing = false);
+        OperationResult<SlotDealAudienceDto> SlotDealAudience(int me, int stadiumId);
+        OperationResult<SlotDealResultDto> CreateSlotDeal(int me, SlotDealInput input);
+        OperationResult<List<OwnerCustomerDto>> Customers(int me, int stadiumId, string? q);
+        OperationResult<bool> SetBlockPaid(int me, int slotBlockId, bool isPaid);
+        OperationResult<OwnerQuoteDto> OwnerQuote(int me, int pitchId, DateTime start, int durationMinutes);
+        OperationResult<List<VenueExpenseDto>> Expenses(int me, int stadiumId, DateTime? from, DateTime? to);
+        OperationResult<int> SaveExpense(int me, ExpenseSaveInput input);
+        OperationResult<bool> DeleteExpense(int me, int expenseId);
+        OperationResult<OwnerFinanceDto> Finance(int me, int? stadiumId, int year, int month);
         OperationResult<List<VenueReviewDto>> OwnerReviews(int me, int stadiumId);
         OperationResult<bool> ReplyReview(int me, int reviewId, string reply);
 

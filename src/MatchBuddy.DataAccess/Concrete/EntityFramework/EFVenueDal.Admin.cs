@@ -46,7 +46,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         public OperationResult<AdminOwnerDetailDto> OwnerDetail(int ownerId)
         {
             var summary = Owners().FirstOrDefault(o => o.Owner.PlayerId == ownerId);
-            if (summary == null) return OperationResult<AdminOwnerDetailDto>.NotFound("İşletme bulunamadı.");
+            if (summary == null) return OperationResult<AdminOwnerDetailDto>.NotFound(ErrorCodes.Admin.OwnerNotFound);
 
             using var context = new MatchBuddyContext();
             var owner = context.Players.AsNoTracking().First(p => p.PlayerId == ownerId);
@@ -92,7 +92,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             var owner = context.Players.FirstOrDefault(p => p.PlayerId == ownerId && p.Role == PlayerRoles.Owner && !p.IsDeleted);
-            if (owner == null) return OperationResult<string>.NotFound("İşletme bulunamadı.");
+            if (owner == null) return OperationResult<string>.NotFound(ErrorCodes.Admin.OwnerNotFound);
             owner.Password = passwordHash;
             context.SaveChanges();
             return OperationResult<string>.Ok(owner.UserName ?? string.Empty);
@@ -112,7 +112,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             using var transaction = context.Database.BeginTransaction();
 
             if (context.Players.Any(p => p.UserName == o.UserName))
-                return OperationResult<CreateOwnerResultDto>.BadRequest("Bu kullanıcı adı zaten kullanılıyor.");
+                return OperationResult<CreateOwnerResultDto>.BadRequest(ErrorCodes.Admin.UserNameTaken);
 
             var owner = new Player
             {
@@ -127,7 +127,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 IsAdmin = 0,
                 UserScore = 0,
                 ProfilePictureUrl = photoUrls.FirstOrDefault(),
-                MembershipUntil = o.MembershipUntil,
+                // Bitiş verilmezse venue.defaultMembershipDays (0 = süresiz)
+                MembershipUntil = o.MembershipUntil ?? (P.Int(ParameterKeys.Venue.DefaultMembershipDays) is var days && days > 0
+                    ? DateTime.Today.AddDays(days) : null),
                 MembershipSuspended = false,
             };
             context.Players.Add(owner);
@@ -157,7 +159,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             context.Pitches.Add(new Pitch
             {
-                StadiumId = stadium.StadiumId, Name = "Saha 1", Surface = 1, IsIndoor = true, PlayersPerSide = 7, BasePrice = 1500m, IsActive = true,
+                StadiumId = stadium.StadiumId, Name = Msg.GetDefault(MessageKeys.Admin.LabelDefaultPitchName), Surface = 1, IsIndoor = true, PlayersPerSide = 7, BasePrice = 1500m, IsActive = true,
             });
             for (byte d = 0; d < 7; d++)
             {
@@ -174,21 +176,21 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             }
             catch (DbUpdateException)
             {
-                return OperationResult<CreateOwnerResultDto>.BadRequest("İşletme oluşturulamadı (kullanıcı adı kullanımda olabilir).");
+                return OperationResult<CreateOwnerResultDto>.BadRequest(ErrorCodes.Admin.CreateOwnerFailed);
             }
             return OperationResult<CreateOwnerResultDto>.Ok(new CreateOwnerResultDto { OwnerId = owner.PlayerId, StadiumId = stadium.StadiumId },
-                "İşletme hesabı ve tesis oluşturuldu.");
+                Msg.Get(MessageKeys.Admin.OwnerCreated));
         }
 
         public OperationResult<bool> UpdateMembership(int ownerId, DateTime? membershipUntil, bool suspended)
         {
             using var context = new MatchBuddyContext();
             var owner = context.Players.FirstOrDefault(p => p.PlayerId == ownerId && !p.IsDeleted);
-            if (owner == null || owner.Role != PlayerRoles.Owner) return OperationResult<bool>.NotFound("İşletme bulunamadı.");
+            if (owner == null || owner.Role != PlayerRoles.Owner) return OperationResult<bool>.NotFound(ErrorCodes.Admin.OwnerNotFound);
             owner.MembershipUntil = membershipUntil;
             owner.MembershipSuspended = suspended;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Üyelik güncellendi.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Admin.MembershipUpdated));
         }
 
         public OperationResult<bool> AssignVenue(int stadiumId, int ownerId)
@@ -197,10 +199,10 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var stadium = context.Stadiums.FirstOrDefault(s => s.StadiumId == stadiumId);
             if (stadium == null) return OperationResult<bool>.NotFound(VenueRules.VenueNotFound);
             var owner = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == ownerId && !p.IsDeleted);
-            if (owner == null || owner.Role != PlayerRoles.Owner) return OperationResult<bool>.BadRequest("Seçilen hesap bir işletme değil.");
+            if (owner == null || owner.Role != PlayerRoles.Owner) return OperationResult<bool>.BadRequest(ErrorCodes.Admin.NotAnOwner);
             stadium.OwnerPlayerId = ownerId;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, "Tesis işletmeye atandı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Admin.VenueAssigned));
         }
 
         public OperationResult<bool> SetListed(int stadiumId, bool isListed)
@@ -210,13 +212,15 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             if (stadium == null) return OperationResult<bool>.NotFound(VenueRules.VenueNotFound);
             stadium.IsListed = isListed;
             context.SaveChanges();
-            return OperationResult<bool>.Ok(true, isListed ? "Tesis yayına alındı." : "Tesis yayından kaldırıldı.");
+            return OperationResult<bool>.Ok(true, Msg.Get(isListed ? MessageKeys.Admin.VenueListed : MessageKeys.Admin.VenueUnlisted));
         }
 
         public List<VenueGeoRefDto> GeoRefs()
         {
             using var context = new MatchBuddyContext();
+            // Harici (oyuncu eklediği) sahalar OSM eşleştirmesine karışmaz
             return context.Stadiums.AsNoTracking()
+                .Where(s => !s.IsExternal)
                 .Select(s => new VenueGeoRefDto { StadiumId = s.StadiumId, OsmId = s.OsmId, Location = s.Location })
                 .ToList();
         }
@@ -225,7 +229,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatchBuddyContext();
             if (input.OsmId > 0 && context.Stadiums.Any(s => s.OsmId == input.OsmId))
-                return OperationResult<int>.BadRequest("Bu OpenStreetMap kaydı zaten içe aktarılmış.");
+                return OperationResult<int>.BadRequest(ErrorCodes.Osm.AlreadyImported);
             var stadium = new Stadium
             {
                 StadiumName = input.Name,
@@ -242,7 +246,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             };
             context.Stadiums.Add(stadium);
             context.SaveChanges();
-            return OperationResult<int>.Ok(stadium.StadiumId, "Tesis içe aktarıldı.");
+            return OperationResult<int>.Ok(stadium.StadiumId, Msg.Get(MessageKeys.Osm.Imported));
         }
     }
 }

@@ -29,7 +29,7 @@ namespace MatchBuddy.Api.Model
                 JsonTokenType.Number => reader.TryGetInt64(out var l) ? l.ToString(CultureInfo.InvariantCulture)
                                         : reader.GetDouble().ToString(CultureInfo.InvariantCulture),
                 JsonTokenType.String => reader.GetString(),
-                _ => throw new JsonException("Metin ya da sayı bekleniyordu."),
+                _ => throw new JsonException(Msg.Get(ErrorCodes.Venue.NumberOrStringExpected)),
             };
 
         public override void Write(Utf8JsonWriter writer, string? value, JsonSerializerOptions options)

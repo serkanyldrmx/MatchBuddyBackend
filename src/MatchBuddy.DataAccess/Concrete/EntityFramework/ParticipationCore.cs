@@ -14,7 +14,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
     {
         public const byte RejectedStatus = 3; // Match.IsActive: 3 = reddedildi
 
-        public const string OwnerCannotJoin = "İşletme hesapları maça katılamaz.";
+        public const string OwnerCannotJoin = ErrorCodes.Match.OwnerCannotJoin;
 
         // Bir tarafın kapasitesi: ceil(UserCount / 2)
         public static int SideCapacity(Match match) => (match.UserCount + 1) / 2;
@@ -41,20 +41,62 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 p.MatchId == match.MatchId && p.PlayerId == playerId && p.Status == ParticipantStatus.Going);
         }
 
-        // Daha az oyuncusu olan taraf (eşitse Home)
-        public static byte PickSide(IEnumerable<MatchParticipant> going)
+        // ---- Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular") ----
+        // Misafirler kadroya sayılır: toplam = Going + misafir, taraf = o taraftaki Going + misafir.
+
+        public const string SideFull = ErrorCodes.Match.SideFull;
+
+        public static List<MatchGuest> LoadGuests(MatchBuddyContext context, int matchId) =>
+            context.MatchGuests.Where(g => g.MatchId == matchId).ToList();
+
+        // Bir taraftaki kadro sayısı (Going oyuncular + misafirler)
+        public static int SideCount(IEnumerable<MatchParticipant> going, IEnumerable<MatchGuest> guests, byte side) =>
+            going.Count(p => p.Side == side) + guests.Count(g => g.Side == side);
+
+        // Maç başına kadro sayısı: Going + misafir (liste ekranları için)
+        public static Dictionary<int, int> RosterCounts(MatchBuddyContext context, List<int> matchIds)
+        {
+            var counts = context.MatchParticipants.AsNoTracking()
+                .Where(p => matchIds.Contains(p.MatchId) && p.Status == ParticipantStatus.Going)
+                .GroupBy(p => p.MatchId)
+                .Select(g => new { MatchId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.MatchId, x => x.Count);
+            foreach (var g in GuestCounts(context, matchIds))
+            {
+                counts[g.Key] = (counts.TryGetValue(g.Key, out var c) ? c : 0) + g.Value;
+            }
+            return counts;
+        }
+
+        // Maç başına misafir sayısı (matchIds null ise tüm maçlar)
+        public static Dictionary<int, int> GuestCounts(MatchBuddyContext context, List<int>? matchIds)
+        {
+            var query = context.MatchGuests.AsNoTracking().AsQueryable();
+            if (matchIds != null) query = query.Where(g => matchIds.Contains(g.MatchId));
+            return query
+                .GroupBy(g => g.MatchId)
+                .Select(g => new { MatchId = g.Key, Count = g.Count() })
+                .ToList()
+                .ToDictionary(x => x.MatchId, x => x.Count);
+        }
+
+        // Daha az kişisi (Going + misafir) olan taraf (eşitse Home)
+        public static byte PickSide(IEnumerable<MatchParticipant> going, IEnumerable<MatchGuest>? guests = null)
         {
             var list = going.ToList();
-            var home = list.Count(p => p.Side == ParticipantSide.Home);
-            var away = list.Count(p => p.Side == ParticipantSide.Away);
+            var guestList = guests?.ToList() ?? new List<MatchGuest>();
+            var home = SideCount(list, guestList, ParticipantSide.Home);
+            var away = SideCount(list, guestList, ParticipantSide.Away);
             return away < home ? ParticipantSide.Away : ParticipantSide.Home;
         }
 
         public static string DisplayName(Player? p)
         {
-            if (p == null) return "Bir oyuncu";
+            // Bildirim metinlerine (veritabanı) yazılır: varsayılan dil
+            if (p == null) return Msg.GetDefault(MessageKeys.Match.LabelSomePlayer);
             var name = $"{p.PlayerName} {p.PlayerSurname}".Trim();
-            return string.IsNullOrWhiteSpace(name) ? (p.UserName ?? "Bir oyuncu") : name;
+            return string.IsNullOrWhiteSpace(name) ? (p.UserName ?? Msg.GetDefault(MessageKeys.Match.LabelSomePlayer)) : name;
         }
 
         // Maça bağlı bildirim (tercihler NotificationWriter'da kontrol edilir)
@@ -80,14 +122,17 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
         // Kapasite doldukça yedekleri (en eski önce) asile yükseltir, bildirim ve aktivite yazar.
         // participants: maçın (takip edilen) tüm kayıtları, güncel durumlarıyla.
-        public static void PromoteFromWaitlist(MatchBuddyContext context, Match match, List<MatchParticipant> participants, byte? preferredSide)
+        // guests: maçın güncel misafirleri (null ise veritabanından okunur). Misafirler kapasiteye sayılır.
+        public static void PromoteFromWaitlist(MatchBuddyContext context, Match match, List<MatchParticipant> participants, byte? preferredSide,
+            List<MatchGuest>? guests = null)
         {
             if (match.IsActive == RejectedStatus || IsPast(match)) return;
+            guests ??= LoadGuests(context, match.MatchId);
 
             while (true)
             {
                 var going = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
-                if (going.Count >= match.UserCount) break;
+                if (going.Count + guests.Count >= match.UserCount) break;
 
                 var next = participants
                     .Where(p => p.Status == ParticipantStatus.Waitlist)
@@ -97,13 +142,16 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 if (next == null) break;
 
                 next.Status = ParticipantStatus.Going;
-                next.Side = preferredSide ?? PickSide(going);
+                // Boşalan taraf tercih edilir (doluysa daha az kişili taraf)
+                next.Side = preferredSide.HasValue && SideCount(going, guests, preferredSide.Value) < SideCapacity(match)
+                    ? preferredSide.Value
+                    : PickSide(going, guests);
                 next.Confirmed = false;
                 next.ReminderSentAt = null;
                 preferredSide = null; // boşalan taraf sadece ilk yükselen için
 
                 AddNotification(context, NotificationType.WaitlistPromoted,
-                    $"Yedek listesinden asil kadroya geçtin: '{match.MatchName}' maçı, {match.MatchDate:dd.MM.yyyy HH:mm}.",
+                    Msg.GetDefault(MessageKeys.Match.NotifWaitlistPromoted, match.MatchName, match.MatchDate),
                     match.MatchId, new[] { next.PlayerId });
                 AddActivity(context, ActivityType.JoinedMatch, next.PlayerId, matchId: match.MatchId);
             }
@@ -113,33 +161,45 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
         /// Katıl mantığı. match: LockMatch ile kilitlenmiş satır. SaveChanges çağırmaz.
         /// Going olursa JoinedMatch aktivitesi yazılır, kurucuya bildirim gider.
         /// </summary>
-        public static OperationResult<byte> Join(MatchBuddyContext context, Match match, int playerId, byte? preferredSide = null)
+        /// <param name="checkReliability">Maçın en düşük güvenilirlik sınırı uygulanır mı (davetle / rakip takım olarak katılımda hayır).</param>
+        public static OperationResult<byte> Join(MatchBuddyContext context, Match match, int playerId, byte? preferredSide = null,
+            bool checkReliability = false)
         {
             // İşletme hesapları maça katılamaz (docs/venues-api.md)
             if (context.Players.Any(p => p.PlayerId == playerId && p.Role == PlayerRoles.Owner))
                 return OperationResult<byte>.Forbidden(OwnerCannotJoin);
             if (match.IsActive == RejectedStatus)
-                return OperationResult<byte>.BadRequest("Bu maç reddedildi, katılım kapalı.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.RejectedJoinClosed);
             if (IsPast(match))
-                return OperationResult<byte>.BadRequest("Maç tarihi geçti, katılım kapalı.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.PastJoinClosed);
+
+            // Kurucunun güvenilirlik sınırı (docs/reliability-api.md): yeni oyuncular takılmaz
+            if (checkReliability && match.MinReliability is int min && min > 0 && match.CreatedByPlayerId != playerId)
+            {
+                var badge = ReliabilityCore.Badge(context, playerId);
+                if (badge.Level != ReliabilityLevel.New && badge.Score < min)
+                    return OperationResult<byte>.BadRequest(ErrorCodes.Reliability.TooLow, min, badge.Score);
+            }
 
             var matchId = match.MatchId;
             var participants = context.MatchParticipants.Where(p => p.MatchId == matchId).ToList();
             var mine = participants.FirstOrDefault(p => p.PlayerId == playerId);
             if (mine?.Status == ParticipantStatus.Going)
-                return OperationResult<byte>.BadRequest("Bu maça zaten katılıyorsun.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.AlreadyJoined);
             if (mine?.Status == ParticipantStatus.Waitlist)
-                return OperationResult<byte>.BadRequest("Zaten bu maçın yedek listesindesin.");
+                return OperationResult<byte>.BadRequest(ErrorCodes.Match.AlreadyWaitlisted);
 
             var going = participants.Where(p => p.Status == ParticipantStatus.Going).ToList();
+            var guests = LoadGuests(context, matchId);
             byte status;
             byte? side;
-            if (going.Count < match.UserCount)
+            // Kapasite: Going + misafir < UserCount (misafir yüzünden dolu maça katılan yedeğe düşer)
+            if (going.Count + guests.Count < match.UserCount)
             {
                 status = ParticipantStatus.Going;
-                side = PickSide(going);
+                side = PickSide(going, guests);
                 // Takım daveti / rakip takım: tercih edilen taraf doluysa normal kural (PickSide)
-                if (preferredSide.HasValue && going.Count(p => p.Side == preferredSide.Value) < SideCapacity(match))
+                if (preferredSide.HasValue && SideCount(going, guests, preferredSide.Value) < SideCapacity(match))
                 {
                     side = preferredSide.Value;
                 }
@@ -174,13 +234,13 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             {
                 var player = context.Players.AsNoTracking().FirstOrDefault(p => p.PlayerId == playerId);
                 var text = status == ParticipantStatus.Going
-                    ? $"{DisplayName(player)}, '{match.MatchName}' maçına katıldı."
-                    : $"{DisplayName(player)}, '{match.MatchName}' maçının yedek listesine katıldı.";
+                    ? Msg.GetDefault(MessageKeys.Match.NotifJoined, DisplayName(player), match.MatchName)
+                    : Msg.GetDefault(MessageKeys.Match.NotifJoinedWaitlist, DisplayName(player), match.MatchName);
                 AddNotification(context, NotificationType.MatchJoin, text, matchId, new[] { match.CreatedByPlayerId.Value });
             }
 
             return OperationResult<byte>.Ok(status,
-                status == ParticipantStatus.Going ? "Maça katıldın." : "Maç dolu, yedek listesine eklendin.");
+                Msg.Get(status == ParticipantStatus.Going ? MessageKeys.Match.Joined : MessageKeys.Match.JoinedWaitlist));
         }
 
         /// <summary>
@@ -191,9 +251,9 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
             var participants = context.MatchParticipants.Where(p => p.MatchId == match.MatchId).ToList();
             var mine = participants.FirstOrDefault(p => p.PlayerId == playerId);
             if (mine == null || mine.Status == ParticipantStatus.Declined)
-                return OperationResult<bool>.BadRequest("Bu maçta kaydın bulunmuyor.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.NotParticipant);
             if (IsPast(match))
-                return OperationResult<bool>.BadRequest("Maç tarihi geçti, kadrodan ayrılamazsın.");
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.PastCannotLeave);
 
             var wasGoing = mine.Status == ParticipantStatus.Going;
             var vacatedSide = mine.Side;
@@ -208,7 +268,7 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 PromoteFromWaitlist(context, match, participants, vacatedSide);
             }
 
-            return OperationResult<bool>.Ok(true, wasGoing ? "Maçtan ayrıldın." : "Yedek listesinden çıktın.");
+            return OperationResult<bool>.Ok(true, Msg.Get(wasGoing ? MessageKeys.Match.Left : MessageKeys.Match.LeftWaitlist));
         }
     }
 }

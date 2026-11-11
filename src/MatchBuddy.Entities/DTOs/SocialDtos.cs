@@ -50,6 +50,11 @@ namespace MatchBuddy.Entities.DTOs
         public bool NotifyMatchReminder { get; set; }
         public bool NotifyMatchResult { get; set; }
         public bool NotifyMatchUpdates { get; set; }
+        public bool NotifyDeals { get; set; }
+        /// <summary>"system" | "light" | "dark" (docs/platform-api.md)</summary>
+        public string Theme { get; set; } = "system";
+        /// <summary>Arayüz dili, ör. "tr" (docs/platform-api.md)</summary>
+        public string Language { get; set; } = "tr";
     }
 
     /// <summary>POST Settings gövdesi: gönderilmeyen alanlar mevcut değerini korur.</summary>
@@ -63,6 +68,9 @@ namespace MatchBuddy.Entities.DTOs
         public bool? NotifyMatchReminder { get; set; }
         public bool? NotifyMatchResult { get; set; }
         public bool? NotifyMatchUpdates { get; set; }
+        public bool? NotifyDeals { get; set; }
+        public string? Theme { get; set; }
+        public string? Language { get; set; }
     }
 
     public class LastMessageDto
@@ -70,12 +78,39 @@ namespace MatchBuddy.Entities.DTOs
         public string? Text { get; set; }
         public DateTime SendingDate { get; set; }
         public bool Mine { get; set; }
+        public bool HasImage { get; set; }
+        /// <summary>Benim gönderdiğim son mesaj karşı tarafça okundu mu (birebir)</summary>
+        public bool Read { get; set; }
+        /// <summary>Grup sohbetinde son mesajı gönderen (benim değilse)</summary>
+        public string? SenderName { get; set; }
     }
 
     public class MessageContactDto
     {
         public SocialPlayerDto Player { get; set; } = null!;
         public LastMessageDto? LastMessage { get; set; }
+        /// <summary>Bu kişiden gelen okunmamış mesaj sayısı</summary>
+        public int UnreadCount { get; set; }
+    }
+
+    /// <summary>Grup sohbeti özeti: üyeler (fotoğraflarıyla), son mesaj, okunmamış sayısı.</summary>
+    public class GroupSummaryDto
+    {
+        public int GroupId { get; set; }
+        public string? GroupName { get; set; }
+        public int? CreatedByPlayerId { get; set; }
+        public int MemberCount { get; set; }
+        public List<PlayerSummaryDto> Members { get; set; } = new();
+        public LastMessageDto? LastMessage { get; set; }
+        public int UnreadCount { get; set; }
+    }
+
+    /// <summary>Mesaj simgesindeki rozet: okunmamış birebir + grup mesajı.</summary>
+    public class UnreadSummaryDto
+    {
+        public int Direct { get; set; }
+        public int Groups { get; set; }
+        public int Total => Direct + Groups;
     }
 
     public class ActivityMatchDto
@@ -157,6 +192,27 @@ namespace MatchBuddy.Entities.DTOs
     {
         public int Invited { get; set; }
         public int Skipped { get; set; }
+    }
+
+    /// <summary>"Yedek bul": maçta boş yer ve kurucunun haber verebileceği adaylar (docs/reliability-api.md).</summary>
+    public class SubstituteCandidatesDto
+    {
+        public int OpenSpots { get; set; }
+        public List<SubstituteCandidateDto> Candidates { get; set; } = new();
+    }
+
+    public class SubstituteCandidateDto
+    {
+        public int PlayerId { get; set; }
+        public string? PlayerName { get; set; }
+        public string? PlayerSurname { get; set; }
+        public string? UserName { get; set; }
+        public string? ProfilePictureUrl { get; set; }
+        public ReliabilityBadgeDto Reliability { get; set; } = new();
+        /// <summary>Kurucuyla son dönemde birlikte oynadığı maç sayısı.</summary>
+        public int MatchesTogether { get; set; }
+        /// <summary>Bu maç için bekleyen daveti / yedek çağrısı var mı.</summary>
+        public bool Invited { get; set; }
     }
 
     // ---- Takvim ----

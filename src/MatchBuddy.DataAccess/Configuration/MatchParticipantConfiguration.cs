@@ -29,6 +29,27 @@ namespace MatchBuddy.DataAccess.Configuration
         }
     }
 
+    public class MatchGuestConfiguration : IEntityTypeConfiguration<MatchGuest>
+    {
+        public void Configure(EntityTypeBuilder<MatchGuest> builder)
+        {
+            builder.ToTable("MatchGuests");
+            builder.HasKey(x => x.GuestId);
+            builder.Property(x => x.Name).HasMaxLength(MatchGuestRules.NameMaxLength).IsRequired();
+            builder.Property(x => x.Note).HasMaxLength(MatchGuestRules.NoteMaxLength);
+
+            builder.HasOne(x => x.Match)
+                .WithMany()
+                .HasForeignKey(x => x.MatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.AddedByPlayer)
+                .WithMany()
+                .HasForeignKey(x => x.AddedByPlayerId)
+                .OnDelete(DeleteBehavior.NoAction);
+        }
+    }
+
     public class MatchLikeConfiguration : IEntityTypeConfiguration<MatchLike>
     {
         public void Configure(EntityTypeBuilder<MatchLike> builder)

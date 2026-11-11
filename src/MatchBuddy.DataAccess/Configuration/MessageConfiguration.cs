@@ -12,7 +12,7 @@ namespace MatchBuddy.DataAccess.Configuration
 
             builder
                 .Property(b => b.MatchMessage)
-                .HasMaxLength(250)
+                .HasMaxLength(1000)
                 .IsRequired();
 
             builder
@@ -25,6 +25,14 @@ namespace MatchBuddy.DataAccess.Configuration
 
 
             builder.Property(x=>x.RecipientPlayerId).IsRequired(false);
+
+            // Resimli mesaj (docs/media-api.md); sadece resimli mesajda MatchMessage "" olur
+            builder.Property(x => x.ImageUrl).HasMaxLength(300);
+
+            // Okunmamış sayısı / konuşma yükleme: alıcı + gönderen
+            builder.HasIndex(x => new { x.RecipientPlayerId, x.SendPlayerId });
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+            builder.HasOne<Message>().WithMany().HasForeignKey(x => x.ReplyToMessageId).OnDelete(DeleteBehavior.NoAction);
 
         }
     }

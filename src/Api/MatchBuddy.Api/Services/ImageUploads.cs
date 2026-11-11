@@ -1,8 +1,8 @@
 namespace MatchBuddy.Api.Services
 {
     /// <summary>
-    /// wwwroot/uploads altına resim kaydetme (profil resmi, tesis fotoğrafları).
-    /// Uzantı (jpg/jpeg/png), boyut (≤ 5MB) ve dosya imzası (magic bytes) kontrol edilir.
+    /// ESKİ: wwwroot/uploads altına resim kaydetme. Yeni yüklemeler medya hattından geçer (IMediaService, docs/media-api.md);
+    /// bu sınıf sadece eski /uploads dosyalarını silmek (Delete) için kullanılır.
     /// </summary>
     public static class ImageUploads
     {
@@ -10,14 +10,14 @@ namespace MatchBuddy.Api.Services
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png" };
 
         /// <summary>Doğrulama hatası (yoksa null).</summary>
-        public static string? Validate(IFormFile? file)
+        public static AppError? Validate(IFormFile? file)
         {
-            if (file == null || file.Length == 0) return "Dosya boş.";
+            if (file == null || file.Length == 0) return AppError.Bad(ErrorCodes.Media.FileEmpty);
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension)) return "Sadece JPG, JPEG veya PNG dosyaları yüklenebilir.";
-            if (file.Length > MaxBytes) return "Dosya boyutu 5MB'ı geçemez.";
+            if (!AllowedExtensions.Contains(extension)) return AppError.Bad(ErrorCodes.Media.FormatNotAllowed);
+            if (file.Length > MaxBytes) return AppError.Bad(ErrorCodes.Media.FileTooLarge, MaxBytes / (1024 * 1024));
             // Uzantıya güvenme: dosya imzasını (magic bytes) kontrol et
-            if (!HasImageSignature(file)) return "Dosya geçerli bir resim değil.";
+            if (!HasImageSignature(file)) return AppError.Bad(ErrorCodes.Media.InvalidImage);
             return null;
         }
 

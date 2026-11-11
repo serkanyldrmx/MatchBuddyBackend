@@ -1,15 +1,15 @@
-﻿namespace MatchBuddy.Core.Utilities.Results
+using MatchBuddy.Core.Errors;
+
+namespace MatchBuddy.Core.Utilities.Results
 {
-    public class ErrorResult:Result
+    public class ErrorResult : Result
     {
-        public ErrorResult(string message) : base(false, message)
+        /// <summary>Hata kodu (ErrorCodes) + mesaj yer tutucu değerleri.</summary>
+        public ErrorResult(string code, params object?[] args) : base(code, args)
         {
-
         }
-
-        public ErrorResult() : base(false)
+        public ErrorResult() : base(ErrorCodes.Common.OperationFailed, null)
         {
-
         }
     }
 }

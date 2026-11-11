@@ -25,6 +25,10 @@ namespace Business
             services.AddScoped<IInviteService, InviteManager>();
             services.AddScoped<ITournamentService, TournamentManager>();
             services.AddScoped<IVenueService, VenueManager>();
+            services.AddScoped<IChatService, ChatManager>();
+            // Kimlik doğrulama (docs/auth-api.md). AuthSettings, IOutgoingMessageQueue ve doğrulayıcılar API katmanında kaydedilir.
+            services.AddScoped<MatchBuddy.Business.Auth.IAuthService, MatchBuddy.Business.Auth.AuthManager>();
+            services.AddScoped<MatchBuddy.Business.Auth.ExternalSignInService>();
         }
     }
 }

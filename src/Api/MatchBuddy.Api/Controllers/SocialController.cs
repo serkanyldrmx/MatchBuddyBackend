@@ -1,5 +1,6 @@
 using MatchBuddy.Api.Model;
 using MatchBuddy.Api.Security;
+using MatchBuddy.Api.Services;
 using MatchBuddy.Business.Abstract;
 using MatchBuddy.Entities.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -14,10 +15,12 @@ namespace MatchBuddy.Api.Controllers
     public class SocialController : ControllerBase
     {
         private readonly ISocialService _socialService;
+        private readonly IMediaService _mediaService;
 
-        public SocialController(ISocialService socialService)
+        public SocialController(ISocialService socialService, IMediaService mediaService)
         {
             _socialService = socialService;
+            _mediaService = mediaService;
         }
 
         [HttpPost("Follow")]
@@ -107,9 +110,14 @@ namespace MatchBuddy.Api.Controllers
         }
 
         [HttpPost("DeleteAccount")]
-        public IActionResult DeleteAccount(DeleteAccountModel model)
+        public async Task<IActionResult> DeleteAccount(DeleteAccountModel model)
         {
-            return this.ToHttp(_socialService.DeleteAccount(User.GetPlayerId(), model.Password));
+            var me = User.GetPlayerId();
+            var (avatarMediaId, avatarUrl) = _mediaService.GetAvatar(me);
+            var result = _socialService.DeleteAccount(me, model.Password);
+            // Hesap silindiyse profil fotoğrafı (medya ya da eski /uploads dosyası) da silinir
+            if (result.Success) await _mediaService.DeleteImageAsync(avatarMediaId, avatarUrl, CancellationToken.None);
+            return this.ToHttp(result);
         }
 
         [HttpGet("MessageContacts")]

@@ -20,7 +20,7 @@ namespace MatchBuddy.Api.Security
         /// </summary>
         public string Key { get; set; } = string.Empty;
 
-        public int ExpiresMinutes { get; set; } = 120;
+        // Not: token süresi artık yapılandırmada değil, sistem parametresinde: auth.accessTokenMinutes (docs/auth-api.md).
     }
 
     public static class Roles
@@ -38,7 +38,8 @@ namespace MatchBuddy.Api.Security
 
     public interface IJwtTokenService
     {
-        (string Token, DateTime ExpiresAt) CreateToken(Player player);
+        /// <summary>Access token. <paramref name="minutes"/> verilmezse auth.accessTokenMinutes.</summary>
+        (string Token, DateTime ExpiresAt) CreateToken(Player player, int? minutes = null);
     }
 
     public class JwtTokenService : IJwtTokenService
@@ -50,9 +51,9 @@ namespace MatchBuddy.Api.Security
             _options = options.Value;
         }
 
-        public (string Token, DateTime ExpiresAt) CreateToken(Player player)
+        public (string Token, DateTime ExpiresAt) CreateToken(Player player, int? minutes = null)
         {
-            var expiresAt = DateTime.UtcNow.AddMinutes(_options.ExpiresMinutes);
+            var expiresAt = DateTime.UtcNow.AddMinutes(minutes ?? P.Int(ParameterKeys.Auth.AccessTokenMinutes));
 
             var claims = new List<Claim>
             {

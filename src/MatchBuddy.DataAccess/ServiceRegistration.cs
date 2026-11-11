@@ -9,6 +9,7 @@ namespace MatchBuddy.DataAccess
         public static void AddDataAccessRegistration(this IServiceCollection services)
         {
             services.AddScoped<IMatchDal, EFMatchDal>();
+            services.AddScoped<MatchBuddy.DataAccess.Concrete.EntityFramework.IReliabilityDal, MatchBuddy.DataAccess.Concrete.EntityFramework.EFReliabilityDal>();
             services.AddScoped<IMessageDal, EFMessageDal>();
             services.AddScoped<IPlayerDal, EFPlayerDal>();
             services.AddScoped<IStadiumDal, EFStadiumDal>();
@@ -26,6 +27,9 @@ namespace MatchBuddy.DataAccess
             services.AddScoped<IInviteDal, EFInviteDal>();
             services.AddScoped<ITournamentDal, EFTournamentDal>();
             services.AddScoped<IVenueDal, EFVenueDal>();
+            services.AddScoped<IChatDal, EFChatDal>();
+            services.AddScoped<IAuthDal, EFAuthDal>();
+            services.AddScoped<IExternalAccountStore>(sp => sp.GetRequiredService<IAuthDal>());
         }
     }
 }

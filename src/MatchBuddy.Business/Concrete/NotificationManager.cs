@@ -25,7 +25,7 @@ namespace MatchBuddy.Business.Concrete
         {
             notification.CreatedAt = DateTime.Now;
             _notificationDal.Add(notification);
-            return new SuccessResult("Bildirim eklendi.");
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.Added));
         }
 
         public IResult Delete(int notificationId)
@@ -33,11 +33,11 @@ namespace MatchBuddy.Business.Concrete
             var notification = _notificationDal.Get(n => n.NotificationId == notificationId);
             if (notification == null)
             {
-                return new ErrorResult("Bildirim bulunamadı.");
+                return new ErrorResult(ErrorCodes.Notification.NotFound);
             }
 
             _notificationDal.Delete(notification);
-            return new SuccessResult("Bildirim silindi.");
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.Deleted));
         }
 
         public IDataResult<List<Notification>> GetAllNotifications()
@@ -74,7 +74,7 @@ namespace MatchBuddy.Business.Concrete
         public IResult Update(Notification notification)
         {
             _notificationDal.Update(notification);
-            return new SuccessResult("Bildirim güncellendi.");
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.Updated));
         }
 
         public IResult MarkAsRead(int playerNotificationId, int playerId)
@@ -83,12 +83,12 @@ namespace MatchBuddy.Business.Concrete
             var pn = _playerNotificationDal.Get(p => p.PlayerNotificationId == playerNotificationId && p.PlayerId == playerId);
             if (pn == null)
             {
-                return new ErrorResult("Bildirim bulunamadı.");
+                return new ErrorResult(ErrorCodes.Notification.NotFound);
             }
 
             pn.IsRead = true;
             _playerNotificationDal.Update(pn);
-            return new SuccessResult("Bildirim okundu olarak işaretlendi.");
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.MarkedRead));
         }
 
         public IResult SendNotificationToPlayers(List<int> playerIds, Notification notification)
@@ -97,7 +97,7 @@ namespace MatchBuddy.Business.Concrete
             _notificationDal.SendToPlayers(notification.Type, notification.Text, notification.MatchId,
                 notification.StadiumId, playerIds ?? new List<int>());
 
-            return new SuccessResult("Bildirim oyunculara gönderildi.");
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.Sent));
         }
     }
 

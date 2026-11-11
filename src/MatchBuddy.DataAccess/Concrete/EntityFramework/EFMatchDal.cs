@@ -181,7 +181,8 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
                 }
 
                 // Bildirim mesajını oluşturuyoruz
-                var notificationText = $"Tebrikler Takımınız Yeni Bir Maça Eklendi: {matchDetails.MatchName} ({matchDetails.MatchDate}) - {matchDetails.StadiumName}, {matchDetails.StadiumAddress}. {result.FirstOrDefault()?.TeamName} takımı için yeni bir maç başlatıldı.";
+                var notificationText = Msg.GetDefault(MessageKeys.Match.NotifTeamAdded, matchDetails.MatchName, matchDetails.MatchDate,
+                    matchDetails.StadiumName, matchDetails.StadiumAddress, result.FirstOrDefault()?.TeamName);
 
                 // Bildirim (alıcı tercihleri NotificationWriter'da kontrol edilir)
                 NotificationWriter.Add(context, NotificationType.MatchCreated, notificationText, matchId, null,
@@ -223,11 +224,11 @@ namespace MatchBuddy.DataAccess.Concrete.EntityFramework
 
                 if (status == 2)
                 {
-                    notificationText = $"Tebrikler! Maçınız onaylandı: '{match.MatchName}' maçı, {match.MatchDate?.ToString("dd MMMM yyyy")} tarihinde, {match.StadiumName} ({match.StadiumAddress}) stadyumunda gerçekleşecektir.";
+                    notificationText = Msg.GetDefault(MessageKeys.Match.NotifApproved, match.MatchName, match.MatchDate, match.StadiumName, match.StadiumAddress);
                 }
                 else if (status == 3)
                 {
-                    notificationText = $"Üzgünüz! Maçınız reddedildi: '{match.MatchName}' maçı, {match.MatchDate?.ToString("dd MMMM yyyy")} tarihinde, {match.StadiumName} ({match.StadiumAddress}) stadyumunda yapılacaktı.";
+                    notificationText = Msg.GetDefault(MessageKeys.Match.NotifRejected, match.MatchName, match.MatchDate, match.StadiumName, match.StadiumAddress);
                 }
                 else
                 {

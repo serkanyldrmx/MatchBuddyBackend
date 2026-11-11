@@ -45,7 +45,10 @@ namespace MatchBuddy.Entities.DTOs
         public decimal? PitchPrice { get; set; }
         public decimal? ExtrasPrice { get; set; }
         public decimal? TotalPrice { get; set; }
+        /// <summary>Kişi başı pay (krampon hariç; kiralayan ayrıca CleatPrice öder).</summary>
         public decimal? PerPlayer { get; set; }
+        /// <summary>Bir çift krampon ücreti (maçta krampon yoksa null).</summary>
+        public decimal? CleatPrice { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int CleatCount { get; set; }
         public bool CameraRequested { get; set; }
@@ -64,7 +67,10 @@ namespace MatchBuddy.Entities.DTOs
         public string? Description { get; set; }
         public byte IsActive { get; set; }
         public int Capacity { get; set; }
+        // Going + misafir (doluluk halkası için)
         public int GoingCount { get; set; }
+        // Misafir oyuncu sayısı
+        public int GuestCount { get; set; }
         public int WaitlistCount { get; set; }
         public int Likes { get; set; }
         public bool LikedByMe { get; set; }
@@ -102,6 +108,8 @@ namespace MatchBuddy.Entities.DTOs
         public bool MyConfirmed { get; set; }
         public byte? MySide { get; set; }
         public List<MatchParticipantDto> Participants { get; set; } = new();
+        // Misafir oyuncular (hesabı olmayan kişiler)
+        public List<MatchGuestDto> Guests { get; set; } = new();
         public MatchResultDto? Result { get; set; }
         public MatchMvpDto? Mvp { get; set; }
         public int? MyMvpVote { get; set; }
@@ -111,6 +119,15 @@ namespace MatchBuddy.Entities.DTOs
         public int? OwnerPlayerId { get; set; }
         public bool CanReview { get; set; }
         public MyReviewDto? MyReview { get; set; }
+
+        // Güvenilirlik (docs/reliability-api.md)
+        public int? MinReliability { get; set; }
+        /// <summary>Kurucu şu an "gelmeyenleri" işaretleyebilir mi (maç başladı, pencere açık).</summary>
+        public bool NoShowWindowOpen { get; set; }
+        /// <summary>Haftalık sabit maç serisi aktif mi (kurucu "Tekrarı durdur" diyebilir).</summary>
+        public bool RepeatWeekly { get; set; }
+        /// <summary>Yalnızca kurucu/admin: son dakika çekilenler ve gelmeyenler (mazeretleriyle).</summary>
+        public List<MatchWithdrawalDto>? Withdrawals { get; set; }
     }
 
     public class MatchStadiumDto
@@ -137,6 +154,20 @@ namespace MatchBuddy.Entities.DTOs
         public double? AvgRating { get; set; }
         // Sosyal paket: bu oyuncuyu takip ediyor muyum
         public bool IFollow { get; set; }
+        // Güvenilirlik rozeti (docs/reliability-api.md)
+        public ReliabilityBadgeDto? Reliability { get; set; }
+        // Kurucu "gelmedi" işaretledi mi
+        public bool NoShow { get; set; }
+    }
+
+    public class MatchGuestDto
+    {
+        public int GuestId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Note { get; set; }
+        public byte Side { get; set; }
+        public PlayerSummaryDto? AddedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public class MatchResultDto

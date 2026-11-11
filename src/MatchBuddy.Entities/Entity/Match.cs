@@ -34,8 +34,16 @@ namespace MatchBuddy.Entities.Entity
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
         public string? RejectReason { get; set; }
+        // Kurucunun istediği en düşük güvenilirlik puanı (null = sınır yok). Yeni oyuncular takılmaz.
+        public int? MinReliability { get; set; }
+        // Maç sonrası güvenilirlik olayları (Attended) yazıldı mı
+        public DateTime? ReliabilitySettledAt { get; set; }
+        // Haftalık sabit maç serisi (MatchSeries); null = tek seferlik
+        public int? SeriesId { get; set; }
         // Oluşturulma zamanı (DB varsayılanı GETDATE())
         public DateTime CreatedAt { get; set; }
+        // Paylaşılabilir davet linki kodu (/m/{kod}); ilk paylaşımda oluşur (docs/engagement-api.md)
+        public string? ShareCode { get; set; }
         public List<MatchTeam> MatchTeams { get; set; }
         public List<MatchComment> MatchComments { get; set; }
     }
