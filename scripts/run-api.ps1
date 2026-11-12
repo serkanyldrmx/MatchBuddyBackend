@@ -42,10 +42,10 @@ Push-Location $repo
 try {
     if ($Migrate) {
         & "$root\dotnet.exe" tool restore | Out-Null
-        & "$root\dotnet.exe" ef database update --project src/MatchBuddy.DataAccess --startup-project src/Api/MatchBuddy.Api
+        & "$root\dotnet.exe" ef database update --project src/MatcBuddy.DataAccess --startup-project src/MatcBuddy.Api
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
-    & "$root\dotnet.exe" run --project src/Api/MatchBuddy.Api --launch-profile http
+    & "$root\dotnet.exe" run --project src/MatcBuddy.Api --launch-profile http
 }
 finally {
     Pop-Location

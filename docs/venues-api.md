@@ -352,7 +352,7 @@ Her istek, `stadiumId` ya da dolaylı tesis sahibi `OwnerPlayerId == ben` kontro
 | POST | UpdateMembership | `{ ownerId, membershipUntil, suspended }` | |
 | POST | AssignVenue | `{ stadiumId, ownerId }` | |
 | POST | SetListed | `{ stadiumId, isListed }` | |
-| GET | OsmCandidates | `?city=` veya `?south=&west=&north=&east=` | Sunucu tarafında Overpass API sorgusu (`https://overpass-api.de/api/interpreter`, timeout 25 sn, User-Agent `MatchBuddy/1.0`): `leisure=pitch` + `sport~soccer` node/way (way için center). Dönüş `[{ osmId, name, lat, lon, address, phone, website, openingHours, alreadyExists }]`. alreadyExists: aynı OsmId ya da 150 m içinde bir tesis var. `city` verildiyse şehir sınırı Nominatim ile bulunur. Hata/timeout → 502 `{ message }` |
+| GET | OsmCandidates | `?city=` veya `?south=&west=&north=&east=` | Sunucu tarafında Overpass API sorgusu (`https://overpass-api.de/api/interpreter`, timeout 25 sn, User-Agent `MatcBuddy/1.0`): `leisure=pitch` + `sport~soccer` node/way (way için center). Dönüş `[{ osmId, name, lat, lon, address, phone, website, openingHours, alreadyExists }]`. alreadyExists: aynı OsmId ya da 150 m içinde bir tesis var. `city` verildiyse şehir sınırı Nominatim ile bulunur. Hata/timeout → 502 `{ message }` |
 | POST | ImportCandidate | `{ osmId, name, lat, lon, address, city, district, phone }` | IsListed = 1 ama işletmesi olmadığı için görünmez; OsmId set edilir. Dönüş `{ stadiumId }` |
 
 ## Bildirim türleri (NotificationType sonuna)
@@ -375,7 +375,7 @@ Ardından seed eklenir:
 - **5 demo işletme ve tesis:** İstanbul 3 (Kadıköy, Beşiktaş, Ataşehir), Ankara 1 (Çankaya), İzmir 1 (Bornova).
   - Gerçekçi isimler, adresler ve koordinatlar.
   - Her birinde 1–3 saha, açılış saatleri, akşam saatleri için pahalı fiyat kuralı, 1 aktif kampanya ve değişen olanaklar.
-  - Fotoğraflar: `MatchBuddyReact` git geçmişindeki stadyum görselleri (`stadyum*.jpg`, `foto*.jpg`) `wwwroot/uploads/venues/` altına kopyalanır.
+  - Fotoğraflar: `MatcBuddyReact` git geçmişindeki stadyum görselleri (`stadyum*.jpg`, `foto*.jpg`) `wwwroot/uploads/venues/` altına kopyalanır.
   - Kullanıcı adları `isletme_<kısa ad>`, şifre `Isletme!2026`. Bunlar sadece yerel demo verisidir; `docs/demo-accounts.md` dosyasına yazılır.
 - **Demo maçlar:**
   - Mevcut oyunculardan rastgele kurucu ve katılımcılarla 12 gelecek maç (bir kısmı bekliyor, bir kısmı onaylı, 2 tanesi takım maçı, 1 tanesi "rakip aranıyor")

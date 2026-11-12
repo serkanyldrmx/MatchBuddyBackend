@@ -52,7 +52,7 @@ Kayıt (`POST /api/Players/SavePlayer`, `playerModel` JSON'u içinde) artık `te
 ## Sosyal giriş eşleştirme
 
 1. Sağlayıcı + sağlayıcı kullanıcı kimliği daha önce bağlandıysa → o hesap.
-2. Sağlayıcı e-postayı doğrulanmış verdiyse ve bu e-postaya sahip, e-postası MatchBuddy'de de doğrulanmış **tek** bir hesap varsa → hesaba bağlanır.
+2. Sağlayıcı e-postayı doğrulanmış verdiyse ve bu e-postaya sahip, e-postası MatcBuddy'de de doğrulanmış **tek** bir hesap varsa → hesaba bağlanır.
    Facebook e-postası yalnızca `auth.facebookEmailTrusted = true` ise güvenilir sayılır.
 3. Aksi halde yeni hesap açılır (`hasPassword = false`); şifre "Şifremi unuttum" ile belirlenebilir.
 

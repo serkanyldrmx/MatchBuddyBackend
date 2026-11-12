@@ -1,0 +1,577 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AUTH_ADMIN_ONLY" xml:space="preserve">
+    <value>This operation is for administrators only.</value>
+  </data>
+  <data name="AUTH_FORBIDDEN" xml:space="preserve">
+    <value>You are not allowed to perform this operation.</value>
+  </data>
+  <data name="AUTH_INVALID_CREDENTIALS" xml:space="preserve">
+    <value>Invalid user name or password.</value>
+  </data>
+  <data name="AUTH_UNAUTHORIZED" xml:space="preserve">
+    <value>Your session has expired or you are not signed in. Please sign in again.</value>
+  </data>
+  <data name="COMMON_BAD_REQUEST" xml:space="preserve">
+    <value>The request is invalid.</value>
+  </data>
+  <data name="COMMON_CONFLICT" xml:space="preserve">
+    <value>The record was changed by another operation. Please refresh and try again.</value>
+  </data>
+  <data name="COMMON_INTERNAL_ERROR" xml:space="preserve">
+    <value>An unexpected error occurred. Please try again later.</value>
+  </data>
+  <data name="COMMON_INVALID_DATE_RANGE" xml:space="preserve">
+    <value>The end date must be after the start date.</value>
+  </data>
+  <data name="COMMON_INVALID_JSON" xml:space="preserve">
+    <value>Invalid JSON format.</value>
+  </data>
+  <data name="COMMON_LIST_OR" xml:space="preserve">
+    <value>or</value>
+  </data>
+  <data name="COMMON_MAINTENANCE" xml:space="preserve">
+    <value>The system is under maintenance.</value>
+  </data>
+  <data name="COMMON_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>This operation is not supported for this address.</value>
+  </data>
+  <data name="COMMON_NOT_FOUND" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="COMMON_OPERATION_FAILED" xml:space="preserve">
+    <value>The operation could not be completed.</value>
+  </data>
+  <data name="COMMON_PAYLOAD_TOO_LARGE" xml:space="preserve">
+    <value>The request body is too large.</value>
+  </data>
+  <data name="COMMON_RATE_LIMITED" xml:space="preserve">
+    <value>Too many requests. Please try again shortly.</value>
+  </data>
+  <data name="COMMON_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The service is currently unavailable. Please try again later.</value>
+  </data>
+  <data name="COMMON_UNSUPPORTED_MEDIA_TYPE" xml:space="preserve">
+    <value>The content type is not supported.</value>
+  </data>
+  <data name="COMMON_UPSTREAM_ERROR" xml:space="preserve">
+    <value>An external service could not be reached. Please try again later.</value>
+  </data>
+  <data name="GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Group not found.</value>
+  </data>
+  <data name="LABEL_COMMON_VALUE" xml:space="preserve">
+    <value>value</value>
+  </data>
+  <data name="MATCH_NOT_FOUND" xml:space="preserve">
+    <value>Match not found.</value>
+  </data>
+  <data name="MSG_COMMON_SAVED" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="MSG_PARAM_UPDATED" xml:space="preserve">
+    <value>Parameter updated.</value>
+  </data>
+  <data name="PARAM_INVALID_JSON" xml:space="preserve">
+    <value>The parameter value must be valid JSON.</value>
+  </data>
+  <data name="PARAM_INVALID_LIST" xml:space="preserve">
+    <value>'{0}' must be a JSON array of positive integers (e.g. [60,90]).</value>
+  </data>
+  <data name="PARAM_INVALID_TYPE" xml:space="preserve">
+    <value>The value of '{0}' must be of type {1}.</value>
+  </data>
+  <data name="PARAM_NOT_FOUND" xml:space="preserve">
+    <value>Parameter not found.</value>
+  </data>
+  <data name="PARAM_OUT_OF_RANGE" xml:space="preserve">
+    <value>'{0}' must be between {1} and {2}.</value>
+  </data>
+  <data name="PARAM_VALUE_REQUIRED" xml:space="preserve">
+    <value>The parameter value cannot be empty.</value>
+  </data>
+  <data name="PLAYER_NOT_FOUND" xml:space="preserve">
+    <value>Player not found.</value>
+  </data>
+  <data name="TEAM_NOT_FOUND" xml:space="preserve">
+    <value>Team not found.</value>
+  </data>
+  <data name="TOURNAMENT_NOT_FOUND" xml:space="preserve">
+    <value>Tournament not found.</value>
+  </data>
+  <data name="VALIDATION_BODY_REQUIRED" xml:space="preserve">
+    <value>The request body cannot be empty.</value>
+  </data>
+  <data name="VALIDATION_FAILED" xml:space="preserve">
+    <value>The submitted data is invalid. Please check the highlighted fields.</value>
+  </data>
+  <data name="VALIDATION_INVALID_EMAIL" xml:space="preserve">
+    <value>Enter a valid e-mail address.</value>
+  </data>
+  <data name="VALIDATION_INVALID_FORMAT" xml:space="preserve">
+    <value>The submitted value could not be read (invalid format).</value>
+  </data>
+  <data name="VALIDATION_INVALID_VALUE" xml:space="preserve">
+    <value>The value '{0}' is not valid for {1}.</value>
+  </data>
+  <data name="VALIDATION_MUST_BE_NUMBER" xml:space="preserve">
+    <value>The {0} field must be a number.</value>
+  </data>
+  <data name="VALIDATION_NEGATIVE_NOT_ALLOWED" xml:space="preserve">
+    <value>{0} cannot be negative.</value>
+  </data>
+  <data name="VALIDATION_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} must be between {1} and {2}.</value>
+  </data>
+  <data name="VALIDATION_REQUIRED" xml:space="preserve">
+    <value>The {0} field is required.</value>
+  </data>
+  <data name="VALIDATION_TOO_LONG" xml:space="preserve">
+    <value>{0} can be at most {1} characters.</value>
+  </data>
+  <data name="VALIDATION_TOO_SHORT" xml:space="preserve">
+    <value>{0} must be at least {1} characters.</value>
+  </data>
+  <data name="VALIDATION_UNKNOWN_VALUE_INVALID" xml:space="preserve">
+    <value>The value is invalid.</value>
+  </data>
+  <data name="VALIDATION_VALUE_INVALID" xml:space="preserve">
+    <value>The value '{0}' is invalid.</value>
+  </data>
+  <data name="VALIDATION_VALUE_MISSING" xml:space="preserve">
+    <value>A value is required.</value>
+  </data>
+  <data name="VENUE_BOOKING_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>Bookings at this venue can be made at most {0} days ahead.</value>
+  </data>
+  <data name="VENUE_BOOKING_TOO_SOON" xml:space="preserve">
+    <value>Bookings at this venue must be made at least {0} hours in advance.</value>
+  </data>
+  <data name="VENUE_NOT_FOUND" xml:space="preserve">
+    <value>Venue not found.</value>
+  </data>
+  <data name="VENUE_NOT_YOURS" xml:space="preserve">
+    <value>This venue does not belong to you.</value>
+  </data>
+  <data name="VENUE_PITCH_NOT_FOUND" xml:space="preserve">
+    <value>Pitch not found.</value>
+  </data>
+  <data name="VENUE_SETTINGS_OUT_OF_RANGE" xml:space="preserve">
+    <value>{0} must be between {1} and {2}.</value>
+  </data>
+  <data name="AUTH_REFRESH_INVALID" xml:space="preserve">
+    <value>Your session has ended. Please sign in again.</value>
+  </data>
+  <data name="AUTH_REFRESH_REUSED" xml:space="preserve">
+    <value>For your security you were signed out. Please sign in again.</value>
+  </data>
+  <data name="AUTH_PASSWORD_TOO_WEAK" xml:space="preserve">
+    <value>The password must contain at least one letter and one digit.</value>
+  </data>
+  <data name="AUTH_PASSWORD_NOT_SET" xml:space="preserve">
+    <value>Your account has no password yet. Use "Forgot password" to set one.</value>
+  </data>
+  <data name="AUTH_IDENTIFIER_REQUIRED" xml:space="preserve">
+    <value>Enter your user name, email or phone number.</value>
+  </data>
+  <data name="AUTH_INVALID_CHANNEL" xml:space="preserve">
+    <value>Delivery method must be email or SMS.</value>
+  </data>
+  <data name="AUTH_CODE_REQUIRED" xml:space="preserve">
+    <value>Enter the verification code.</value>
+  </data>
+  <data name="AUTH_CODE_INVALID" xml:space="preserve">
+    <value>The code is wrong or has expired.</value>
+  </data>
+  <data name="AUTH_CODE_ATTEMPTS_EXCEEDED" xml:space="preserve">
+    <value>Too many wrong attempts. Please request a new code.</value>
+  </data>
+  <data name="AUTH_CODE_RESEND_COOLDOWN" xml:space="preserve">
+    <value>Please wait {0} seconds before requesting a new code.</value>
+  </data>
+  <data name="AUTH_EMAIL_MISSING" xml:space="preserve">
+    <value>Your account has no email address.</value>
+  </data>
+  <data name="AUTH_EMAIL_ALREADY_CONFIRMED" xml:space="preserve">
+    <value>Your email address is already verified.</value>
+  </data>
+  <data name="AUTH_PROVIDER_NOT_CONFIGURED" xml:space="preserve">
+    <value>Sign-in with {0} is not available right now.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNKNOWN" xml:space="preserve">
+    <value>Unknown sign-in provider.</value>
+  </data>
+  <data name="AUTH_PROVIDER_UNAVAILABLE" xml:space="preserve">
+    <value>The sign-in provider is unreachable. Please try again later.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_REQUIRED" xml:space="preserve">
+    <value>No sign-in data was received from the provider.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_TOKEN_INVALID" xml:space="preserve">
+    <value>The provider sign-in could not be verified. Please try again.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_NOT_FOUND" xml:space="preserve">
+    <value>This sign-in method is not linked to your account.</value>
+  </data>
+  <data name="AUTH_EXTERNAL_LOGIN_LAST_METHOD" xml:space="preserve">
+    <value>This is the only way into your account. Set a password before removing it.</value>
+  </data>
+  <data name="AUTH_TERMS_REQUIRED" xml:space="preserve">
+    <value>You must accept the terms of use and privacy notice to continue.</value>
+  </data>
+  <data name="AUTH_TERMS_VERSION_MISMATCH" xml:space="preserve">
+    <value>The terms have been updated. Please reload and accept the current version.</value>
+  </data>
+  <data name="LABEL_AUTH_DEFAULT_PLAYER_NAME" xml:space="preserve">
+    <value>Player</value>
+  </data>
+  <data name="MAIL_GREETING" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="MAIL_FOOTER" xml:space="preserve">
+    <value>MatcBuddy — set up your pickup game easily.</value>
+  </data>
+  <data name="MAIL_IGNORE_NOTICE" xml:space="preserve">
+    <value>If you did not request this, you can ignore this email; nothing has changed on your account.</value>
+  </data>
+  <data name="MAIL_RESET_SUBJECT" xml:space="preserve">
+    <value>Your MatcBuddy password reset code</value>
+  </data>
+  <data name="MAIL_RESET_BODY" xml:space="preserve">
+    <value>Use the code below to reset your password. It is valid for {0} minutes.</value>
+  </data>
+  <data name="MAIL_VERIFY_SUBJECT" xml:space="preserve">
+    <value>Verify your MatcBuddy email</value>
+  </data>
+  <data name="MAIL_VERIFY_BODY" xml:space="preserve">
+    <value>Enter the code below in the app or click the button to verify your email. The code is valid for {0} minutes.</value>
+  </data>
+  <data name="MAIL_VERIFY_BUTTON" xml:space="preserve">
+    <value>Verify my email</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_SUBJECT" xml:space="preserve">
+    <value>Your MatcBuddy password was changed</value>
+  </data>
+  <data name="MAIL_PASSWORD_CHANGED_BODY" xml:space="preserve">
+    <value>Your password was changed on {0} and other devices were signed out. If this wasn't you, use "Forgot password" right away.</value>
+  </data>
+  <data name="SMS_RESET_BODY" xml:space="preserve">
+    <value>Your MatcBuddy password reset code: {0}. Valid for {1} minutes. Do not share it.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT" xml:space="preserve">
+    <value>Signed out.</value>
+  </data>
+  <data name="MSG_AUTH_LOGGED_OUT_ALL" xml:space="preserve">
+    <value>Signed out of all devices.</value>
+  </data>
+  <data name="MSG_AUTH_RESET_REQUESTED" xml:space="preserve">
+    <value>If the details match an account, a verification code has been sent.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_RESET" xml:space="preserve">
+    <value>Your password has been reset. You can now sign in.</value>
+  </data>
+  <data name="MSG_AUTH_PASSWORD_CHANGED" xml:space="preserve">
+    <value>Your password has been changed.</value>
+  </data>
+  <data name="MSG_AUTH_EMAIL_VERIFIED" xml:space="preserve">
+    <value>Your email address has been verified.</value>
+  </data>
+  <data name="MSG_AUTH_VERIFICATION_SENT" xml:space="preserve">
+    <value>A verification code was sent to your email.</value>
+  </data>
+  <data name="MSG_AUTH_TERMS_ACCEPTED" xml:space="preserve">
+    <value>Thanks, your consent has been recorded.</value>
+  </data>
+  <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
+    <value>The sign-in method was removed from your account.</value>
+  </data>
+  <data name="MATCH_ORGANIZER_ONLY" xml:space="preserve">
+    <value>Only the match organizer can do this.</value>
+  </data>
+  <data name="MATCH_BALANCE_PLAYER_COUNT" xml:space="preserve">
+    <value>Balancing needs between {0} and {1} players.</value>
+  </data>
+  <data name="RELIABILITY_INVALID_REASON" xml:space="preserve">
+    <value>Invalid excuse.</value>
+  </data>
+  <data name="RELIABILITY_NOTE_TOO_LONG" xml:space="preserve">
+    <value>The note can be at most {0} characters.</value>
+  </data>
+  <data name="RELIABILITY_TOO_LOW" xml:space="preserve">
+    <value>This match requires a reliability score of at least {0}; yours is {1}.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_STARTED" xml:space="preserve">
+    <value>No-shows can be marked after the match starts.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_WINDOW_CLOSED" xml:space="preserve">
+    <value>No-shows can be marked within {0} hours after the match; the window has closed.</value>
+  </data>
+  <data name="RELIABILITY_NOSHOW_NOT_PARTICIPANT" xml:space="preserve">
+    <value>Only players in the match roster can be marked.</value>
+  </data>
+  <data name="RELIABILITY_NO_PENALTY" xml:space="preserve">
+    <value>This player has no penalty to reverse for this match.</value>
+  </data>
+  <data name="RELIABILITY_CANNOT_EXCUSE_SELF" xml:space="preserve">
+    <value>You cannot accept your own excuse.</value>
+  </data>
+  <data name="RELIABILITY_MIN_OUT_OF_RANGE" xml:space="preserve">
+    <value>The minimum reliability score must be between 1 and 100.</value>
+  </data>
+  <data name="MSG_RELIABILITY_LEFT_WITH_PENALTY" xml:space="preserve">
+    <value>You left the match. {0} points were deducted from your reliability score (new score: {1}). They are refunded if the organizer accepts your excuse.</value>
+  </data>
+  <data name="MSG_RELIABILITY_NOSHOWS_SAVED" xml:space="preserve">
+    <value>No-shows saved ({0} players).</value>
+  </data>
+  <data name="MSG_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>Excuse accepted for {0}; points refunded.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW" xml:space="preserve">
+    <value>{0} withdrew from "{1}" at the last minute. Excuse: {2}. Accept it to refund their points.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_WITHDREW_NO_REASON" xml:space="preserve">
+    <value>{0} withdrew from "{1}" at the last minute.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_EXCUSE_ACCEPTED" xml:space="preserve">
+    <value>Your excuse for "{0}" was accepted; {1} points refunded.</value>
+  </data>
+  <data name="NOTIF_RELIABILITY_NOSHOW" xml:space="preserve">
+    <value>You were marked as a no-show for "{0}"; {1} points were deducted. Contact the organizer if this is a mistake.</value>
+  </data>
+  <data name="LABEL_EXCUSE_EMERGENCY" xml:space="preserve">
+    <value>Emergency</value>
+  </data>
+  <data name="LABEL_EXCUSE_HEALTH" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="LABEL_EXCUSE_BEREAVEMENT" xml:space="preserve">
+    <value>Bereavement</value>
+  </data>
+  <data name="LABEL_EXCUSE_WORK" xml:space="preserve">
+    <value>Work</value>
+  </data>
+  <data name="LABEL_EXCUSE_TRANSPORT" xml:space="preserve">
+    <value>Transport</value>
+  </data>
+  <data name="LABEL_EXCUSE_OTHER" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="INVITE_NO_OPEN_SPOT" xml:space="preserve">
+    <value>The match has no open spot; no need to call substitutes.</value>
+  </data>
+  <data name="NOTIF_INVITE_SUBSTITUTE" xml:space="preserve">
+    <value>{0}: a spot opened in '{1}' ({2:dd.MM.yyyy HH:mm}). First to join gets it!</value>
+  </data>
+  <data name="MSG_INVITE_SUBSTITUTE_SENT" xml:space="preserve">
+    <value>{0} players notified. The first to join gets the spot.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTECANDIDATELIMIT" xml:space="preserve">
+    <value>Maximum candidates shown in the find-a-substitute list.</value>
+  </data>
+  <data name="PARAMDESC_RELIABILITY_SUBSTITUTELOOKBACKDAYS" xml:space="preserve">
+    <value>How many days back to look for past teammates when suggesting substitutes.</value>
+  </data>
+  <data name="OWNER_DEAL_LIMIT" xml:space="preserve">
+    <value>A venue can post at most {0} empty-slot deals per day.</value>
+  </data>
+  <data name="OWNER_DEAL_NOT_FUTURE" xml:space="preserve">
+    <value>A deal can only be posted for a future time.</value>
+  </data>
+  <data name="OWNER_DEAL_TOO_FAR" xml:space="preserve">
+    <value>A deal can be posted at most {0} days ahead.</value>
+  </data>
+  <data name="OWNER_DEAL_CROSSES_MIDNIGHT" xml:space="preserve">
+    <value>A deal cannot cross midnight; split it into two deals.</value>
+  </data>
+  <data name="OWNER_REPEAT_ONLY_NEW_MANUAL" xml:space="preserve">
+    <value>Weekly repeat can only be chosen for a new phone booking.</value>
+  </data>
+  <data name="MATCH_NOT_REPEATING" xml:space="preserve">
+    <value>This match does not repeat weekly.</value>
+  </data>
+  <data name="LABEL_DEAL_TITLE" xml:space="preserve">
+    <value>Last-minute deal</value>
+  </data>
+  <data name="LABEL_REPEAT_WEEKS" xml:space="preserve">
+    <value>Repeat weeks</value>
+  </data>
+  <data name="MSG_DEAL_SENT" xml:space="preserve">
+    <value>Deal is live. {0} players notified.</value>
+  </data>
+  <data name="NOTIF_SLOT_DEAL" xml:space="preserve">
+    <value>{0}: {2} is free at {1:dd.MM HH:mm}, {3}% off! Book your match now.</value>
+  </data>
+  <data name="MSG_SERIES_SAVED" xml:space="preserve">
+    <value>{0} weekly bookings added.{1:' Weeks skipped because they were taken: '0;;''}</value>
+  </data>
+  <data name="MSG_SERIES_REMOVED" xml:space="preserve">
+    <value>{0} bookings deleted.</value>
+  </data>
+  <data name="MSG_REPEAT_STOPPED" xml:space="preserve">
+    <value>Weekly repeat stopped. Weeks already created stay.</value>
+  </data>
+  <data name="NOTIF_SERIES_INVITE" xml:space="preserve">
+    <value>'{0}' weekly match {1:dd.MM HH:mm}: are you in this week too?</value>
+  </data>
+  <data name="NOTIF_SERIES_CREATED" xml:space="preserve">
+    <value>Your weekly match '{0}' was created for {1:dd.MM HH:mm}; last week's players were invited.</value>
+  </data>
+  <data name="NOTIF_SERIES_SKIPPED" xml:space="preserve">
+    <value>Your weekly match '{0}' could not be created for {1:dd.MM HH:mm} because the slot is taken or closed.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_AUTO" xml:space="preserve">
+    <value>Weekly booking: '{0}' {1:dd.MM HH:mm} {2} was approved automatically.</value>
+  </data>
+  <data name="NOTIF_SERIES_OWNER_PENDING" xml:space="preserve">
+    <value>Weekly booking request: '{0}' {1:dd.MM HH:mm} {2}. Awaiting your approval.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXPERDAY" xml:space="preserve">
+    <value>Maximum empty-slot deals a venue can post per day.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXDAYSAHEAD" xml:space="preserve">
+    <value>How many days ahead an empty-slot deal can be posted.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALAUDIENCEDAYS" xml:space="preserve">
+    <value>Players who played at / near the venue within this many days receive deal notifications.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_DEALMAXRECIPIENTS" xml:space="preserve">
+    <value>Maximum players notified per deal.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_REPEATMAXWEEKS" xml:space="preserve">
+    <value>Maximum weeks for a weekly phone booking.</value>
+  </data>
+  <data name="PARAMDESC_VENUE_SERIESLEADDAYS" xml:space="preserve">
+    <value>How many days ahead the next week of a weekly match is created.</value>
+  </data>
+  <data name="GROUP_NOT_MEMBER" xml:space="preserve">
+    <value>You are not a member of this group.</value>
+  </data>
+  <data name="GROUP_CREATOR_ONLY" xml:space="preserve">
+    <value>Only the group creator can do this.</value>
+  </data>
+  <data name="GROUP_NO_PLAYERS" xml:space="preserve">
+    <value>Select players to add.</value>
+  </data>
+  <data name="MESSAGE_TOO_LONG" xml:space="preserve">
+    <value>Messages can be at most {0} characters.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NAME_REQUIRED" xml:space="preserve">
+    <value>Venue name must be {0}-{1} characters.</value>
+  </data>
+  <data name="EXTERNAL_VENUE_NOT_FOUND" xml:space="preserve">
+    <value>The selected venue was not found.</value>
+  </data>
+  <data name="EXTERNAL_DATE_REQUIRED" xml:space="preserve">
+    <value>Choose a match date and time.</value>
+  </data>
+  <data name="EXTERNAL_PAST_DATE" xml:space="preserve">
+    <value>A match cannot be created in the past.</value>
+  </data>
+  <data name="EXTERNAL_TOO_FAR_AHEAD" xml:space="preserve">
+    <value>A match can be created at most {0} days ahead.</value>
+  </data>
+  <data name="EXTERNAL_INVALID_PRICE" xml:space="preserve">
+    <value>Pitch fee must be between 0 and {0}.</value>
+  </data>
+  <data name="EXTERNAL_NOT_EXTERNAL_MATCH" xml:space="preserve">
+    <value>This match is at a partner venue; make a new booking to change the time.</value>
+  </data>
+  <data name="EXTERNAL_MATCH_CLOSED" xml:space="preserve">
+    <value>A played or cancelled match cannot be edited.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_CREATED" xml:space="preserve">
+    <value>Match created. You booked the pitch yourself, so no approval is needed.</value>
+  </data>
+  <data name="MSG_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>Match details updated.</value>
+  </data>
+  <data name="NOTIF_EXTERNAL_MATCH_UPDATED" xml:space="preserve">
+    <value>"{0}" was updated: {1:dd.MM.yyyy HH:mm}, {2}.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBERS_ADDED" xml:space="preserve">
+    <value>{0} player(s) added to the group.</value>
+  </data>
+  <data name="MSG_GROUP_LEFT" xml:space="preserve">
+    <value>You left the group.</value>
+  </data>
+  <data name="MSG_GROUP_MEMBER_REMOVED" xml:space="preserve">
+    <value>Member removed from the group.</value>
+  </data>
+  <data name="MSG_GROUP_RENAMED" xml:space="preserve">
+    <value>Group name updated.</value>
+  </data>
+  <data name="MESSAGE_NOT_FOUND" xml:space="preserve">
+    <value>Message not found.</value>
+  </data>
+  <data name="MESSAGE_NOT_YOURS" xml:space="preserve">
+    <value>You can only delete your own messages.</value>
+  </data>
+  <data name="MESSAGE_REPLY_INVALID" xml:space="preserve">
+    <value>The replied message is not in this conversation.</value>
+  </data>
+  <data name="MESSAGE_INVALID_REACTION" xml:space="preserve">
+    <value>This reaction cannot be used.</value>
+  </data>
+  <data name="MESSAGE_ALREADY_DELETED" xml:space="preserve">
+    <value>This message is already deleted.</value>
+  </data>
+  <data name="SHARE_NOT_FOUND" xml:space="preserve">
+    <value>The invite link is invalid or the match was deleted.</value>
+  </data>
+  <data name="EXTERNAL_LINK_NO_VENUES" xml:space="preserve">
+    <value>Select external venues to link.</value>
+  </data>
+  <data name="EXTERNAL_LINK_TARGET_INVALID" xml:space="preserve">
+    <value>Target venue not found or it is an external venue.</value>
+  </data>
+  <data name="LABEL_MESSAGE_DELETED" xml:space="preserve">
+    <value>🚫 This message was deleted</value>
+  </data>
+  <data name="MSG_MESSAGE_DELETED" xml:space="preserve">
+    <value>Message deleted.</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dddd, MMMM dd, HH:mm}
+📍 {2}
+🔥 {3} players needed, join us!
+
+👉 {4}</value>
+  </data>
+  <data name="SHARE_MATCH_TEXT_FULL" xml:space="preserve">
+    <value>⚽ {0}
+📅 {1:dddd, MMMM dd, HH:mm}
+📍 {2}
+
+👉 {3}</value>
+  </data>
+  <data name="SHARE_OG_TITLE" xml:space="preserve">
+    <value>⚽ {0} · {1} players needed</value>
+  </data>
+  <data name="SHARE_OG_TITLE_FULL" xml:space="preserve">
+    <value>⚽ {0}</value>
+  </data>
+  <data name="SHARE_OG_DESCRIPTION" xml:space="preserve">
+    <value>📅 {0:dddd, MMMM dd, HH:mm} · 📍 {1}</value>
+  </data>
+  <data name="SHARE_OG_PER_PLAYER" xml:space="preserve">
+    <value>{0:0.##} TRY per player</value>
+  </data>
+  <data name="SHARE_NOT_FOUND_TITLE" xml:space="preserve">
+    <value>MatcBuddy · Match not found</value>
+  </data>
+  <data name="MSG_EXTERNAL_LINKED" xml:space="preserve">
+    <value>{0} venue(s) linked, {1} match(es) moved.</value>
+  </data>
+  <data name="MATCH_INVALID_LINEUP" xml:space="preserve">
+    <value>Invalid lineup: each player and each spot can be used only once.</value>
+  </data>
+  <data name="MSG_MATCH_LINEUP_UPDATED" xml:space="preserve">
+    <value>Lineup saved.</value>
+  </data>
+</root>

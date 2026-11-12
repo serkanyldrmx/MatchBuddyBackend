@@ -362,10 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 # Kullanıcı yüklemeleri (profil resimleri) repoya girmemeli
-src/Api/MatchBuddy.Api/wwwroot/uploads/*
-!src/Api/MatchBuddy.Api/wwwroot/uploads/.gitkeep
+src/MatcBuddy.Api/wwwroot/uploads/*
+!src/MatcBuddy.Api/wwwroot/uploads/.gitkeep
 # Medya hattının yerel deposu (Storage:Provider = Local)
-src/Api/MatchBuddy.Api/App_Data/
+src/MatcBuddy.Api/App_Data/
 
 # Serilog dosya logları (Logging:File:Path)
-src/Api/MatchBuddy.Api/logs/
+src/MatcBuddy.Api/logs/

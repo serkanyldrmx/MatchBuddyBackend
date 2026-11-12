@@ -6,7 +6,7 @@ Sonra: python -I scripts/seed_demo.py [API_BASE]   (varsayılan http://localhost
 
 Veriler gerçek API üzerinden eklenir (şifreler hash'lenir, iş kuralları çalışır):
   - geçici admin `seed_admin` (kayıt + SQL ile Role=1) -> sonunda silinir
-  - 5 işletme + tesis (CreateOwner, fotoğraflar MatchBuddyReact git geçmişinden)
+  - 5 işletme + tesis (CreateOwner, fotoğraflar MatcBuddyReact git geçmişinden)
   - işletme girişleriyle: tesis bilgileri, sahalar, açılış saatleri, fiyat kuralları, kampanyalar
   - 16 demo oyuncu (demo_<ad>, şifre Demo!2026), 3 demo takım
   - 12 gelecek maç (bekleyen / onaylı, 2 takım maçı, 1 "rakip aranıyor") ve
@@ -40,7 +40,7 @@ import requests
 ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
 FINANCE_ONLY = "--finance-only" in sys.argv
 BASE = ARGS[0] if ARGS else "http://localhost:5099/api"
-FRONTEND_REPO = r"D:\Project\repos\MatchBuddyReact"
+FRONTEND_REPO = r"D:\Project\repos\MatcBuddyReact"
 OWNER_PASSWORD = "Isletme!2026"
 DEMO_PASSWORD = "Demo!2026"
 ADMIN_USER = "seed_admin"
@@ -55,7 +55,7 @@ def sql(query):
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
-$c = New-Object System.Data.SqlClient.SqlConnection 'Server=(localdb)\mssqllocaldb;Database=MatchBuddy;Trusted_Connection=true'
+$c = New-Object System.Data.SqlClient.SqlConnection 'Server=(localdb)\mssqllocaldb;Database=MatcBuddy;Trusted_Connection=true'
 $c.Open()
 $cmd = $c.CreateCommand(); $cmd.CommandText = [Console]::In.ReadToEnd()
 $da = New-Object System.Data.SqlClient.SqlDataAdapter $cmd
@@ -96,7 +96,7 @@ def post(path, tok, body=None, what=None):
 
 def register(user, name, surname, password, phone="5550000000"):
     model = dict(playerName=name, playerSurname=surname, userName=user, password=password,
-                 email=f"{user}@matchbuddy.local", phoneNumber=phone, address="Türkiye",
+                 email=f"{user}@matcbuddy.local", phoneNumber=phone, address="Türkiye",
                  size=random.randint(168, 192), weight=random.randint(62, 92), age=random.randint(19, 38))
     r = requests.post(f"{BASE}/Players/SavePlayer", files={"playerModel": (None, json.dumps(model))}, timeout=30)
     ok(r, f"register {user}")
@@ -120,7 +120,7 @@ def extract_images():
                 f.write(p.stdout)
             files.append(path)
     if not files:
-        raise RuntimeError("MatchBuddyReact git geçmişinde stadyum görseli bulunamadı")
+        raise RuntimeError("MatcBuddyReact git geçmişinde stadyum görseli bulunamadı")
     print(f"{len(files)} görsel çıkarıldı: {', '.join(os.path.basename(f) for f in files)}")
     return files
 
@@ -440,7 +440,7 @@ def main():
                 path = images[img_i % len(images)]
                 img_i += 1
                 photos.append(("photos", (os.path.basename(path), open(path, "rb").read(), "image/jpeg")))
-            model = dict(owner=dict(name=v["owner"], contactName=v["contact"], userName=v["user"], email=f"{v['user']}@matchbuddy.local",
+            model = dict(owner=dict(name=v["owner"], contactName=v["contact"], userName=v["user"], email=f"{v['user']}@matcbuddy.local",
                                     phoneNumber=v["phone"], password=OWNER_PASSWORD,
                                     membershipUntil=(datetime.now() + timedelta(days=365)).strftime("%Y-%m-%dT00:00:00")),
                          venue=dict(name=v["name"], city=v["city"], district=v["district"], address=v["address"],

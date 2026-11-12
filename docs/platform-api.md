@@ -1,6 +1,6 @@
 # Platform API: hata modeli, yerelleştirme, parametreler, işletme/oyuncu ayarları
 
-This document is the contract for the **platform layer** of the MatchBuddy backend:
+This document is the contract for the **platform layer** of the MatcBuddy backend:
 
 - the standard error body and the error-code catalog
 - localization
@@ -98,7 +98,7 @@ POST /api/Players/PlayerLogin  (11th attempt within a minute)
 
 ## 2. Yerelleştirme (localization)
 
-- **Source:** every user-facing text comes from `MatchBuddy.Core/Resources/Messages.resx`. That file is the neutral resource and is **Turkish** (`[assembly: NeutralResourcesLanguage("tr")]`). This covers:
+- **Source:** every user-facing text comes from `src/MatcBuddy.Core/Resources/Messages.resx`. That file is the neutral resource and is **Turkish** (`[assembly: NeutralResourcesLanguage("tr")]`). This covers:
   - error and success messages
   - notification texts
   - field labels
@@ -122,9 +122,9 @@ POST /api/Players/PlayerLogin  (11th attempt within a minute)
 - Background services (match reminders, media cleanup) also use the default language.
 
 ### Yeni dil eklemek
-1. Copy `MatchBuddy.Core/Resources/Messages.resx` to `Messages.<kod>.resx` (e.g. `Messages.de.resx`). Translate the `value`s and keep the placeholders (`{0}` …) unchanged. Keys you leave out fall back to Turkish.
+1. Copy `src/MatcBuddy.Core/Resources/Messages.resx` to `Messages.<kod>.resx` (e.g. `Messages.de.resx`). Translate the `value`s and keep the placeholders (`{0}` …) unchanged. Keys you leave out fall back to Turkish.
 2. Add the code to `appsettings.json` → `Localization:SupportedCultures` (e.g. `["tr","en","de"]`).
-3. Rebuild; the satellite assembly is produced automatically (`bin/.../<kod>/MatchBuddy.Core.resources.dll`).
+3. Rebuild; the satellite assembly is produced automatically (`bin/.../<kod>/MatcBuddy.Core.resources.dll`).
 
    `PlayerSettings.language` only accepts the languages in this list (`SOCIAL_INVALID_LANGUAGE`).
 
@@ -136,7 +136,7 @@ Developer rules:
 
 ## 3. Hata kodu kataloğu
 
-Constants: `MatchBuddy.Core/Errors/ErrorCodes*.cs` (`ErrorCodes.Common`, `.Validation`, `.Auth`, `.Match`, `.Venue` …). The constant value is the same string as the resx key. The Turkish texts below are the current contents of `Messages.resx`, and the frontend gets them in `message`.
+Constants: `src/MatcBuddy.Core/Errors/ErrorCodes*.cs` (`ErrorCodes.Common`, `.Validation`, `.Auth`, `.Match`, `.Venue` …). The constant value is the same string as the resx key. The Turkish texts below are the current contents of `Messages.resx`, and the frontend gets them in `message`.
 
 The `VALIDATION_*` texts (other than `VALIDATION_FAILED`) also appear inside the `errors` dictionary. Codes whose placeholders say "alan adı" get a localized field label as an argument.
 
@@ -533,7 +533,7 @@ How the cache behaves:
 - `PUT` clears that entry immediately, so the new value applies from the next request.
 - Rate limits (`rateLimit.*`) also apply immediately, because the limit value is part of the limiter partition key.
 
-Code keeps the definitions in `MatchBuddy.Core/Parameters/ParameterCatalog.cs` (key, type, default, group, min/max, public). At startup:
+Code keeps the definitions in `src/MatcBuddy.Core/Parameters/ParameterCatalog.cs` (key, type, default, group, min/max, public). At startup:
 - Keys that are missing from the table are inserted with their default value.
 - Metadata of existing rows (type, group, min/max, isPublic, description) is updated from code.
 - **Existing values are never changed.**
@@ -811,12 +811,12 @@ The server **does not** pick the request language from `language` on its own. Th
 ```json
 {
   "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" },
-               "File": { "Path": "logs/matchbuddy-.log", "RetainedFileCountLimit": 14 } },
+               "File": { "Path": "logs/matcbuddy-.log", "RetainedFileCountLimit": 14 } },
   "Localization": { "DefaultCulture": "tr", "SupportedCultures": [ "tr", "en" ] },
   "Proxy": { "KnownProxies": [], "KnownNetworks": [], "ForwardLimit": 1 },
   "Swagger": { "Enabled": false },
   "Cors": { "AllowedOrigins": [ "http://localhost:3000" ] },
-  "Jwt": { "Issuer": "MatchBuddy.Api", "Audience": "MatchBuddy.Client", "ExpiresMinutes": 120, "Key": "" }
+  "Jwt": { "Issuer": "MatcBuddy.Api", "Audience": "MatcBuddy.Client", "ExpiresMinutes": 120, "Key": "" }
 }
 ```
 `appsettings.Development.json` sets `"Swagger": { "Enabled": true }`.
@@ -839,7 +839,7 @@ The server **does not** pick the request language from `language` on its own. Th
 ### 7.3 Loglama (Serilog)
 - **Sinks:**
   - Console.
-  - A daily rolling file at `Logging:File:Path`, relative to the content root, default `logs/matchbuddy-YYYYMMDD.log`. `Logging:File:RetainedFileCountLimit` (14) is how many files to keep. The folder is in `.gitignore`.
+  - A daily rolling file at `Logging:File:Path`, relative to the content root, default `logs/matcbuddy-YYYYMMDD.log`. `Logging:File:RetainedFileCountLimit` (14) is how many files to keep. The folder is in `.gitignore`.
 - **Levels:** `Logging:LogLevel` / the `Serilog` section (`ReadFrom.Configuration`). `Microsoft.AspNetCore` and `Microsoft.EntityFrameworkCore` are kept at Warning.
 - **Request log:** one line per request:
   `HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed} ms (user {UserId}, ip {ClientIp}, trace {TraceId})`
@@ -886,7 +886,7 @@ JWT `OnChallenge` and `OnForbidden` write the standard body:
 - **EF tool:** a local tool manifest in the repo root (`dotnet-tools.json`, dotnet-ef 10.0.14):
   ```
   dotnet tool restore
-  dotnet tool run dotnet-ef database update --project src/MatchBuddy.DataAccess --startup-project src/MatchBuddy.DataAccess
+  dotnet tool run dotnet-ef database update --project src/MatcBuddy.DataAccess --startup-project src/MatcBuddy.DataAccess
   ```
 - **Migration:** `20261106193535_PlatformParameters`. It is additive: `SystemParameters`, `ParameterAudits`, `VenueSettings`, and `PlayerSettings.Theme` / `PlayerSettings.Language`. Parameter rows are filled in at application startup.
 - **Visual Studio 2022 cannot build .NET 10 projects.** Use one of:

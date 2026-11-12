@@ -2,7 +2,7 @@
 
 Mobil uygulama yazmadan, site telefona "uygulama gibi" eklenir (PWA) ve uygulama kapalıyken de bildirim alınır.
 Android / masaüstü Chrome, Edge, Firefox: doğrudan. iPhone (iOS 16.4+): önce Safari'de Paylaş → "Ana Ekrana Ekle",
-sonra ana ekrandaki MatchBuddy'den açıp Ayarlar → "Telefona bildirim".
+sonra ana ekrandaki MatcBuddy'den açıp Ayarlar → "Telefona bildirim".
 
 ## Akış
 1. Oyuncu Ayarlar → Bildirimler → **Telefona bildirim** anahtarını açar; tarayıcı izin ister.

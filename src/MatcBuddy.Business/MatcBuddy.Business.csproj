@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- İş kuralları (servisler / manager'lar, kimlik doğrulama). Api'ye bağımlı olmamalı. -->
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MatcBuddy.DataAccess\MatcBuddy.DataAccess.csproj" />
+    <ProjectReference Include="..\MatcBuddy.Entities\MatcBuddy.Entities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MatcBuddy.Core.Errors" />
+    <Using Include="MatcBuddy.Core.Localization" />
+    <Using Include="MatcBuddy.Core.Parameters" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MatcBuddy.Tests" />
+  </ItemGroup>
+
+</Project>

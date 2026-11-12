@@ -125,24 +125,24 @@ Uç nokta şekilleri sözleşmeyle aynıdır; aşağıdakiler sözleşmenin aç�
   2026-11-06'daki gerçek çalıştırma: `migratedAvatars: 101`, `migratedVenuePhotos: 18`, `missing: []` (seed verisinde birçok oyuncu aynı dosyayı paylaşıyor); ikinci çalıştırma 0/0.
 - **Temizlik:** `MediaCleanupService` açılışta ve sonra `Media:CleanupIntervalMinutes` (varsayılan 60) aralıkla çalışır; 24 saatten eski Pending → depodan silinir + Deleted.
   Opsiyonel madde de uygulandı: 7 günden eski Deleted satırlar, hiçbir bağlantı kolonunda kullanılmıyorsa tablodan silinir.
-- **Yerel depo:** `src/Api/MatchBuddy.Api/App_Data/media` (`.gitignore`'a eklendi). İçerik kökü (content root) proje klasörü olmalı (VS / `dotnet run` varsayılanı).
+- **Yerel depo:** `src/MatcBuddy.Api/App_Data/media` (`.gitignore`'a eklendi). İçerik kökü (content root) proje klasörü olmalı (VS / `dotnet run` varsayılanı).
 
 ## R2 kurulumu
 
 Canlıda fotoğrafları Cloudflare R2'de tutmak için (kod değişikliği gerekmez, sadece ayar):
 
 1. **R2'yi etkinleştir:** Cloudflare panelinde (dash.cloudflare.com) hesabını seç → sol menüden **R2 Object Storage** → ilk kullanımda **Purchase R2 / Enable R2** (ücretsiz katman için de ödeme yöntemi istenir). Sayfanın sağındaki **Account ID** değerini not al.
-2. **Bucket oluştur:** R2 → **Create bucket** → ad: ör. `matchbuddy-media`, Location: *Automatic* (veya Avrupa için *EEUR* ipucu), Default storage class: *Standard* → **Create bucket**.
+2. **Bucket oluştur:** R2 → **Create bucket** → ad: ör. `matcbuddy-media`, Location: *Automatic* (veya Avrupa için *EEUR* ipucu), Default storage class: *Standard* → **Create bucket**.
 3. **Herkese açık erişim** (bucket → **Settings**):
    - Hızlı yol: **Public Development URL (r2.dev)** → **Allow Access** → onay kutusuna `allow` yaz. Verilen adres (ör. `https://pub-xxxxxxxx.r2.dev`) `PublicBaseUrl` olur. r2.dev hız sınırlıdır, sadece deneme için önerilir.
    - Canlı için: **Custom Domains** → **Connect Domain** → Cloudflare'de yönetilen bir alan adı gir (ör. `media.ornek.com`) → DNS kaydı otomatik eklenir, durum *Active* olunca `PublicBaseUrl = https://media.ornek.com`. (Önbellek kuralları için alan adının Cloudflare'de olması gerekir; dosyalar zaten `Cache-Control: public, max-age=31536000, immutable` ile yüklenir.)
 4. **API token oluştur:** R2 ana sayfası → **Manage R2 API Tokens** (ya da *API → Manage API tokens*) → **Create API token** →
-   Permissions: **Object Read & Write**, Specify bucket(s): **Apply to specific buckets only** → `matchbuddy-media`, TTL: isteğe göre → **Create API Token**.
+   Permissions: **Object Read & Write**, Specify bucket(s): **Apply to specific buckets only** → `matcbuddy-media`, TTL: isteğe göre → **Create API Token**.
    Çıkan **Access Key ID** ve **Secret Access Key** sadece bir kez gösterilir; kaydet. (S3 endpoint'i de burada görünür: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.)
-5. **Ayarları gir** (geliştirme makinesinde `src/Api/MatchBuddy.Api` klasöründe; değerleri kendi değerlerinle değiştir):
+5. **Ayarları gir** (geliştirme makinesinde `src/MatcBuddy.Api` klasöründe; değerleri kendi değerlerinle değiştir):
 
 ```powershell
-cd src/Api/MatchBuddy.Api
+cd src/MatcBuddy.Api
 dotnet user-secrets set "Storage:Provider" "S3"
 dotnet user-secrets set "Storage:S3:ServiceUrl" "https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
 dotnet user-secrets set "Storage:S3:Bucket" "<BUCKET_ADI>"
@@ -155,4 +155,4 @@ dotnet user-secrets set "Storage:S3:PublicBaseUrl" "https://<PUBLIC_ALAN_ADI_YA_
    (`Storage:S3:Region` varsayılan `auto`; R2 için değiştirme.)
 6. API'yi yeniden başlat. Provider `S3` iken eksik ayar varsa API açılışta anlaşılır bir hatayla durur. `GET /media/{key}` istekleri `PublicBaseUrl/{key}`'e 302 ile yönlenir;
    frontend'de `REACT_APP_MEDIA_BASE_URL=<PublicBaseUrl>` tanımlanırsa yönlendirme hiç olmadan doğrudan R2'den yüklenir.
-7. **Mevcut yerel dosyalar:** S3'e geçmeden önce yüklenmiş `/media/...` dosyaları `App_Data/media` altındadır; aynı klasör yapısıyla bucket'a kopyalanmalıdır (ör. `rclone copy src/Api/MatchBuddy.Api/App_Data/media r2:<BUCKET_ADI>` — rclone'da `provider = Cloudflare` ile yapılandırılmış bir remote).
+7. **Mevcut yerel dosyalar:** S3'e geçmeden önce yüklenmiş `/media/...` dosyaları `App_Data/media` altındadır; aynı klasör yapısıyla bucket'a kopyalanmalıdır (ör. `rclone copy src/MatcBuddy.Api/App_Data/media r2:<BUCKET_ADI>` — rclone'da `provider = Cloudflare` ile yapılandırılmış bir remote).

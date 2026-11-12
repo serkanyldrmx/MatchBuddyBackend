@@ -1,7 +1,7 @@
 # Maç Katılımı, Sonuç, MVP ve Puanlama — API Sözleşmesi
 > **Hata gövdeleri:** bu dokümandaki tüm hata yanıtları artık standart gövdeyi kullanır: `{ success:false, code, message, errors?, traceId }`. Hata kodları, yerelleştirme ve parametreler için bkz. [platform-api.md](platform-api.md). Mesaj örnekleri `message` alanının Türkçe metnidir.
 
-Bu doküman frontend (MatchBuddyReact) ile backend (MatchBuddy) arasındaki sözleşmedir.
+Bu doküman frontend (MatcBuddyReact) ile backend (MatcBuddy) arasındaki sözleşmedir.
 Tüm uç noktalar `[Authorize]`; "ben" = JWT'deki oyuncu (`User.GetPlayerId()`).
 JSON alan adları camelCase döner (ASP.NET varsayılanı).
 

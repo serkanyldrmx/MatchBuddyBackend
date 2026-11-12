@@ -2,7 +2,7 @@
 -- Anlaşmalı tesis paketi (docs/venues-api.md): veri sıfırlama. Yeniden çalıştırılabilir.
 --
 -- ÖNCE YEDEK ALIN:
---   BACKUP DATABASE [MatchBuddy] TO DISK = N'<klasör>\MatchBuddy_before_venues_<zaman>.bak' WITH INIT
+--   BACKUP DATABASE [MatcBuddy] TO DISK = N'<klasör>\MatcBuddy_before_venues_<zaman>.bak' WITH INIT
 --
 -- Silinenler: tüm maçlar ve bağlı satırları, maç / tesis bildirimleri, turnuvalar, tüm tesisler
 -- (ve tesis tabloları). Ayrıca daha önceki seed çalıştırmalarının demo hesapları (isletme_*, demo_*,

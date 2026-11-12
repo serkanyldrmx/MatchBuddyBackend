@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Tüm projeler için ortak derleme ayarları. Yeni proje eklerken bu değerleri csproj'da tekrar etmeyin.
+    Paket sürümleri Directory.Packages.props içinde merkezi olarak yönetilir.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+
+    <Company>MatcBuddy</Company>
+    <Product>MatcBuddy</Product>
+    <Authors>MatcBuddy</Authors>
+    <Copyright>© MatcBuddy</Copyright>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Varlıklar ve DTO'lar. Yalnızca MatcBuddy.Core'a bağımlıdır. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MatcBuddy.Core\MatcBuddy.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MatcBuddy.Core.Errors" />
+    <Using Include="MatcBuddy.Core.Localization" />
+  </ItemGroup>
+
+</Project>
