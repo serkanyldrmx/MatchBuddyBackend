@@ -26,6 +26,7 @@ namespace MatcBuddy.Business.Abstract
         // Bildirimi sil
 
         IResult MarkAsRead(int playerNotificationId, int playerId);
+        IResult MarkAllAsRead(int playerId);
         // Oyuncuya ait bildirimi okundu olarak işaretle
 
         IResult SendNotificationToPlayers(List<int> playerIds, Notification notification);

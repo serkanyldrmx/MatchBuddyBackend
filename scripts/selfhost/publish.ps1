@@ -41,13 +41,25 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 
 New-Item -ItemType Directory -Force $Root, $app, $data, (Join-Path $Root "logs"), (Join-Path $Root "backups"), (Join-Path $Root "cloudflared") | Out-Null
 
-Step "Çalışan canlı API durduruluyor"
-Get-Process MatcBuddy.Api -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$app*" } | Stop-Process -Force
-Start-Sleep -Seconds 1
-
+# Önce ayrı klasöre derlenir; canlı API yalnızca kopyalama sırasında (birkaç saniye) durur.
+# (Derleme sırasında durdurulursa denetleyici 30 sn içinde yeniden başlatıp dosyaları kilitliyordu.)
+$staging = Join-Path $Root "staging"
 Step "Derleniyor (Release)"
-& $dotnet publish $apiProject -c Release -o $app --nologo -v q -clp:ErrorsOnly
+if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+& $dotnet publish $apiProject -c Release -o $staging --nologo -v q -clp:ErrorsOnly
 if ($LASTEXITCODE -ne 0) { throw "Derleme başarısız." }
+
+Step "Canlı API durdurulup yeni sürüm kopyalanıyor"
+$copied = $false
+for ($try = 1; $try -le 5 -and -not $copied; $try++) {
+    Get-Process MatcBuddy.Api -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$app*" } | Stop-Process -Force
+    Start-Sleep -Seconds 1
+    # /XF: canlı ayar dosyası ve üretilmiş dosyalar korunur
+    & robocopy $staging $app /E /R:2 /W:1 /NFL /NDL /NJH /NJS /NP /XF appsettings.Production.json | Out-Null
+    if ($LASTEXITCODE -lt 8) { $copied = $true } else { Write-Host "Kopyalama denemesi $try başarısız, tekrar deneniyor..." }
+}
+if (-not $copied) { throw "Yeni sürüm kopyalanamadı (dosyalar kilitli)." }
+Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 
 # ------------------------------------------------------------------ Canlı ayar dosyası (bir kez)
 $prodFile = Join-Path $app "appsettings.Production.json"

@@ -8,6 +8,14 @@ namespace MatcBuddy.Api.Model
         public int MatchId { get; set; }
     }
 
+    // Join gövdesi: sahada boş bir yere dokunularak katılınırsa taraf (1 ev, 2 deplasman) ve yer
+    public class JoinMatchModel
+    {
+        public int MatchId { get; set; }
+        public byte? Side { get; set; }
+        public int? Slot { get; set; }
+    }
+
     public class SetSideModel
     {
         public int MatchId { get; set; }

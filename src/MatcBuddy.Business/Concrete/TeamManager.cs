@@ -44,6 +44,23 @@ namespace MatcBuddy.Business.Concrete
 
         public bool IsPlayerInTeam(int teamId, int playerId) => _teamDal.IsPlayerInTeam(teamId, playerId);
 
+        public bool CanManage(int teamId, int playerId)
+        {
+            var creator = _teamDal.GetCreatorId(teamId);
+            return creator.HasValue ? creator.Value == playerId : _teamDal.IsPlayerInTeam(teamId, playerId);
+        }
+
+        public IResult Leave(int teamId, int playerId)
+        {
+            if (!_teamDal.IsPlayerInTeam(teamId, playerId))
+            {
+                return new ErrorResult(ErrorCodes.Team.NotMember);
+            }
+            return _teamDal.Leave(teamId, playerId)
+                ? new Result(true, Messages.Deleted)
+                : new ErrorResult(ErrorCodes.Team.LastMember);
+        }
+
         public IResult Delete(Team team)
         {
             //if (team.TeamName.Length < 3)

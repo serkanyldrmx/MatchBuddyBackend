@@ -143,6 +143,68 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.ToTable("Blocks", (string)null);
                 });
 
+            modelBuilder.Entity("MatcBuddy.Entities.Entity.BusinessApplication", b =>
+                {
+                    b.Property<int>("BusinessApplicationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BusinessApplicationId"));
+
+                    b.Property<string>("AdminNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("District")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("PitchCount")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BusinessApplicationId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("BusinessApplications", (string)null);
+                });
+
             modelBuilder.Entity("MatcBuddy.Entities.Entity.Campaign", b =>
                 {
                     b.Property<int>("CampaignId")
@@ -206,6 +268,127 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.HasIndex("StadiumId");
 
                     b.ToTable("Campaigns", (string)null);
+                });
+
+            modelBuilder.Entity("MatcBuddy.Entities.Entity.EmailCampaign", b =>
+                {
+                    b.Property<int>("EmailCampaignId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmailCampaignId"));
+
+                    b.Property<byte>("Audience")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ButtonText")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ButtonUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByPlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Cursor")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OwnerPlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RepeatDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SentCount")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("EmailCampaignId");
+
+                    b.HasIndex("OwnerPlayerId");
+
+                    b.HasIndex("Status", "ScheduledAt");
+
+                    b.ToTable("EmailCampaigns", (string)null);
+                });
+
+            modelBuilder.Entity("MatcBuddy.Entities.Entity.EmailTemplate", b =>
+                {
+                    b.Property<int>("EmailTemplateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmailTemplateId"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ButtonText")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ButtonUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("OwnerPlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("EmailTemplateId");
+
+                    b.HasIndex("OwnerPlayerId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("EmailTemplates", (string)null);
                 });
 
             modelBuilder.Entity("MatcBuddy.Entities.Entity.ExternalLogin", b =>
@@ -530,6 +713,39 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.HasIndex("playerId");
 
                     b.ToTable("MatchComments");
+                });
+
+            modelBuilder.Entity("MatcBuddy.Entities.Entity.MatchEmailReminder", b =>
+                {
+                    b.Property<int>("MatchEmailReminderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MatchEmailReminderId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinutesBefore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MatchEmailReminderId");
+
+                    b.HasIndex("SentAt");
+
+                    b.HasIndex("MatchId", "PlayerId", "MinutesBefore")
+                        .IsUnique();
+
+                    b.ToTable("MatchEmailReminders", (string)null);
                 });
 
             modelBuilder.Entity("MatcBuddy.Entities.Entity.MatchGuest", b =>
@@ -1300,6 +1516,9 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.Property<bool>("NotifyTeamInvite")
                         .HasColumnType("bit");
 
+                    b.Property<byte>("PhoneVisibility")
+                        .HasColumnType("tinyint");
+
                     b.Property<byte>("ProfileVisibility")
                         .HasColumnType("tinyint");
 
@@ -1839,6 +2058,9 @@ namespace MatcBuddy.DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
+
+                    b.Property<int?>("CreatedByPlayerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("TeamName")
                         .IsRequired()

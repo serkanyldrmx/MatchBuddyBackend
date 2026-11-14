@@ -12,6 +12,8 @@ namespace MatcBuddy.Entities.DTOs
         public int PlayerNotificationId { get; set; }
         public bool IsRead { get; set; }
         public Notification Notification { get; set; }
+        /// <summary>Bildirime dokununca açılacak sayfa (push ile aynı kural: PushDispatchService.UrlFor).</summary>
+        public string? Url { get; set; }
     }
 
 }

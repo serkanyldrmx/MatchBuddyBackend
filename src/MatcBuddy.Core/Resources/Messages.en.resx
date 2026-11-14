@@ -574,4 +574,97 @@
   <data name="MSG_MATCH_LINEUP_UPDATED" xml:space="preserve">
     <value>Lineup saved.</value>
   </data>
+  <data name="MATCH_CAPACITY_BELOW_ROSTER" xml:space="preserve">
+    <value>There are {0} people in the squad; the player count cannot be lower. Remove someone first.</value>
+  </data>
+  <data name="MATCH_EDIT_CLOSED" xml:space="preserve">
+    <value>A played or rejected match cannot be edited.</value>
+  </data>
+  <data name="MSG_MATCH_INFO_UPDATED" xml:space="preserve">
+    <value>Match details updated.</value>
+  </data>
+  <data name="NOTIF_MATCH_UPDATED" xml:space="preserve">
+    <value>Details of '{0}' were updated: {1}.</value>
+  </data>
+  <data name="NOTIF_MATCH_CAPACITY_CHANGED" xml:space="preserve">
+    <value>player count {0} → {1}</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_NAME" xml:space="preserve">
+    <value>match name</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_DESCRIPTION" xml:space="preserve">
+    <value>description</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_DATE" xml:space="preserve">
+    <value>date</value>
+  </data>
+  <data name="AUTH_CHANNEL_UNAVAILABLE" xml:space="preserve">
+    <value>We cannot send a code this way right now. Try the other method or contact support.</value>
+  </data>
+  <data name="MSG_SHARE_SENT_TO_GROUPS" xml:space="preserve">
+    <value>Match sent to {0} group(s).</value>
+  </data>
+  <data name="NOTIF_MATCH_SHARED_TO_GROUP" xml:space="preserve">
+    <value>{0} shared the match '{1}' in your group. Tap to join.</value>
+  </data>
+  <data name="NOTIF_MATCH_CANCELLED" xml:space="preserve">
+    <value>The match '{0}' ({1:dd.MM.yyyy HH:mm}) was cancelled.</value>
+  </data>
+  <data name="TEAM_CREATOR_ONLY" xml:space="preserve">
+    <value>Only the player who created the team can do this.</value>
+  </data>
+  <data name="TEAM_NOT_MEMBER" xml:space="preserve">
+    <value>You are not in this team.</value>
+  </data>
+  <data name="TEAM_LAST_MEMBER" xml:space="preserve">
+    <value>You are the last player in the team; delete the team instead of leaving.</value>
+  </data>
+  <data name="BIZAPP_NOT_FOUND" xml:space="preserve">
+    <value>Application not found.</value>
+  </data>
+  <data name="BIZAPP_CONSENT_REQUIRED" xml:space="preserve">
+    <value>Please accept the privacy notice to continue.</value>
+  </data>
+  <data name="MSG_BIZAPP_RECEIVED" xml:space="preserve">
+    <value>Your application has been received. We will call you shortly.</value>
+  </data>
+  <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
+    <value>Template not found.</value>
+  </data>
+  <data name="EMAIL_SYSTEM_TEMPLATE" xml:space="preserve">
+    <value>System templates cannot be deleted; you can deactivate them.</value>
+  </data>
+  <data name="EMAIL_CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Mailing not found.</value>
+  </data>
+  <data name="EMAIL_CAMPAIGN_LOCKED" xml:space="preserve">
+    <value>The mailing is being sent; you can edit it when it finishes.</value>
+  </data>
+  <data name="EMAIL_INVALID_URL" xml:space="preserve">
+    <value>The button link must start with http(s).</value>
+  </data>
+  <data name="EMAIL_INVALID_SCHEDULE" xml:space="preserve">
+    <value>The send time cannot be in the past or more than 6 months ahead.</value>
+  </data>
+  <data name="EMAIL_OWNER_TOO_FREQUENT" xml:space="preserve">
+    <value>You can email your customers at most once every {0} days.</value>
+  </data>
+  <data name="EMAIL_NO_ADDRESS" xml:space="preserve">
+    <value>Your account has no email address. Add one in Edit profile.</value>
+  </data>
+  <data name="EMAIL_NOT_IN_MATCH" xml:space="preserve">
+    <value>You need to be in the match to set a reminder.</value>
+  </data>
+  <data name="MSG_EMAIL_CAMPAIGN_SAVED" xml:space="preserve">
+    <value>Mailing scheduled.</value>
+  </data>
+  <data name="MSG_EMAIL_TEST_SENT" xml:space="preserve">
+    <value>Test email sent to {0}.</value>
+  </data>
+  <data name="MSG_EMAIL_REMINDERS_ON" xml:space="preserve">
+    <value>Email reminder set.</value>
+  </data>
+  <data name="MSG_EMAIL_REMINDERS_OFF" xml:space="preserve">
+    <value>Email reminder turned off.</value>
+  </data>
 </root>

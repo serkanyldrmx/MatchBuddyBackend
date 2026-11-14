@@ -15,5 +15,10 @@ namespace MatcBuddy.DataAccess.Abstract
         void AddWithActivity(Team team, int creatorPlayerId);
         // Maçlardaki ev sahibi / rakip takım bağlantılarını kaldırır (FK NoAction; takım silinmeden önce)
         void ClearMatchReferences(int teamId);
+        // Takımı kuran oyuncu (eski takımlarda null)
+        int? GetCreatorId(int teamId);
+        // Oyuncuyu takımdan çıkarır; kurucu ayrılırsa kuruculuk en eski üyeye geçer.
+        // false: oyuncu takımda kalan son kişi (takım silinmeli)
+        bool Leave(int teamId, int playerId);
     }
 }

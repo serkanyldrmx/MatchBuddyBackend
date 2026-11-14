@@ -51,6 +51,10 @@ namespace MatcBuddy.Entities.DTOs
         public bool NotifyMatchResult { get; set; }
         public bool NotifyMatchUpdates { get; set; }
         public bool NotifyDeals { get; set; }
+        /// <summary>Telefonumu maçta kim görür: 0 kimse, 1 maç yöneticileri, 2 maçtaki herkes</summary>
+        public byte PhoneVisibility { get; set; }
+        /// <summary>Kampanya / duyuru e-postaları (Player.MarketingConsent)</summary>
+        public bool MarketingConsent { get; set; }
         /// <summary>"system" | "light" | "dark" (docs/platform-api.md)</summary>
         public string Theme { get; set; } = "system";
         /// <summary>Arayüz dili, ör. "tr" (docs/platform-api.md)</summary>
@@ -69,6 +73,8 @@ namespace MatcBuddy.Entities.DTOs
         public bool? NotifyMatchResult { get; set; }
         public bool? NotifyMatchUpdates { get; set; }
         public bool? NotifyDeals { get; set; }
+        public int? PhoneVisibility { get; set; }
+        public bool? MarketingConsent { get; set; }
         public string? Theme { get; set; }
         public string? Language { get; set; }
     }
@@ -121,6 +127,8 @@ namespace MatcBuddy.Entities.DTOs
         public int? HomeScore { get; set; }
         public int? AwayScore { get; set; }
         public string? StadiumName { get; set; }
+        /// <summary>Görüntüleyen bu maçta (katılıyor / yedek): akışta "Katıl" gösterilmez</summary>
+        public bool InMatch { get; set; }
     }
 
     public class ActivityDto

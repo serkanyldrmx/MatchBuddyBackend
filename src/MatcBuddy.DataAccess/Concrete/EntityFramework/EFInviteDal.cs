@@ -256,6 +256,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
         {
             using var context = new MatcBuddyContext();
             var blocked = SocialGraph.Load(context, me).BlockedEither.ToList();
+            var now = DateTime.Now;
 
             var matchRows = (from i in context.MatchInvites.AsNoTracking()
                              join m in context.Matchs.AsNoTracking() on i.MatchId equals m.MatchId
@@ -264,6 +265,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                              from s in ms.DefaultIfEmpty()
                              where i.InviteeId == me && i.Status == InviteStatus.Pending
                                    && !p.IsDeleted && !blocked.Contains(i.InviterId)
+                                   && m.MatchDate > now && m.IsActive != RejectedStatus
                              orderby i.CreatedAt descending, i.InviteId descending
                              select new { Invite = i, Match = m, Inviter = p, StadiumName = s != null ? s.StadiumName : null })
                             .ToList();
@@ -327,10 +329,13 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             using var context = new MatcBuddyContext();
             var blocked = SocialGraph.Load(context, me).BlockedEither.ToList();
 
+            var now = DateTime.Now;
             var matchCount = (from i in context.MatchInvites
+                              join m in context.Matchs on i.MatchId equals m.MatchId
                               join p in context.Players on i.InviterId equals p.PlayerId
                               where i.InviteeId == me && i.Status == InviteStatus.Pending
                                     && !p.IsDeleted && !blocked.Contains(i.InviterId)
+                                    && m.MatchDate > now && m.IsActive != RejectedStatus
                               select i.InviteId).Count();
             var teamCount = (from i in context.TeamInvites
                              join p in context.Players on i.InviterId equals p.PlayerId

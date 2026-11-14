@@ -65,6 +65,9 @@ namespace MatcBuddy.Entities.Entity
         // İşletmelerin "boş saat / indirim" bildirimleri
         public bool NotifyDeals { get; set; } = true;
 
+        // Telefon numaramı maçta kim görebilir / arayabilir: 0 kimse, 1 maç yöneticileri (varsayılan), 2 maçtaki herkes
+        public byte PhoneVisibility { get; set; } = PhoneVisibilities.MatchManagers;
+
         // Arayüz tercihleri (docs/platform-api.md): "system" | "light" | "dark"
         public string Theme { get; set; } = PlayerThemes.System;
 
@@ -72,6 +75,13 @@ namespace MatcBuddy.Entities.Entity
         public string Language { get; set; } = "tr";
 
         public static PlayerSettings Defaults(int playerId) => new() { PlayerId = playerId };
+    }
+
+    public static class PhoneVisibilities
+    {
+        public const byte Nobody = 0;
+        public const byte MatchManagers = 1;
+        public const byte MatchPlayers = 2;
     }
 
     public static class MessagePermissions

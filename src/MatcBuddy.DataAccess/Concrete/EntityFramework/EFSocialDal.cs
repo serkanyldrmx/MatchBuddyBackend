@@ -427,6 +427,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     NotifyMatchResult = settings.NotifyMatchResult,
                     NotifyMatchUpdates = settings.NotifyMatchUpdates,
                     NotifyDeals = settings.NotifyDeals,
+                    PhoneVisibility = settings.PhoneVisibility,
                     Theme = settings.Theme,
                     Language = settings.Language,
                 });
@@ -442,6 +443,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 existing.NotifyMatchResult = settings.NotifyMatchResult;
                 existing.NotifyMatchUpdates = settings.NotifyMatchUpdates;
                 existing.NotifyDeals = settings.NotifyDeals;
+                existing.PhoneVisibility = settings.PhoneVisibility;
                 existing.Theme = settings.Theme;
                 existing.Language = settings.Language;
             }
@@ -580,6 +582,11 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                                AwayScore = m.AwayScore,
                                StadiumName = s != null ? s.StadiumName : null,
                            }).ToList().ToDictionary(m => m.MatchId);
+            var mineIn = context.MatchParticipants.AsNoTracking()
+                .Where(p => p.PlayerId == me && matchIds.Contains(p.MatchId)
+                            && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
+                .Select(p => p.MatchId).ToHashSet();
+            foreach (var m in matches.Values) m.InMatch = mineIn.Contains(m.MatchId);
 
             var teamIds = activities.Where(a => a.TeamId.HasValue).Select(a => a.TeamId!.Value).Distinct().ToList();
             var teams = context.Teams.AsNoTracking()

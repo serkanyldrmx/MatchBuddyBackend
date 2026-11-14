@@ -42,7 +42,7 @@ namespace MatcBuddy.Api.Controllers
             var result = _teamService.Add(team, User.GetPlayerId());
             if (result.Success)
             {
-                foreach (var playerId in teamModel.PlayerId)
+                foreach (var playerId in teamModel.PlayerId.Distinct()) // aynı oyuncu iki kez eklenmesin
                 {
                     var playerTeam = new PlayerTeam()
                     {
@@ -68,10 +68,10 @@ namespace MatcBuddy.Api.Controllers
         {
             if (playerIdModel.PlayerIds != null && playerIdModel.TeamId > 0)
             {
-                // Takım kadrosunu düzenleme: sadece takımın oyuncusu veya admin
-                if (!User.IsAdmin() && !_teamService.IsPlayerInTeam(playerIdModel.TeamId, User.GetPlayerId()))
+                // Takım kadrosunu düzenleme: kurucu (kurucusu bilinmeyen eski takımlarda her üye) veya admin
+                if (!User.IsAdmin() && !_teamService.CanManage(playerIdModel.TeamId, User.GetPlayerId()))
                 {
-                    return Forbid();
+                    return this.ForbiddenError(ErrorCodes.Team.CreatorOnly);
                 }
                 if (_socialService.OwnerIds(playerIdModel.PlayerIds).Count > 0)
                 {
@@ -98,10 +98,10 @@ namespace MatcBuddy.Api.Controllers
         [HttpPost("DeleteTeam")]
         public IActionResult DeleteTeam(int teamId)
         {
-            // Takım silme: sadece takımın oyuncusu veya admin
-            if (!User.IsAdmin() && !_teamService.IsPlayerInTeam(teamId, User.GetPlayerId()))
+            // Takım silme: kurucu (kurucusu bilinmeyen eski takımlarda her üye) veya admin
+            if (!User.IsAdmin() && !_teamService.CanManage(teamId, User.GetPlayerId()))
             {
-                return Forbid();
+                return this.ForbiddenError(ErrorCodes.Team.CreatorOnly);
             }
 
             var team = new Team()
@@ -114,6 +114,14 @@ namespace MatcBuddy.Api.Controllers
                 return Ok(result);
             }
             return this.ToHttp(result);
+        }
+
+        // Takımdan ayrıl: kurucu ayrılırsa kuruculuk takımdaki en eski oyuncuya geçer
+        [HttpPost("LeaveTeam")]
+        public IActionResult LeaveTeam(int teamId)
+        {
+            var result = _teamService.Leave(teamId, User.GetPlayerId());
+            return result.Success ? Ok(result) : this.ToHttp(result);
         }
 
         [HttpGet("GetTeamList")]

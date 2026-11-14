@@ -70,7 +70,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 : OperationResult<bool>.Forbidden();
         }
 
-        public OperationResult<byte> Join(int matchId, int playerId)
+        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null)
         {
             using var context = new MatcBuddyContext();
             using var transaction = context.Database.BeginTransaction();
@@ -78,7 +78,8 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<byte>.NotFound();
 
-            var result = ParticipationCore.Join(context, match, playerId, checkReliability: true);
+            // side/slot: sahada dokunulan boş yer (doluysa normal kural)
+            var result = ParticipationCore.Join(context, match, playerId, side is 1 or 2 ? side : null, checkReliability: true, preferredSlot: slot);
             if (!result.Success) return result;
 
             context.SaveChanges();
@@ -188,8 +189,12 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
 
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.NotFound);
-            var guard = GuestGuard<bool>(context, match, actorPlayerId, isAdmin);
-            if (guard != null) return guard;
+            // Diziliş kadrodaki tüm oyunculara açıktır (yalnızca kurucuya değil)
+            if (!CanArrange(context, match, actorPlayerId, isAdmin)) return OperationResult<bool>.Forbidden();
+            if (match.IsActive == RejectedStatus)
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.RejectedRosterLocked);
+            if (IsPast(match))
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.PastRosterLocked);
 
             var going = context.MatchParticipants
                 .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
@@ -541,6 +546,144 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 Msg.Get(liked ? MessageKeys.Match.Liked : MessageKeys.Match.Unliked));
         }
 
+        /// <summary>
+        /// Maç bilgilerini düzenler: ad, açıklama, kadro sayısı (yönetici). Admin ayrıca tarih / onay durumu değiştirebilir.
+        /// Rezervasyon alanları (saha, süre, fiyat) korunur: saat değişikliği yeni rezervasyon gerektirir.
+        /// Kadro sayısı kadronun (Going + misafir) altına inemez; artarsa yedekler asile yükselir.
+        /// Değişiklik kadrodaki (ve yedekteki) diğer oyunculara bildirilir.
+        /// </summary>
+        public OperationResult<bool> UpdateInfo(int actorPlayerId, bool isAdmin, UpdateMatchInfoInput input)
+        {
+            using var context = new MatcBuddyContext();
+            using var transaction = context.Database.BeginTransaction();
+
+            var match = LockMatch(context, input.MatchId);
+            if (match == null) return OperationResult<bool>.NotFound(ErrorCodes.Match.NotFound);
+            if (!CanManage(context, match, actorPlayerId, isAdmin)) return OperationResult<bool>.Forbidden();
+            if (!isAdmin && (IsPast(match) || match.IsActive == RejectedStatus))
+                return OperationResult<bool>.BadRequest(ErrorCodes.Match.EditClosed);
+
+            var changes = new List<string>();
+
+            if (input.MatchName != null)
+            {
+                var name = input.MatchName.Trim();
+                if (name.Length < 2 || name.Length > 100)
+                    return OperationResult<bool>.FieldError("matchName", ErrorCodes.Match.NameInvalid);
+                if (name != match.MatchName)
+                {
+                    match.MatchName = name;
+                    changes.Add("name");
+                }
+            }
+
+            if (input.Description != null)
+            {
+                // Sütun boş bırakılamaz (NOT NULL): açıklama silinirse boş metin yazılır
+                var desc = string.IsNullOrWhiteSpace(input.Description) ? string.Empty : input.Description.Trim();
+                if (desc != null && desc.Length > 1000)
+                    return OperationResult<bool>.FieldError("description", ErrorCodes.Validation.TooLong, "description", 1000);
+                if (desc != match.Description)
+                {
+                    match.Description = desc;
+                    changes.Add("description");
+                }
+            }
+
+            var oldCount = match.UserCount;
+            if (input.UserCount is > 0 && input.UserCount.Value != match.UserCount)
+            {
+                var playersPerSide = match.PitchId.HasValue
+                    ? context.Pitches.AsNoTracking().Where(p => p.PitchId == match.PitchId.Value).Select(p => (int?)p.PlayersPerSide).FirstOrDefault()
+                    : null;
+                var min = VenuePricing.MinUserCount();
+                var max = VenuePricing.MaxUserCount(playersPerSide ?? P.Int(ParameterKeys.Venue.PlayersPerSideMax));
+                if (input.UserCount.Value < min || input.UserCount.Value > max)
+                    return OperationResult<bool>.FieldError("userCount", ErrorCodes.Validation.OutOfRange,
+                        Msg.Get(MessageKeys.Reservation.LabelUserCount), min, max);
+
+                var going = context.MatchParticipants
+                    .Where(p => p.MatchId == match.MatchId && p.Status == ParticipantStatus.Going)
+                    .ToList();
+                var guests = LoadGuests(context, match.MatchId);
+                var roster = going.Count + guests.Count;
+                if (input.UserCount.Value < roster)
+                    return OperationResult<bool>.FieldError("userCount", ErrorCodes.Match.CapacityBelowRoster, roster);
+
+                // Yeni taraf kapasitesine sığmayan taraftan son gelenler diğer tarafa kayar (toplam zaten sığıyor)
+                match.UserCount = input.UserCount.Value;
+                var sideCap = SideCapacity(match);
+                foreach (var side in new[] { ParticipantSide.Home, ParticipantSide.Away })
+                {
+                    var other = side == ParticipantSide.Home ? ParticipantSide.Away : ParticipantSide.Home;
+                    var overflow = SideCount(going, guests, side) - sideCap;
+                    if (overflow <= 0) continue;
+                    foreach (var g in guests.Where(g => g.Side == side).OrderByDescending(g => g.GuestId).Take(overflow).ToList())
+                    {
+                        g.Side = other;
+                        g.Slot = null;
+                        overflow--;
+                    }
+                    foreach (var p in going.Where(p => p.Side == side).OrderByDescending(p => p.JoinedAt).Take(Math.Max(overflow, 0)).ToList())
+                    {
+                        p.Side = other;
+                        p.Slot = null;
+                    }
+                }
+                changes.Add("capacity");
+            }
+
+            if (isAdmin)
+            {
+                if (input.MatchDate.HasValue && input.MatchDate != match.MatchDate)
+                {
+                    match.MatchDate = input.MatchDate;
+                    changes.Add("date");
+                }
+                if (input.IsActive is >= 1 and <= 3) match.IsActive = input.IsActive.Value;
+            }
+
+            if (changes.Count == 0)
+            {
+                context.SaveChanges();
+                transaction.Commit();
+                return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.InfoUpdated));
+            }
+
+            context.SaveChanges();
+
+            // Kapasite arttıysa yedekler asile yükselir
+            if (match.UserCount > oldCount)
+            {
+                var participants = context.MatchParticipants.Where(p => p.MatchId == match.MatchId).ToList();
+                PromoteFromWaitlist(context, match, participants, null);
+            }
+
+            // Kadrodaki ve yedekteki diğer oyunculara haber ver
+            var recipients = context.MatchParticipants.AsNoTracking()
+                .Where(p => p.MatchId == match.MatchId && p.PlayerId != actorPlayerId
+                            && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
+                .Select(p => p.PlayerId)
+                .ToList();
+            if (recipients.Count > 0)
+            {
+                var parts = changes.Select(c => c switch
+                {
+                    "capacity" => Msg.GetDefault(MessageKeys.Match.NotifCapacityChanged, oldCount, match.UserCount),
+                    "name" => Msg.GetDefault(MessageKeys.Match.LabelFieldName),
+                    "description" => Msg.GetDefault(MessageKeys.Match.LabelFieldDescription),
+                    _ => Msg.GetDefault(MessageKeys.Match.LabelFieldDate),
+                });
+                AddNotification(context, NotificationType.MatchUpdated,
+                    Msg.GetDefault(MessageKeys.Match.NotifUpdated, match.MatchName ?? string.Empty, string.Join(", ", parts)),
+                    match.MatchId, recipients);
+            }
+
+            context.SaveChanges();
+            transaction.Commit();
+            return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Match.InfoUpdated));
+        }
+
         public void FillFromWaitlist(int matchId)
         {
             using var context = new MatcBuddyContext();
@@ -804,6 +947,8 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .Where(e => e.MatchId == match.MatchId && e.Type == ReliabilityEventType.NoShow)
                 .Select(e => e.PlayerId).ToHashSet();
 
+            var phones = VisiblePhones(context, match, participants, playerId, mine?.Status);
+
             var detail = new MatchDetailDto
             {
                 OwnerPlayerId = ownerPlayerId,
@@ -828,6 +973,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 },
                 CreatedBy = createdBy == null ? null : PlayerSummaryDto.FromPlayer(createdBy),
                 CanManage = canManage,
+                CanArrange = canManage || mine?.Status == ParticipantStatus.Going,
                 IsPast = IsPast(match),
                 MyStatus = mine?.Status,
                 MyConfirmed = mine?.Confirmed ?? false,
@@ -855,6 +1001,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                             ? new ReliabilityBadgeDto { Score = b.Score, Level = b.Level, CompletedMatches = b.CompletedMatches }
                             : null,
                         NoShow = noShows.Contains(p.PlayerId),
+                        Phone = phones.TryGetValue(p.PlayerId, out var phone) ? phone : null,
                     })
                     .ToList(),
                 Guests = guests.Select(g => new MatchGuestDto
@@ -882,6 +1029,45 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 && match.MatchDate!.Value.AddHours(P.Int(ParameterKeys.Reliability.NoShowMarkWindowHours)) > DateTime.Now;
             if (canManage) detail.Withdrawals = new EFReliabilityDal().Withdrawals(match.MatchId);
             return detail;
+        }
+
+        /// <summary>
+        /// Görüntüleyenin arayabileceği oyuncuların numaraları (oyuncunun PhoneVisibility ayarına göre):
+        /// "maç yöneticileri" → yalnızca maçın kurucusu; "maçtaki herkes" → kurucu + kadrodaki (Going) oyuncular.
+        /// Site yöneticisi olmak numara görmeyi sağlamaz. Reddedilmiş maçta numara verilmez.
+        /// </summary>
+        private static Dictionary<int, string> VisiblePhones(MatcBuddyContext context, Match match, List<MatchParticipant> participants,
+            int viewerId, byte? viewerStatus)
+        {
+            var result = new Dictionary<int, string>();
+            if (match.IsActive == RejectedStatus) return result;
+            var viewerIsManager = CanManage(context, match, viewerId, isAdmin: false);
+            var viewerIsPlayer = viewerStatus == ParticipantStatus.Going;
+            if (!viewerIsManager && !viewerIsPlayer) return result;
+
+            var targets = participants
+                .Where(p => p.PlayerId != viewerId
+                            && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist)
+                            && !string.IsNullOrWhiteSpace(p.Player?.PhoneNumber))
+                .ToList();
+            if (targets.Count == 0) return result;
+            var ids = targets.Select(p => p.PlayerId).ToList();
+            var settings = context.PlayerSettings.AsNoTracking()
+                .Where(s => ids.Contains(s.PlayerId))
+                .ToDictionary(s => s.PlayerId, s => s.PhoneVisibility);
+
+            foreach (var p in targets)
+            {
+                var visibility = settings.TryGetValue(p.PlayerId, out var v) ? v : PhoneVisibilities.MatchManagers;
+                var allowed = visibility switch
+                {
+                    PhoneVisibilities.MatchManagers => viewerIsManager,
+                    PhoneVisibilities.MatchPlayers => viewerIsManager || viewerIsPlayer,
+                    _ => false,
+                };
+                if (allowed) result[p.PlayerId] = p.Player!.PhoneNumber!.Trim();
+            }
+            return result;
         }
 
         public PlayerStatsDto? GetPlayerStats(int playerId)
@@ -1103,6 +1289,30 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
 
             // Tesis yorumları maça NoAction FK ile bağlı: elle silinir
             context.VenueReviews.Where(r => r.MatchId == matchId).ExecuteDelete();
+
+            // Oynanmamış maç iptal edildiyse kadrodakilere, yedeklere ve tesise haber ver (sahaya boşuna gitmesinler).
+            // Maç silindiği için bildirim maça bağlanmaz (MatchId = null).
+            if (!IsPast(match))
+            {
+                var recipients = context.MatchParticipants.AsNoTracking()
+                    .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
+                    .Select(p => p.PlayerId)
+                    .ToList();
+                if (match.PitchId.HasValue)
+                {
+                    var ownerId = context.Stadiums.AsNoTracking().Where(s => s.StadiumId == match.StadiumId)
+                        .Select(s => s.OwnerPlayerId).FirstOrDefault();
+                    if (ownerId.HasValue) recipients.Add(ownerId.Value);
+                }
+                recipients = recipients.Where(id => id != actorPlayerId).Distinct().ToList();
+                if (recipients.Count > 0)
+                {
+                    NotificationWriter.Add(context, NotificationType.MatchRejection,
+                        Msg.GetDefault(MessageKeys.Match.NotifCancelled, match.MatchName ?? string.Empty, match.MatchDate),
+                        null, match.StadiumId, recipients);
+                    context.SaveChanges();
+                }
+            }
 
             // Yorumlar, kadro, beğeni, oy, puan, davet, aktivite ve MatchTeam FK cascade ile silinir
             context.Matchs.Remove(match);

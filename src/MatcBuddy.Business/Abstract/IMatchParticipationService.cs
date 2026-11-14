@@ -7,7 +7,7 @@ namespace MatcBuddy.Business.Abstract
     public interface IMatchParticipationService
     {
         OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
-        OperationResult<byte> Join(int matchId, int playerId);
+        OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null);
         OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null);
         OperationResult<bool> Confirm(int matchId, int playerId);
         OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);
@@ -19,6 +19,7 @@ namespace MatcBuddy.Business.Abstract
         // Eski MatchLiked uç noktası: sadece beğenir (geri uyumluluk)
         OperationResult<ToggleLikeResultDto> Like(int matchId, int playerId);
         void FillFromWaitlist(int matchId);
+        OperationResult<bool> UpdateInfo(int actorPlayerId, bool isAdmin, UpdateMatchInfoInput input);
 
         // Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular")
         OperationResult<int> AddGuest(int matchId, int actorPlayerId, bool isAdmin, byte side, string? name, string? note);

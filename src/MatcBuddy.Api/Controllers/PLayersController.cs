@@ -1,3 +1,4 @@
+using MatcBuddy.Core.Utilities;
 using System.Text.Json;
 using MatcBuddy.Api.Model;
 using MatcBuddy.Api.Security;
@@ -123,7 +124,7 @@ namespace MatcBuddy.Api.Controllers
                 Address = playerData.Address,
                 Age = playerData.Age,
                 Email = playerData.Email,
-                PhoneNumber = playerData.PhoneNumber,
+                PhoneNumber = PhoneNumbers.Normalize(playerData.PhoneNumber) ?? string.Empty, // isteğe bağlı (sütun boş metin tutar)
                 UserName = playerData.UserName,
                 IsAdmin = 0,
                 ProfilePictureUrl = ""
@@ -148,6 +149,8 @@ namespace MatcBuddy.Api.Controllers
                 // E-posta doğrulama kodu (yumuşak zorunluluk: giriş yine çalışır)
                 if (!string.IsNullOrWhiteSpace(player.Email))
                     _auth.SendEmailVerification(player.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
+                // Hoş geldin e-postası (e-posta varsa; şablon yönetim panelinden düzenlenir / kapatılır)
+                HttpContext.RequestServices.GetRequiredService<IEmailCenterService>().SendWelcome(player.PlayerId);
                 return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
@@ -203,7 +206,10 @@ namespace MatcBuddy.Api.Controllers
                 StringComparison.OrdinalIgnoreCase);
             if (emailChanged) existingPlayer.EmailConfirmed = false;
             existingPlayer.Email = playerData.Email;
-            existingPlayer.PhoneNumber = playerData.PhoneNumber;
+            // Telefon isteğe bağlı; tek biçimde saklanır. Değişirse doğrulaması sıfırlanır.
+            var phone = PhoneNumbers.Normalize(playerData.PhoneNumber) ?? string.Empty;
+            if (!string.Equals(phone, existingPlayer.PhoneNumber, StringComparison.Ordinal)) existingPlayer.PhoneConfirmed = false;
+            existingPlayer.PhoneNumber = phone;
             existingPlayer.UserName = playerData.UserName;
 
             // Puanı sadece admin değiştirebilir
@@ -212,9 +218,10 @@ namespace MatcBuddy.Api.Controllers
                 existingPlayer.UserScore = playerData.UserScore;
             }
 
-            // Şifre boş gönderildiyse mevcut şifre korunur
+            // Şifre boş gönderildiyse mevcut şifre korunur. Oyuncu kendi şifresini yalnızca mevcut şifreyi soran
+            // POST /api/Auth/ChangePassword ile değiştirir; burada yalnızca admin şifre atayabilir.
             var passwordChanged = false;
-            if (!string.IsNullOrEmpty(playerData.Password))
+            if (!string.IsNullOrEmpty(playerData.Password) && User.IsAdmin())
             {
                 var policy = MatcBuddy.Business.Auth.PasswordPolicy.Validate(playerData.Password);
                 if (policy != null)

@@ -459,14 +459,13 @@ namespace MatcBuddy.Business.Auth
 
         public bool ConsentRequired(Player player) => !string.Equals(player.TermsVersion?.Trim(), CurrentTermsVersion, StringComparison.Ordinal);
 
-        /// <summary>Profil tamamlanmamış: telefon / soyad / yaş eksik (sosyal girişle açılan hesaplarda).</summary>
+        /// <summary>Profil tamamlanmamış: soyad / e-posta eksik (sosyal girişle açılan hesaplarda).</summary>
         public List<string> MissingProfileFields(Player player)
         {
             var missing = new List<string>();
-            if (string.IsNullOrWhiteSpace(player.PhoneNumber)) missing.Add("phoneNumber");
+            // Telefon, yaş, boy, kilo isteğe bağlıdır (kayıt formuyla aynı)
             if (string.IsNullOrWhiteSpace(player.PlayerSurname)) missing.Add("playerSurname");
             if (string.IsNullOrWhiteSpace(player.Email)) missing.Add("email");
-            if (player.Age <= 0) missing.Add("age");
             return missing;
         }
 

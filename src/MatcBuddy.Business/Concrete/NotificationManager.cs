@@ -55,8 +55,11 @@ namespace MatcBuddy.Business.Concrete
             using (var context = new MatcBuddyContext())
             {
                 var notifications = context.PlayerNotification
-                    .Where(pn => pn.PlayerId == playerId )
+                    .Where(pn => pn.PlayerId == playerId)
                     .Include(pn => pn.Notification)
+                    .OrderByDescending(pn => pn.Notification.CreatedAt)
+                    .ThenByDescending(pn => pn.PlayerNotificationId)
+                    .Take(100)
                     .Select(pn => new PlayerNotificationDto
                     {
                         PlayerNotificationId = pn.PlayerNotificationId,
@@ -88,6 +91,15 @@ namespace MatcBuddy.Business.Concrete
 
             pn.IsRead = true;
             _playerNotificationDal.Update(pn);
+            return new SuccessResult(Msg.Get(MessageKeys.Notification.MarkedRead));
+        }
+
+        public IResult MarkAllAsRead(int playerId)
+        {
+            using var context = new MatcBuddyContext();
+            context.PlayerNotification
+                .Where(p => p.PlayerId == playerId && !p.IsRead)
+                .ExecuteUpdate(s => s.SetProperty(p => p.IsRead, true));
             return new SuccessResult(Msg.Get(MessageKeys.Notification.MarkedRead));
         }
 

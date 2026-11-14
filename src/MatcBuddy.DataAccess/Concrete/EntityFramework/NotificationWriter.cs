@@ -23,6 +23,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 or NotificationType.MatchApproval
                 or NotificationType.MatchRejection
                 or NotificationType.MatchCreated
+                or NotificationType.MatchUpdated
                 or NotificationType.WaitlistPromoted
                 or NotificationType.TournamentUpdate
                 or NotificationType.ReservationRequest

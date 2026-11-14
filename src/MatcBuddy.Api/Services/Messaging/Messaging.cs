@@ -232,4 +232,28 @@ namespace MatcBuddy.Api.Services.Messaging
             }
         }
     }
+
+    /// <summary>
+    /// Kod gönderilebilecek kanallar. Gerçek gönderici (SMTP / Netgsm) yoksa kanal canlıda kapalı sayılır:
+    /// outbox yalnızca geliştirmede "gönderildi" kabul edilir. Böylece kullanıcıya hiç gitmeyecek bir kod için
+    /// "kod gönderildi" denmez (docs/auth-api.md §Yapılandırma).
+    /// </summary>
+    public sealed class MessagingChannels
+    {
+        public MessagingChannels(bool emailConfigured, bool smsConfigured, bool isDevelopment)
+        {
+            EmailConfigured = emailConfigured;
+            SmsConfigured = smsConfigured;
+            EmailAvailable = emailConfigured || isDevelopment;
+            SmsAvailable = smsConfigured || isDevelopment;
+        }
+
+        public bool EmailConfigured { get; }
+        public bool SmsConfigured { get; }
+        public bool EmailAvailable { get; }
+        public bool SmsAvailable { get; }
+
+        public bool IsAvailable(string? channel) =>
+            string.Equals(channel, "sms", StringComparison.OrdinalIgnoreCase) ? SmsAvailable : EmailAvailable;
+    }
 }

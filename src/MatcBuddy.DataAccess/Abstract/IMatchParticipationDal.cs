@@ -14,7 +14,7 @@ namespace MatcBuddy.DataAccess.Abstract
         // canManage: admin veya kurucu; kurucusu olmayan eski maçlarda admin veya Going oyuncu
         OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
 
-        OperationResult<byte> Join(int matchId, int playerId);
+        OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null);
         OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null);
         OperationResult<bool> Confirm(int matchId, int playerId);
         OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);
@@ -32,6 +32,7 @@ namespace MatcBuddy.DataAccess.Abstract
 
         // Kapasite arttıysa yedekleri sırayla asile yükseltir
         void FillFromWaitlist(int matchId);
+        OperationResult<bool> UpdateInfo(int actorPlayerId, bool isAdmin, UpdateMatchInfoInput input);
 
         List<MatchFeedItemDto> GetMatchFeed(int playerId);
         MatchDetailDto? GetMatchDetail(int matchId, int playerId, bool isAdmin);

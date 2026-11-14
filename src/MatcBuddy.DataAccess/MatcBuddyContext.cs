@@ -49,6 +49,10 @@ namespace MatcBuddy.DataAccess
         public DbSet<MatchInvite> MatchInvites { get; set; }
         public DbSet<TeamInvite> TeamInvites { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<BusinessApplication> BusinessApplications { get; set; }
+        public DbSet<EmailTemplate> EmailTemplates { get; set; }
+        public DbSet<EmailCampaign> EmailCampaigns { get; set; }
+        public DbSet<MatchEmailReminder> MatchEmailReminders { get; set; }
         public DbSet<Tournament> Tournaments { get; set; }
         public DbSet<TournamentTeam> TournamentTeams { get; set; }
         public DbSet<TournamentFixture> TournamentFixtures { get; set; }

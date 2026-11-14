@@ -16,6 +16,7 @@ namespace MatcBuddy.Core.Errors
             // Tek kullanımlık kodlar (sıfırlama / e-posta doğrulama)
             public const string IdentifierRequired = "AUTH_IDENTIFIER_REQUIRED";
             public const string InvalidChannel = "AUTH_INVALID_CHANNEL";
+            public const string ChannelUnavailable = "AUTH_CHANNEL_UNAVAILABLE";         // 503: SMTP / SMS yapılandırılmamış
             public const string CodeRequired = "AUTH_CODE_REQUIRED";
             public const string CodeInvalid = "AUTH_CODE_INVALID";                       // yanlış / süresi dolmuş / yok
             public const string CodeAttemptsExceeded = "AUTH_CODE_ATTEMPTS_EXCEEDED";    // çok fazla yanlış deneme

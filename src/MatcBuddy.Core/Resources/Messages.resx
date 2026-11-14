@@ -2031,4 +2031,97 @@
   <data name="MSG_MATCH_LINEUP_UPDATED" xml:space="preserve">
     <value>Diziliş kaydedildi.</value>
   </data>
+  <data name="MATCH_CAPACITY_BELOW_ROSTER" xml:space="preserve">
+    <value>Kadroda şu an {0} kişi var; oyuncu sayısı bundan az olamaz. Önce kadrodan kişi çıkar.</value>
+  </data>
+  <data name="MATCH_EDIT_CLOSED" xml:space="preserve">
+    <value>Oynanmış ya da reddedilmiş maç düzenlenemez.</value>
+  </data>
+  <data name="MSG_MATCH_INFO_UPDATED" xml:space="preserve">
+    <value>Maç bilgileri güncellendi.</value>
+  </data>
+  <data name="NOTIF_MATCH_UPDATED" xml:space="preserve">
+    <value>'{0}' maçının bilgileri güncellendi: {1}.</value>
+  </data>
+  <data name="NOTIF_MATCH_CAPACITY_CHANGED" xml:space="preserve">
+    <value>oyuncu sayısı {0} → {1}</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_NAME" xml:space="preserve">
+    <value>maç adı</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_DESCRIPTION" xml:space="preserve">
+    <value>açıklama</value>
+  </data>
+  <data name="LABEL_MATCH_FIELD_DATE" xml:space="preserve">
+    <value>tarih</value>
+  </data>
+  <data name="AUTH_CHANNEL_UNAVAILABLE" xml:space="preserve">
+    <value>Şu an bu yolla kod gönderemiyoruz. Diğer yöntemi dene ya da destek ekibine yaz.</value>
+  </data>
+  <data name="MSG_SHARE_SENT_TO_GROUPS" xml:space="preserve">
+    <value>Maç {0} gruba gönderildi.</value>
+  </data>
+  <data name="NOTIF_MATCH_SHARED_TO_GROUP" xml:space="preserve">
+    <value>{0} grubuna '{1}' maçını gönderdi. Katılmak için dokun.</value>
+  </data>
+  <data name="NOTIF_MATCH_CANCELLED" xml:space="preserve">
+    <value>'{0}' maçı ({1:dd.MM.yyyy HH:mm}) iptal edildi.</value>
+  </data>
+  <data name="TEAM_CREATOR_ONLY" xml:space="preserve">
+    <value>Bu işlemi yalnızca takımı kuran oyuncu yapabilir.</value>
+  </data>
+  <data name="TEAM_NOT_MEMBER" xml:space="preserve">
+    <value>Bu takımda değilsin.</value>
+  </data>
+  <data name="TEAM_LAST_MEMBER" xml:space="preserve">
+    <value>Takımda kalan son oyuncusun; ayrılmak yerine takımı silebilirsin.</value>
+  </data>
+  <data name="BIZAPP_NOT_FOUND" xml:space="preserve">
+    <value>Başvuru bulunamadı.</value>
+  </data>
+  <data name="BIZAPP_CONSENT_REQUIRED" xml:space="preserve">
+    <value>Devam etmek için aydınlatma metnini onaylayın.</value>
+  </data>
+  <data name="MSG_BIZAPP_RECEIVED" xml:space="preserve">
+    <value>Başvurunuz alındı. En kısa sürede sizi arayacağız.</value>
+  </data>
+  <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
+    <value>Şablon bulunamadı.</value>
+  </data>
+  <data name="EMAIL_SYSTEM_TEMPLATE" xml:space="preserve">
+    <value>Sistem şablonu silinemez; isterseniz pasif yapabilirsiniz.</value>
+  </data>
+  <data name="EMAIL_CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Gönderim bulunamadı.</value>
+  </data>
+  <data name="EMAIL_CAMPAIGN_LOCKED" xml:space="preserve">
+    <value>Gönderim sürüyor; bitince düzenleyebilirsiniz.</value>
+  </data>
+  <data name="EMAIL_INVALID_URL" xml:space="preserve">
+    <value>Düğme bağlantısı http(s) ile başlamalı.</value>
+  </data>
+  <data name="EMAIL_INVALID_SCHEDULE" xml:space="preserve">
+    <value>Gönderim zamanı geçmişte ya da 6 aydan ileride olamaz.</value>
+  </data>
+  <data name="EMAIL_OWNER_TOO_FREQUENT" xml:space="preserve">
+    <value>Müşterilerinize en fazla {0} günde bir e-posta gönderebilirsiniz.</value>
+  </data>
+  <data name="EMAIL_NO_ADDRESS" xml:space="preserve">
+    <value>Hesabında e-posta adresi yok. Profili düzenle'den ekleyebilirsin.</value>
+  </data>
+  <data name="EMAIL_NOT_IN_MATCH" xml:space="preserve">
+    <value>Hatırlatma için maçta olman gerekiyor.</value>
+  </data>
+  <data name="MSG_EMAIL_CAMPAIGN_SAVED" xml:space="preserve">
+    <value>Gönderim planlandı.</value>
+  </data>
+  <data name="MSG_EMAIL_TEST_SENT" xml:space="preserve">
+    <value>Test e-postası {0} adresine gönderildi.</value>
+  </data>
+  <data name="MSG_EMAIL_REMINDERS_ON" xml:space="preserve">
+    <value>E-posta hatırlatıcı kuruldu.</value>
+  </data>
+  <data name="MSG_EMAIL_REMINDERS_OFF" xml:space="preserve">
+    <value>E-posta hatırlatıcı kapatıldı.</value>
+  </data>
 </root>

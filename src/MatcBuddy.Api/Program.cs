@@ -164,6 +164,7 @@ namespace MatcBuddy.Api
             else builder.Services.AddSingleton<MatcBuddy.Core.Messaging.IEmailSender, OutboxEmailSender>();
             if (netgsmConfigured) builder.Services.AddSingleton<MatcBuddy.Core.Messaging.ISmsSender, NetgsmSmsSender>();
             else builder.Services.AddSingleton<MatcBuddy.Core.Messaging.ISmsSender, OutboxSmsSender>();
+            builder.Services.AddSingleton(new MessagingChannels(smtpConfigured, netgsmConfigured, builder.Environment.IsDevelopment()));
             builder.Services.AddSingleton<OutgoingMessageQueue>();
             builder.Services.AddSingleton<MatcBuddy.Core.Messaging.IOutgoingMessageQueue>(sp => sp.GetRequiredService<OutgoingMessageQueue>());
             builder.Services.AddHostedService<OutgoingMessageService>();
@@ -185,6 +186,10 @@ namespace MatcBuddy.Api
             });
             builder.Services.AddSingleton<WeatherService>();
             builder.Services.AddSingleton<ShareService>();
+            // E-posta merkezi: bağlantılar + dakikalık zamanlayıcı (hatırlatma / toplu gönderim)
+            builder.Services.AddSingleton<MatcBuddy.Api.Services.EmailLinks>();
+            builder.Services.AddSingleton<MatcBuddy.Business.Email.IEmailLinks>(sp => sp.GetRequiredService<MatcBuddy.Api.Services.EmailLinks>());
+            builder.Services.AddHostedService<MatcBuddy.Api.Services.EmailSchedulerService>();
 
             // Maç hatırlatmaları (Reminders:IntervalSeconds, varsayılan 600 sn)
             builder.Services.AddHostedService<MatchReminderService>();

@@ -68,7 +68,12 @@ namespace MatcBuddy.Business.Concrete
             return _socialDal.Report(me, targetPlayerId, reason, details);
         }
 
-        public PlayerSettingsDto GetSettings(int me) => ToDto(_socialDal.GetSettings(me));
+        public PlayerSettingsDto GetSettings(int me)
+        {
+            var dto = ToDto(_socialDal.GetSettings(me));
+            dto.MarketingConsent = _playerDal.Get(p => p.PlayerId == me)?.MarketingConsent ?? false;
+            return dto;
+        }
 
         public OperationResult<bool> SaveSettings(int me, PlayerSettingsInput input)
         {
@@ -77,6 +82,8 @@ namespace MatcBuddy.Business.Concrete
                 return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidSettingChoice, "messagePermission");
             if (input.ProfileVisibility.HasValue && (input.ProfileVisibility < 0 || input.ProfileVisibility > 2))
                 return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidSettingChoice, "profileVisibility");
+            if (input.PhoneVisibility.HasValue && (input.PhoneVisibility < 0 || input.PhoneVisibility > 2))
+                return OperationResult<bool>.BadRequest(ErrorCodes.Social.InvalidSettingChoice, "phoneVisibility");
             var theme = input.Theme?.Trim().ToLowerInvariant();
             if (theme != null && !PlayerThemes.All.Contains(theme))
                 return OperationResult<bool>.FieldError("theme", ErrorCodes.Social.InvalidTheme, string.Join(", ", PlayerThemes.All));
@@ -96,10 +103,22 @@ namespace MatcBuddy.Business.Concrete
             if (input.NotifyMatchResult.HasValue) s.NotifyMatchResult = input.NotifyMatchResult.Value;
             if (input.NotifyMatchUpdates.HasValue) s.NotifyMatchUpdates = input.NotifyMatchUpdates.Value;
             if (input.NotifyDeals.HasValue) s.NotifyDeals = input.NotifyDeals.Value;
+            if (input.PhoneVisibility.HasValue) s.PhoneVisibility = (byte)input.PhoneVisibility.Value;
             if (theme != null) s.Theme = theme;
             if (language != null) s.Language = language;
 
             _socialDal.SaveSettings(s);
+            // Kampanya / duyuru e-postası izni oyuncu kaydında tutulur (KVKK onayıyla aynı alan)
+            if (input.MarketingConsent.HasValue)
+            {
+                var player = _playerDal.Get(p => p.PlayerId == me);
+                if (player != null && player.MarketingConsent != input.MarketingConsent.Value)
+                {
+                    player.MarketingConsent = input.MarketingConsent.Value;
+                    player.MarketingConsentAt = DateTime.UtcNow;
+                    _playerDal.Update(player);
+                }
+            }
             return OperationResult<bool>.Ok(true, Msg.Get(MessageKeys.Social.SettingsSaved));
         }
 
@@ -114,6 +133,7 @@ namespace MatcBuddy.Business.Concrete
             NotifyMatchResult = s.NotifyMatchResult,
             NotifyMatchUpdates = s.NotifyMatchUpdates,
             NotifyDeals = s.NotifyDeals,
+            PhoneVisibility = s.PhoneVisibility,
             Theme = s.Theme,
             Language = s.Language,
         };

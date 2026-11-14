@@ -12,6 +12,7 @@ namespace MatcBuddy.Entities.DTOs
     {
         public int TeamId { get; set; }
         public string TeamName { get; set; }
+        public int? CreatedByPlayerId { get; set; }
         public List<int> PlayerId { get; set; }
         public List<string> PlayerName { get; set; }
         public List<string> ProfilePictureUrl { get; set; }

@@ -41,6 +41,14 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 p.MatchId == match.MatchId && p.PlayerId == playerId && p.Status == ParticipantStatus.Going);
         }
 
+        /// <summary>
+        /// Sahadaki dizilişi (yer / taraf) düzenleyebilir mi: yönetici ya da kadroda (Going) olan herhangi bir oyuncu.
+        /// </summary>
+        public static bool CanArrange(MatcBuddyContext context, Match match, int playerId, bool isAdmin) =>
+            CanManage(context, match, playerId, isAdmin)
+            || context.MatchParticipants.Any(p =>
+                p.MatchId == match.MatchId && p.PlayerId == playerId && p.Status == ParticipantStatus.Going);
+
         // ---- Misafir oyuncular (docs/match-participation-api.md "Ek: Misafir oyuncular") ----
         // Misafirler kadroya sayılır: toplam = Going + misafir, taraf = o taraftaki Going + misafir.
 
@@ -163,7 +171,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
         /// </summary>
         /// <param name="checkReliability">Maçın en düşük güvenilirlik sınırı uygulanır mı (davetle / rakip takım olarak katılımda hayır).</param>
         public static OperationResult<byte> Join(MatcBuddyContext context, Match match, int playerId, byte? preferredSide = null,
-            bool checkReliability = false)
+            bool checkReliability = false, int? preferredSlot = null)
         {
             // İşletme hesapları maça katılamaz (docs/venues-api.md)
             if (context.Players.Any(p => p.PlayerId == playerId && p.Role == PlayerRoles.Owner))
@@ -193,6 +201,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var guests = LoadGuests(context, matchId);
             byte status;
             byte? side;
+            int? slot = null;
             // Kapasite: Going + misafir < UserCount (misafir yüzünden dolu maça katılan yedeğe düşer)
             if (going.Count + guests.Count < match.UserCount)
             {
@@ -202,6 +211,13 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 if (preferredSide.HasValue && SideCount(going, guests, preferredSide.Value) < SideCapacity(match))
                 {
                     side = preferredSide.Value;
+                    // Sahada dokunulan boş yer: başkası o yeri tutmuyorsa oraya yerleşir
+                    if (preferredSlot is int ps && ps >= 0 && ps < 50
+                        && !going.Any(p => p.Side == side && p.Slot == ps)
+                        && !guests.Any(g => g.Side == side && g.Slot == ps))
+                    {
+                        slot = ps;
+                    }
                 }
             }
             else
@@ -218,6 +234,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             // Daha önce "gelemiyor" olan kayıt yeniden kullanılır
             mine.Status = status;
             mine.Side = side;
+            mine.Slot = slot;
             mine.Confirmed = false;
             mine.JoinedAt = DateTime.Now;
             mine.ReminderSentAt = null;

@@ -21,8 +21,8 @@ namespace MatcBuddy.Business.Concrete
         public OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin) =>
             _participationDal.CheckCanManage(matchId, playerId, isAdmin);
 
-        public OperationResult<byte> Join(int matchId, int playerId) =>
-            _participationDal.Join(matchId, playerId);
+        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null) =>
+            _participationDal.Join(matchId, playerId, side, slot);
 
         public OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null)
         {
@@ -141,6 +141,9 @@ namespace MatcBuddy.Business.Concrete
             _participationDal.ToggleLike(matchId, playerId, likeOnly: true);
 
         public void FillFromWaitlist(int matchId) => _participationDal.FillFromWaitlist(matchId);
+
+        public OperationResult<bool> UpdateInfo(int actorPlayerId, bool isAdmin, UpdateMatchInfoInput input) =>
+            _participationDal.UpdateInfo(actorPlayerId, isAdmin, input);
 
         public IDataResult<List<MatchFeedItemDto>> GetMatchFeed(int playerId) =>
             new SuccessDataResult<List<MatchFeedItemDto>>(_participationDal.GetMatchFeed(playerId));

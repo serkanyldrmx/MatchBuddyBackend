@@ -12,6 +12,8 @@
         {
             public const string Text = "SHARE_MATCH_TEXT";                       // {0} maç, {1} tarih, {2} saha, {3} eksik, {4} link
             public const string TextFull = "SHARE_MATCH_TEXT_FULL";              // {0} maç, {1} tarih, {2} saha, {3} link
+            public const string SentToGroups = "MSG_SHARE_SENT_TO_GROUPS";       // {0} grup sayısı
+            public const string NotifSharedToGroup = "NOTIF_MATCH_SHARED_TO_GROUP"; // {0} gönderen, {1} maç
             public const string OgTitle = "SHARE_OG_TITLE";                      // {0} maç, {1} eksik
             public const string OgTitleFull = "SHARE_OG_TITLE_FULL";             // {0} maç
             public const string OgDescription = "SHARE_OG_DESCRIPTION";          // {0} tarih, {1} saha

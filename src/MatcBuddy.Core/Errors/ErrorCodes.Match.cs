@@ -21,6 +21,8 @@ namespace MatcBuddy.Core.Errors
             public const string PastRosterLocked = "MATCH_PAST_ROSTER_LOCKED";
             public const string InvalidSide = "MATCH_INVALID_SIDE";
             public const string InvalidLineup = "MATCH_INVALID_LINEUP";
+            public const string CapacityBelowRoster = "MATCH_CAPACITY_BELOW_ROSTER"; // {0} kadrodaki kişi sayısı
+            public const string EditClosed = "MATCH_EDIT_CLOSED";
             public const string GuestNotFound = "MATCH_GUEST_NOT_FOUND";
             public const string GuestNameLength = "MATCH_GUEST_NAME_LENGTH";      // {0} en az, {1} en fazla
             public const string ResultNotPlayed = "MATCH_RESULT_NOT_PLAYED";

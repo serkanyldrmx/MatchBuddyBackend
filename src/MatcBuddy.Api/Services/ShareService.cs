@@ -66,6 +66,72 @@ namespace MatcBuddy.Api.Services
             return OperationResult<ShareLinkDto>.Ok(new ShareLinkDto { Code = match.ShareCode!, Url = url, Text = text.ReplaceLineEndings("\n") });
         }
 
+        /// <summary>En fazla bu kadar gruba tek seferde gönderilir.</summary>
+        public const int MaxShareGroups = 10;
+
+        /// <summary>
+        /// Maçı (bilgileri + davet linki) oyuncunun üyesi olduğu gruplara mesaj olarak gönderir; grup üyelerinden
+        /// maçta olmayanlara tıklanınca maça götüren bir bildirim düşer (docs/engagement-api.md §3).
+        /// Dönen liste: mesajın gönderildiği grup kimlikleri (anlık bildirim için).
+        /// </summary>
+        public OperationResult<List<int>> ShareToGroups(int actorPlayerId, bool isAdmin, int matchId, List<int>? groupIds, string? note)
+        {
+            var ids = (groupIds ?? new List<int>()).Distinct().ToList();
+            if (ids.Count == 0 || ids.Count > MaxShareGroups)
+                return OperationResult<List<int>>.FieldError("groupIds", ErrorCodes.Validation.OutOfRange, "groupIds", 1, MaxShareGroups);
+            note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+            if (note != null && note.Length > 300)
+                return OperationResult<List<int>>.FieldError("note", ErrorCodes.Validation.TooLong, "note", 300);
+
+            var link = GetOrCreate(matchId);
+            if (!link.Success || link.Data == null) return OperationResult<List<int>>.From(link);
+
+            using var context = new MatcBuddyContext();
+            var match = context.Matchs.AsNoTracking().First(m => m.MatchId == matchId);
+
+            // Yalnızca üyesi olunan gruplar
+            var allowed = isAdmin
+                ? context.Groups.AsNoTracking().Where(g => ids.Contains(g.GroupId)).Select(g => g.GroupId).ToList()
+                : context.GroupPlayers.AsNoTracking()
+                    .Where(gp => gp.PlayerId == actorPlayerId && ids.Contains(gp.GroupId))
+                    .Select(gp => gp.GroupId).Distinct().ToList();
+            if (allowed.Count != ids.Count) return OperationResult<List<int>>.Forbidden();
+
+            var text = link.Data.Text;
+            if (note != null) text = note + "\n\n" + text;
+            var now = DateTime.Now;
+            foreach (var groupId in allowed)
+            {
+                context.GroupMessages.Add(new GroupMessage
+                {
+                    GroupId = groupId,
+                    MatchMessage = text,
+                    SendingDate = now,
+                    SendPlayerId = actorPlayerId,
+                });
+            }
+
+            // Grup üyelerine bildirim (gönderen ve zaten maçta olanlar hariç)
+            var inMatch = context.MatchParticipants.AsNoTracking()
+                .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
+                .Select(p => p.PlayerId).ToList();
+            var members = context.GroupPlayers.AsNoTracking()
+                .Where(gp => allowed.Contains(gp.GroupId) && gp.PlayerId != actorPlayerId)
+                .Select(gp => gp.PlayerId).Distinct().ToList()
+                .Except(inMatch).ToList();
+            if (members.Count > 0)
+            {
+                var sender = context.Players.AsNoTracking().Where(p => p.PlayerId == actorPlayerId)
+                    .Select(p => (p.PlayerName + " " + p.PlayerSurname).Trim()).FirstOrDefault() ?? string.Empty;
+                NotificationWriter.Add(context, NotificationType.MatchCreated,
+                    Msg.GetDefault(MessageKeys.Share.NotifSharedToGroup, sender, match.MatchName ?? string.Empty),
+                    matchId, null, members);
+            }
+
+            context.SaveChanges();
+            return OperationResult<List<int>>.Ok(allowed, Msg.Get(MessageKeys.Share.SentToGroups, allowed.Count));
+        }
+
         public int? MatchIdOf(string? code)
         {
             if (string.IsNullOrWhiteSpace(code) || code.Length > 12) return null;
@@ -149,7 +215,7 @@ namespace MatcBuddy.Api.Services
             {
                 title = Msg.Get(MessageKeys.Share.NotFoundTitle);
                 description = Msg.Get(ErrorCodes.Share.NotFound);
-                landing = _frontendBase;
+                // landing değişmez: uygulamadaki davet sayfası "Maç bulunamadı" ekranını açıklamasıyla gösterir
             }
             else
             {

@@ -24,6 +24,7 @@ namespace MatcBuddy.Entities.Entity
         TournamentUpdate = 12,
         ReservationRequest = 13,
         VenueReview = 14,
-        SlotDeal = 15
+        SlotDeal = 15,
+        MatchUpdated = 16
     }
 }

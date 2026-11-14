@@ -10,6 +10,8 @@ namespace MatcBuddy.Business
         {
             //services.AddScoped<IMatchCommentsService, MatchManager>();
             services.AddScoped<IMatchService, MatchManager>();
+            services.AddScoped<IBusinessApplicationService, BusinessApplicationManager>();
+            services.AddScoped<IEmailCenterService, EmailCenterManager>();
             services.AddScoped<IMessageService, MessageManager>();
             services.AddScoped<IPlayerService, PlayerManager>();
             services.AddScoped<IStadiumService, StadiumManager>();

@@ -44,6 +44,9 @@ namespace MatcBuddy.Core.Errors
             public const string OwnerNotAllowed = "TEAM_OWNER_NOT_ALLOWED";
             public const string PlayerIdsOrTeamIdRequired = "TEAM_PLAYER_IDS_OR_TEAM_ID_REQUIRED";
             public const string PlayerAlreadyInTeam = "TEAM_PLAYER_ALREADY_IN_TEAM";
+            public const string CreatorOnly = "TEAM_CREATOR_ONLY";
+            public const string NotMember = "TEAM_NOT_MEMBER";
+            public const string LastMember = "TEAM_LAST_MEMBER";
         }
 
         public static partial class Media

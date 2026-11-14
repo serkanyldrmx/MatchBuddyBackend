@@ -355,6 +355,20 @@ Her istek, `stadiumId` ya da dolaylı tesis sahibi `OwnerPlayerId == ben` kontro
 | GET | OsmCandidates | `?city=` veya `?south=&west=&north=&east=` | Sunucu tarafında Overpass API sorgusu (`https://overpass-api.de/api/interpreter`, timeout 25 sn, User-Agent `MatcBuddy/1.0`): `leisure=pitch` + `sport~soccer` node/way (way için center). Dönüş `[{ osmId, name, lat, lon, address, phone, website, openingHours, alreadyExists }]`. alreadyExists: aynı OsmId ya da 150 m içinde bir tesis var. `city` verildiyse şehir sınırı Nominatim ile bulunur. Hata/timeout → 502 `{ message }` |
 | POST | ImportCandidate | `{ osmId, name, lat, lon, address, city, district, phone }` | IsListed = 1 ama işletmesi olmadığı için görünmez; OsmId set edilir. Dönüş `{ stadiumId }` |
 
+## İşletme üyelik başvurusu — `/api/BusinessApplications`
+
+İşletmeler sayfasındaki "Başvur" formu (`/isletme-basvuru`). İşletme hesabı kendiliğinden açılmaz: başvuru kaydedilir,
+yöneticilere e-posta gider; yönetici başvuranı arar ve hesabı `POST /api/Admin/...` işletme sihirbazıyla açar.
+
+| Uç nokta | Yetki | Açıklama |
+|---|---|---|
+| `POST /api/BusinessApplications` | herkese açık (oran sınırı `auth`) | `{ businessName*, contactName*, phone*, email?, city?, district?, pitchCount? (1–50), note? (≤1000), consent* }` → `{ success, message }`. Telefon `05xxxxxxxxx` biçimine çevrilir. Aynı numaradan 24 saat içinde ikinci başvuru kaydedilmez (yine "alındı" döner). |
+| `GET /api/BusinessApplications?status=` | Admin | Yeni (0) olanlar önce, sonra en yeni; en fazla 300. |
+| `GET /api/BusinessApplications/NewCount` | Admin | Menü rozeti için yeni başvuru sayısı. |
+| `POST /api/BusinessApplications/Update` | Admin | `{ businessApplicationId, status (0 yeni, 1 arandı, 2 hesap açıldı, 3 olumsuz), adminNote? }` |
+
+Hata kodları: `BIZAPP_CONSENT_REQUIRED`, `BIZAPP_NOT_FOUND`, alan doğrulamaları `VALIDATION_*`.
+
 ## Bildirim türleri (NotificationType sonuna)
 - `ReservationRequest = 13`
 - `VenueReview = 14`

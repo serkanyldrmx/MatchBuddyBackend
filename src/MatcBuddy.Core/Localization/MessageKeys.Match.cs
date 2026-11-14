@@ -22,6 +22,7 @@ namespace MatcBuddy.Core.Localization
             public const string Liked = "MSG_MATCH_LIKED";
             public const string Unliked = "MSG_MATCH_UNLIKED";
             public const string Deleted = "MSG_MATCH_DELETED";
+            public const string InfoUpdated = "MSG_MATCH_INFO_UPDATED";
 
             // Bildirim metinleri (veritabanına yazılır: Msg.GetDefault)
             public const string NotifJoined = "NOTIF_MATCH_JOINED";                     // {0} oyuncu, {1} maç adı
@@ -32,6 +33,9 @@ namespace MatcBuddy.Core.Localization
             public const string NotifTeamAdded = "NOTIF_MATCH_TEAM_ADDED";              // {0} maç, {1} tarih, {2} stadyum, {3} adres, {4} takım
             public const string NotifApproved = "NOTIF_MATCH_APPROVED";                 // {0} maç, {1} tarih, {2} stadyum, {3} adres
             public const string NotifRejected = "NOTIF_MATCH_REJECTED";                 // {0} maç, {1} tarih, {2} stadyum, {3} adres
+            public const string NotifCancelled = "NOTIF_MATCH_CANCELLED";               // {0} maç adı, {1} tarih
+            public const string NotifUpdated = "NOTIF_MATCH_UPDATED";                   // {0} maç adı, {1} değişiklik özeti
+            public const string NotifCapacityChanged = "NOTIF_MATCH_CAPACITY_CHANGED";  // {0} eski, {1} yeni kadro
 
             // Etiketler
             public const string LabelSomePlayer = "LABEL_MATCH_SOME_PLAYER";
@@ -39,6 +43,9 @@ namespace MatcBuddy.Core.Localization
             public const string LabelScores = "LABEL_MATCH_SCORES";
             public const string LabelGoalsAssists = "LABEL_MATCH_GOALS_ASSISTS";
             public const string LabelRatingScore = "LABEL_MATCH_RATING_SCORE";
+            public const string LabelFieldName = "LABEL_MATCH_FIELD_NAME";
+            public const string LabelFieldDescription = "LABEL_MATCH_FIELD_DESCRIPTION";
+            public const string LabelFieldDate = "LABEL_MATCH_FIELD_DATE";
         }
 
         public static partial class Notification

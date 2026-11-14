@@ -1,5 +1,6 @@
 ﻿using MatcBuddy.Api.Model;
 using MatcBuddy.Api.Security;
+using MatcBuddy.Api.Services.Push;
 using MatcBuddy.Business.Abstract;
 using MatcBuddy.Entities.Entity;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +49,14 @@ namespace MatcBuddy.Api.Controllers
 
             var result = _notificationService.GetUnreadNotificationsByPlayerId(playerId);
             if (result.Success)
+            {
+                foreach (var n in result.Data)
+                {
+                    if (n.Notification != null)
+                        n.Url = PushDispatchService.UrlFor(n.Notification.Type, n.Notification.MatchId, n.Notification.StadiumId);
+                }
                 return Ok(result.Data);
+            }
             return this.ToHttp(result);
         }
 
@@ -102,6 +110,14 @@ namespace MatcBuddy.Api.Controllers
             if (result.Success)
                 return Ok(result.Message);
             return this.ToHttp(result);
+        }
+
+        // Kendi bildirimlerinin hepsini okundu işaretle
+        [HttpPost("MarkAllAsRead")]
+        public IActionResult MarkAllAsRead()
+        {
+            var result = _notificationService.MarkAllAsRead(User.GetPlayerId());
+            return Ok(result.Message);
         }
 
         // Okundu işaretle: sadece bildirimin sahibi

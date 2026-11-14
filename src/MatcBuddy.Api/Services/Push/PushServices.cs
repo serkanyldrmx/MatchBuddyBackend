@@ -184,8 +184,13 @@ namespace MatcBuddy.Api.Services.Push
         public static string UrlFor(NotificationType type, int? matchId, int? stadiumId = null) => type switch
         {
             NotificationType.SlotDeal when stadiumId.HasValue => $"/venues/{stadiumId.Value}",
+            NotificationType.StadiumAdded when stadiumId.HasValue => $"/venues/{stadiumId.Value}",
             NotificationType.MatchInvite or NotificationType.TeamInvite => "/invites",
-            NotificationType.Message => "/home",
+            NotificationType.Message => "/home?messages=1",
+            NotificationType.NewFollower => "/friends",
+            NotificationType.TournamentUpdate => "/tournaments",
+            NotificationType.ReservationRequest => "/venue/reservations",
+            NotificationType.VenueReview => "/venue/reviews",
             _ when matchId.HasValue => $"/match-details/{matchId.Value}",
             _ => "/NotificationList",
         };

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using MatcBuddy.Core.Messaging;
 using MatcBuddy.Entities.Entity;
@@ -11,8 +11,6 @@ namespace MatcBuddy.Business.Auth
     /// </summary>
     public static class AuthTemplates
     {
-        private const string Brand = "MatcBuddy";
-        private const string BrandColor = "#16a34a";
 
         public static EmailMessage PasswordResetEmail(Player p, string email, string code, int minutes) =>
             Build(p, email, MessageKeys.Auth.MailResetSubject, Msg.Get(MessageKeys.Auth.MailResetBody, minutes), code, null, null, true);
@@ -55,21 +53,13 @@ namespace MatcBuddy.Business.Auth
             }.Where(s => !string.IsNullOrEmpty(s)));
 
             string E(string s) => WebUtility.HtmlEncode(s);
-            var html = $@"<!doctype html>
-<html lang=""{E(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)}""><head><meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width,initial-scale=1""><title>{E(subject)}</title></head>
-<body style=""margin:0;padding:0;background:#f3f4f6;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#111827"">
-<table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background:#f3f4f6;padding:24px 0""><tr><td align=""center"">
-<table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden"">
-<tr><td style=""background:{BrandColor};padding:18px 24px;color:#ffffff;font-size:20px;font-weight:700"">&#9917; {Brand}</td></tr>
-<tr><td style=""padding:24px;font-size:15px;line-height:1.6"">
-<p style=""margin:0 0 12px"">{E(greeting)}</p>
-<p style=""margin:0 0 16px"">{E(body)}</p>
-{(code == null ? "" : $@"<div style=""margin:8px 0 20px;text-align:center""><span style=""display:inline-block;padding:12px 20px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:28px;letter-spacing:6px;font-weight:700;font-family:Consolas,monospace"">{E(code)}</span></div>")}
-{(link == null ? "" : $@"<p style=""margin:0 0 20px;text-align:center""><a href=""{E(link)}"" style=""display:inline-block;padding:10px 18px;border-radius:8px;background:{BrandColor};color:#ffffff;text-decoration:none;font-weight:600"">{E(linkText ?? link)}</a></p>")}
-{(ignore == null ? "" : $@"<p style=""margin:0;color:#6b7280;font-size:13px"">{E(ignore)}</p>")}
-</td></tr>
-<tr><td style=""padding:14px 24px;background:#f9fafb;color:#6b7280;font-size:12px"">{E(footer)}</td></tr>
-</table></td></tr></table></body></html>";
+            // Uygulama görünümündeki ortak kabuk (EmailLayout.Shell); kod büyük, okunaklı bir kutuda
+            var content = $@"<p style=""margin:0 0 14px;font-size:16px;font-weight:600"">{E(greeting)}</p>
+<p style=""margin:0 0 18px"">{E(body)}</p>
+{(code == null ? "" : $@"<table role=""presentation"" cellspacing=""0"" cellpadding=""0"" align=""center"" style=""margin:6px auto 22px""><tr><td style=""background:#070b12;border-radius:14px;padding:16px 26px;font-family:Consolas,'Courier New',monospace;font-size:32px;letter-spacing:10px;font-weight:800;color:#c6f432;text-align:center"">{E(code)}</td></tr></table>")}
+{(link == null ? "" : Email.EmailLayout.Button(linkText ?? link, link))}
+{(ignore == null ? "" : $@"<p style=""margin:18px 0 0;padding-top:14px;border-top:1px solid #e2e8dc;color:#6b7280;font-size:13px"">{E(ignore)}</p>")}";
+            var html = Email.EmailLayout.Shell(subject, body, subject, content, $@"<p style=""margin:0"">{E(footer)}</p>");
 
             return new EmailMessage(to, $"{p.PlayerName} {p.PlayerSurname}".Trim(), subject, text, html);
         }

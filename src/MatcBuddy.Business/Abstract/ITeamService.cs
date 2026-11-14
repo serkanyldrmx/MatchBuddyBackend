@@ -19,5 +19,9 @@ namespace MatcBuddy.Business.Abstract
         IDataResult<List<GetTeamAndPlayer>> GetTeamAndPlayer();
         IResult AddPlayerById(List<int> playerIds, int teamId);
         bool IsPlayerInTeam(int teamId, int playerId);
+        // Takımı silme / kadroyu düzenleme yetkisi: kurucu; kurucusu bilinmeyen eski takımlarda her üye
+        bool CanManage(int teamId, int playerId);
+        // Takımdan ayrıl (kurucu ayrılırsa kuruculuk en eski üyeye geçer)
+        IResult Leave(int teamId, int playerId);
     }
 }

@@ -103,6 +103,8 @@ namespace MatcBuddy.Entities.DTOs
         public MatchStadiumDto? Stadium { get; set; }
         public PlayerSummaryDto? CreatedBy { get; set; }
         public bool CanManage { get; set; }
+        /// <summary>Sahadaki dizilişi düzenleyebilir mi (yönetici ya da kadrodaki herhangi bir oyuncu).</summary>
+        public bool CanArrange { get; set; }
         public bool IsPast { get; set; }
         public byte? MyStatus { get; set; }
         public bool MyConfirmed { get; set; }
@@ -159,6 +161,8 @@ namespace MatcBuddy.Entities.DTOs
         public ReliabilityBadgeDto? Reliability { get; set; }
         // Kurucu "gelmedi" işaretledi mi
         public bool NoShow { get; set; }
+        // Bu oyuncuyu arayabilir miyim: oyuncunun telefon ayarı izin veriyorsa numarası, yoksa null
+        public string? Phone { get; set; }
     }
 
     public class MatchGuestDto
@@ -256,5 +260,18 @@ namespace MatcBuddy.Entities.DTOs
         public int MvpCount { get; set; }
         public double? AvgRating { get; set; }
         public int UserScore { get; set; }
+    }
+
+    /// <summary>Maç bilgilerini düzenleme (UpdateMatch). null alanlar değişmez.</summary>
+    public class UpdateMatchInfoInput
+    {
+        public int MatchId { get; set; }
+        public string? MatchName { get; set; }
+        public string? Description { get; set; }
+        /// <summary>Toplam kadro (iki taraf). 0 / null = değişmez.</summary>
+        public int? UserCount { get; set; }
+        /// <summary>Yalnızca admin: tarih ve onay durumu.</summary>
+        public DateTime? MatchDate { get; set; }
+        public byte? IsActive { get; set; }
     }
 }

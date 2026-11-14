@@ -1,6 +1,7 @@
 using MatcBuddy.Api.Model;
 using MatcBuddy.Api.Security;
 using MatcBuddy.Api.Services.Auth;
+using MatcBuddy.Api.Services.Messaging;
 using MatcBuddy.Business.Abstract;
 using MatcBuddy.Business.Auth;
 using MatcBuddy.Core.Utilities.Results;
@@ -30,10 +31,11 @@ namespace MatcBuddy.Api.Controllers
         private readonly IdentifierThrottle _throttle;
         private readonly ExternalAuthOptions _externalOptions;
         private readonly ILogger<AuthController> _logger;
+        private readonly MessagingChannels _channels;
 
         public AuthController(IAuthService auth, IPlayerService players, AuthSessionIssuer issuer, RefreshCookie cookie,
             ExternalSignInService external, ExternalAvatarImporter avatars, IdentifierThrottle throttle,
-            IOptions<ExternalAuthOptions> externalOptions, ILogger<AuthController> logger)
+            IOptions<ExternalAuthOptions> externalOptions, ILogger<AuthController> logger, MessagingChannels channels)
         {
             _auth = auth;
             _players = players;
@@ -44,6 +46,7 @@ namespace MatcBuddy.Api.Controllers
             _throttle = throttle;
             _externalOptions = externalOptions.Value;
             _logger = logger;
+            _channels = channels;
         }
 
         // ================================================================== Oturum
@@ -120,6 +123,8 @@ namespace MatcBuddy.Api.Controllers
         {
             google = _externalOptions.Google.IsConfigured ? new { clientId = _externalOptions.Google.ClientId } : null,
             facebook = _externalOptions.Facebook.IsConfigured ? new { appId = _externalOptions.Facebook.AppId } : null,
+            // Şifre sıfırlama / doğrulama kodunun gönderilebileceği kanallar
+            channels = new { email = _channels.EmailAvailable, sms = _channels.SmsAvailable },
         });
 
         [AllowAnonymous]
@@ -147,6 +152,7 @@ namespace MatcBuddy.Api.Controllers
             }
             _logger.LogInformation("Sosyal giriş: {Provider}, oyuncu {PlayerId} (yeni: {IsNew}, bağlandı: {Linked})",
                 provider, player.PlayerId, result.Data.IsNew, result.Data.Linked);
+            if (result.Data.IsNew) HttpContext.RequestServices.GetRequiredService<IEmailCenterService>().SendWelcome(player.PlayerId);
             return _issuer.SignIn(HttpContext, player, rememberMe, result.Data.IsNew);
         }
 
@@ -179,6 +185,12 @@ namespace MatcBuddy.Api.Controllers
         {
             var throttled = Throttle("forgot", model.Identifier);
             if (throttled != null) return throttled;
+            // Gönderici kurulu değilse kod kimseye ulaşmaz: "gönderildi" demek yerine açıkça söyle (hesap bilgisi sızdırmaz)
+            if (!_channels.IsAvailable(model.Channel))
+            {
+                _logger.LogError("Şifre sıfırlama: {Channel} kanalı yapılandırılmamış (Email:Smtp / Sms:Netgsm).", model.Channel);
+                return this.Error(StatusCodes.Status503ServiceUnavailable, ErrorCodes.Auth.ChannelUnavailable);
+            }
             return this.ToHttp(_auth.ForgotPassword(model.Identifier, model.Channel, AuthSessionIssuer.Client(HttpContext)));
         }
 

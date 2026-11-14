@@ -96,6 +96,18 @@ namespace MatcBuddy.Api.Controllers
             return result.Success ? Ok(result.Data) : this.ToHttp(result);
         }
 
+        /// <summary>Maçı (bilgileri + davet linki) üyesi olduğun gruplara mesaj olarak gönderir. Yanıt: { groupIds, message }.</summary>
+        [HttpPost("ShareToGroups")]
+        public IActionResult ShareToGroups(ShareToGroupsModel model, [FromServices] MatcBuddy.Api.Services.ShareService share,
+            [FromServices] MatcBuddy.Api.Hubs.RealtimeNotifier realtime)
+        {
+            var me = User.GetPlayerId();
+            var result = share.ShareToGroups(me, User.IsAdmin(), model.MatchId, model.GroupIds, model.Note);
+            if (!result.Success || result.Data == null) return this.ToHttp(result);
+            foreach (var groupId in result.Data) _ = realtime.GroupMessageAsync(groupId, me);
+            return Ok(new { groupIds = result.Data, message = result.Message });
+        }
+
         /// <summary>Davet linkiyle katıl (kayıt / girişten sonra). Yanıt: { matchId, status, message }.</summary>
         [HttpPost("JoinByCode")]
         public IActionResult JoinByCode(JoinByCodeModel model, [FromServices] MatcBuddy.Api.Services.ShareService share)
@@ -115,41 +127,20 @@ namespace MatcBuddy.Api.Controllers
             return this.ToHttp(_venueService.ClaimOpponent(User.GetPlayerId(), model));
         }
 
-        //Maç güncellemek için (yetki: canManage)
+        // Maç bilgilerini düzenle (yetki: canManage): ad, açıklama, oyuncu sayısı. Admin: tarih / durum da.
+        // Sözleşme: docs/match-participation-api.md "UpdateMatch"
         [HttpPost("UpdateMatch")]
-        public IActionResult UpdateMatch(MatchModel matchModel)
-        {
-            var permission = _participationService.CheckCanManage(matchModel.MatchId, User.GetPlayerId(), User.IsAdmin());
-            if (!permission.Success) return FromOperation(permission);
-
-            var existing = _matchService.GetById(matchModel.MatchId).Data;
-            if (existing == null) return this.NotFoundError(ErrorCodes.Match.NotFound);
-
-            // Ad / açıklama / kapasite düzenlenir. Rezervasyon alanları (saha, tarih, süre, fiyat, takımlar)
-            // ve onay durumu korunur: saat değişikliği yeni rezervasyon gerektirir, onay işletmenindir.
-            // Admin geçersiz kılma için tarih / durum değiştirebilir.
-            var match = existing;
-            match.MatchName = matchModel.MatchName;
-            match.Description = matchModel.Description;
-            if (matchModel.UserCount > 0) match.UserCount = matchModel.UserCount;
-            if (User.IsAdmin())
+        public IActionResult UpdateMatch(MatchModel matchModel) =>
+            this.ToHttp(_participationService.UpdateInfo(User.GetPlayerId(), User.IsAdmin(), new UpdateMatchInfoInput
             {
-                if (matchModel.MatchDate.HasValue) match.MatchDate = matchModel.MatchDate;
-                if (matchModel.IsActive is >= 1 and <= 3) match.IsActive = matchModel.IsActive;
-            }
+                MatchId = matchModel.MatchId,
+                MatchName = matchModel.MatchName,
+                Description = matchModel.Description,
+                UserCount = matchModel.UserCount,
+                MatchDate = matchModel.MatchDate,
+                IsActive = matchModel.IsActive == 0 ? null : matchModel.IsActive,
+            }));
 
-            var result = _matchService.Update(match);
-            if (result.Success)
-            {
-                // Kapasite arttıysa yedekler asile yükselir
-                _participationService.FillFromWaitlist(match.MatchId);
-                return Ok(result);
-            }
-            return this.ToHttp(result);
-        }
-
-        //Maç silmek için (yetki: canManage)
-        /// <summary>Haftalık tekrarı durdur (kurucu, tesis işletmesi ya da admin). Oluşmuş haftalar kalır.</summary>
         [HttpPost("StopRepeat")]
         public IActionResult StopRepeat(MatchModel model) =>
             this.ToHttp(MatcBuddy.DataAccess.Concrete.EntityFramework.MatchSeriesService.Stop(model.MatchId, User.GetPlayerId(), User.IsAdmin()));
@@ -265,11 +256,11 @@ namespace MatcBuddy.Api.Controllers
         }
 
         [HttpPost("Join")]
-        public IActionResult Join(MatchIdModel model)
+        public IActionResult Join(JoinMatchModel model)
         {
             if (User.IsOwner())
                 return this.ForbiddenError(ErrorCodes.Match.OwnerCannotJoin);
-            var result = _participationService.Join(model.MatchId, User.GetPlayerId());
+            var result = _participationService.Join(model.MatchId, User.GetPlayerId(), model.Side, model.Slot);
             if (!result.Success) return FromOperation(result);
             return Ok(new JoinResponse { Success = true, Message = result.Message, Status = result.Data });
         }
