@@ -52,7 +52,7 @@ Kayıt (`POST /api/Players/SavePlayer`, `playerModel` JSON'u içinde) artık `te
 ## Sosyal giriş eşleştirme
 
 1. Sağlayıcı + sağlayıcı kullanıcı kimliği daha önce bağlandıysa → o hesap.
-2. Sağlayıcı e-postayı doğrulanmış verdiyse ve bu e-postaya sahip, e-postası MatchBuddy'de de doğrulanmış **tek** bir hesap varsa → hesaba bağlanır.
+2. Sağlayıcı e-postayı doğrulanmış verdiyse ve bu e-postaya sahip, e-postası MatcBuddy'de de doğrulanmış **tek** bir hesap varsa → hesaba bağlanır.
    Facebook e-postası yalnızca `auth.facebookEmailTrusted = true` ise güvenilir sayılır.
 3. Aksi halde yeni hesap açılır (`hasPassword = false`); şifre "Şifremi unuttum" ile belirlenebilir.
 
@@ -71,5 +71,5 @@ Kayıt (`POST /api/Players/SavePlayer`, `playerModel` JSON'u içinde) artık `te
 | `Auth:Facebook:AppId`, `Auth:Facebook:AppSecret` | Facebook uygulaması. Boşsa Facebook butonu gizlenir. |
 | `Auth:FrontendBaseUrl` | E-posta bağlantıları için frontend adresi. |
 | `Auth:RefreshCookie:*` | Çerez adı, yolu, SameSite, Domain. Frontend ve API farklı sitedeyse `SameSite=None` (HTTPS şart). |
-| `Email:Smtp:*` | SMTP. Boşsa e-postalar `App_Data/outbox/*.txt` dosyasına yazılır (geliştirme). |
-| `Sms:Netgsm:*` | Netgsm SMS. Boşsa SMS'ler outbox'a yazılır. |
+| `Email:Smtp:*` | SMTP. Boşsa e-postalar `App_Data/outbox/*.txt` dosyasına yazılır (geliştirme). Canlıda (Production) boşsa e-posta kanalı **kapalı** sayılır: `ForgotPassword` 503 `AUTH_CHANNEL_UNAVAILABLE` döner, `GET Providers` yanıtında `channels.email = false` olur. Kendi bilgisayarındaki canlı kurulum için: `scripts/selfhost/configure-messaging.ps1`. |
+| `Sms:Netgsm:*` | Netgsm SMS. Boşsa SMS'ler outbox'a yazılır; canlıda SMS kanalı kapalı sayılır (`channels.sms = false`). |

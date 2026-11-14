@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ortak yapı taşları: sonuç tipleri, hata kodları, yerelleştirme, parametreler. Başka hiçbir projeye bağımlı olmamalı. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MatcBuddy.Core.Errors" />
+    <Using Include="MatcBuddy.Core.Localization" />
+    <Using Include="MatcBuddy.Core.Parameters" />
+  </ItemGroup>
+
+</Project>

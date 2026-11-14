@@ -4,10 +4,10 @@
   doldurmak için: önce şema (dotnet ef migrations script --idempotent), sonra bu dosya.
 
   Kullanım:
-    powershell -ExecutionPolicy Bypass -File scripts\export-data-sql.ps1 -OutFile D:\Project\MatchBuddyDeploy\data.sql
+    powershell -ExecutionPolicy Bypass -File scripts\export-data-sql.ps1 -OutFile D:\Project\MatcBuddyDeploy\data.sql
 #>
 param(
-  [string]$ConnectionString = "Server=(localdb)\mssqllocaldb;Database=MatchBuddy;Trusted_Connection=True;TrustServerCertificate=True",
+  [string]$ConnectionString = "Server=(localdb)\mssqllocaldb;Database=MatcBuddy;Trusted_Connection=True;TrustServerCertificate=True",
   [Parameter(Mandatory = $true)][string]$OutFile,
   [int]$BatchRows = 200
 )
@@ -30,7 +30,7 @@ ORDER BY t.name
 "@
 
 $sb = New-Object System.Text.StringBuilder
-[void]$sb.AppendLine("-- MatchBuddy demo verileri ($(Get-Date -Format 'yyyy-MM-dd HH:mm')). Önce şema betiği çalıştırılmış olmalı.")
+[void]$sb.AppendLine("-- MatcBuddy demo verileri ($(Get-Date -Format 'yyyy-MM-dd HH:mm')). Önce şema betiği çalıştırılmış olmalı.")
 [void]$sb.AppendLine("SET NOCOUNT ON;")
 foreach ($t in $tables.Rows) { [void]$sb.AppendLine("ALTER TABLE [$($t.SchemaName)].[$($t.TableName)] NOCHECK CONSTRAINT ALL;") }
 [void]$sb.AppendLine("GO")

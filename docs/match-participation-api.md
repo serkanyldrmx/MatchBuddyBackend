@@ -1,7 +1,7 @@
 # Maç Katılımı, Sonuç, MVP ve Puanlama — API Sözleşmesi
 > **Hata gövdeleri:** bu dokümandaki tüm hata yanıtları artık standart gövdeyi kullanır: `{ success:false, code, message, errors?, traceId }`. Hata kodları, yerelleştirme ve parametreler için bkz. [platform-api.md](platform-api.md). Mesaj örnekleri `message` alanının Türkçe metnidir.
 
-Bu doküman frontend (MatchBuddyReact) ile backend (MatchBuddy) arasındaki sözleşmedir.
+Bu doküman frontend (MatcBuddyReact) ile backend (MatcBuddy) arasındaki sözleşmedir.
 Tüm uç noktalar `[Authorize]`; "ben" = JWT'deki oyuncu (`User.GetPlayerId()`).
 JSON alan adları camelCase döner (ASP.NET varsayılanı).
 
@@ -52,6 +52,7 @@ Kapasite aşılırsa da hepsi Going kalır (geçmiş veri).
 - **Taraf ataması:** Going olan yeni oyuncu, daha az oyuncusu olan tarafa (eşitse Home) atanır.
 - **Ayrılma:** Going bir oyuncu ayrılırsa kaydı Status = 3 olur; Waitlist'teki en eski oyuncu Going'e yükselir, boşalan tarafa atanır ve bildirim alır.
 - **Yönetim yetkisi (canManage):** admin veya `CreatedByPlayerId == ben`. `CreatedByPlayerId` null olan eski maçlarda: admin veya maçta Going olan oyuncu.
+- **Diziliş yetkisi (canArrange):** canManage veya maçta Going olan herhangi bir oyuncu. `ArrangeLineup` bu kuralla çalışır (maç geçmiş ya da reddedilmiş olmamalı); detay yanıtında `canArrange` alanı döner.
 - **Sonuç girme:** canManage ve maç tarihi geçmiş. Tekrar girilebilir (düzeltme).
 - **MVP oyu / puanlama:** sadece maç tarihi geçmiş ve oy veren Going ise. Kendine oy/puan verilemez; hedef de Going olmalı. Oy değiştirilebilir (upsert).
 - **UserScore:** bir oyuncu puan aldığında `UserScore = round(ortalama(Score) * 20)` (0–100) olarak yeniden hesaplanır.
@@ -86,7 +87,7 @@ Ana sayfa listesi. Tüm maçlar (frontend filtreler).
   "stadium": { "stadiumId": 3, "stadiumName": "...", "address": "...", "location": "41.0, 29.0",
                "openingTime": "08:00:00", "closingTime": "23:00:00" },
   "createdBy": { /* PublicPlayerDto */ } | null,
-  "canManage": true, "isPast": false,
+  "canManage": true, "canArrange": true, "isPast": false,
   "myStatus": 1, "myConfirmed": false, "mySide": 1,
   "participants": [{
     "player": { /* PublicPlayerDto */ }, "status": 1, "side": 1, "confirmed": true,
@@ -100,9 +101,14 @@ Ana sayfa listesi. Tüm maçlar (frontend filtreler).
 ```
 `participants` Status 1 ve 2 olanları içerir (3 = gelemiyor olanlar listelenmez). Waitlist JoinedAt'e göre sıralı.
 
-### POST `Join` — body `{ "matchId": 1 }`
+### POST `Join` — body `{ "matchId": 1, "side"?: 1 | 2, "slot"?: 0.. }`
+`side` / `slot`: sahada dokunulan boş yer. O taraf doluysa normal kural (az kişili taraf) uygulanır; `slot` başkası
+tarafından tutuluyorsa yer otomatik seçilir. Verilmezse eskisi gibi sunucu taraf seçer.
 200 → `{ "success": true, "message": "Maça katıldın." | "Maç dolu, yedek listesine eklendin.", "status": 1 | 2 }`.
 400: zaten katılıyor / maç geçmiş / reddedilmiş.
+
+Maç detayında her katılımcının `phone` alanı, oyuncunun **Ayarlar → Telefonumu maçta kim görebilir** (`PlayerSettings.PhoneVisibility`:
+0 kimse, 1 maç yöneticileri — varsayılan, 2 maçtaki herkes) izin verdiği görüntüleyene doludur; aksi halde `null`.
 
 ### POST `Leave` — body `{ "matchId": 1 }`
 200 → `{ "success": true, "message": "..." }`. Kurucu da ayrılabilir.
@@ -125,7 +131,12 @@ canManage + maç geçmiş. Skorlar 0–50, goals/assists 0–30. Going olmayan p
 
 ### Değişen mevcut uç noktalar
 - `SaveMatch`: `CreatedByPlayerId = ben`; kurucu otomatik Going olarak eklenir (Side 1, Confirmed true).
-- `DeleteMatch`, `UpdateMatch`: yetki = canManage kuralı.
+- `DeleteMatch`: yetki = canManage kuralı.
+- `UpdateMatch` — body `{ "matchId": 1, "matchName": "Çarşamba maçı", "description": "...", "userCount": 14 }`: yetki = canManage.
+  Gönderilmeyen (null) alanlar değişmez; `description: ""` açıklamayı siler. Oynanmış / reddedilmiş maç düzenlenemez (`MATCH_EDIT_CLOSED`, admin hariç).
+  `userCount` kadronun (Going + misafir) altına inemez (`MATCH_CAPACITY_BELOW_ROSTER`); azalınca taraf kapasitesini aşan son gelenler diğer tarafa kayar,
+  artınca yedekler asile yükselir. Saha, saat, süre ve fiyat burada değişmez (harici sahada `UpdateExternalMatch`).
+  Değişiklik kadrodaki ve yedekteki diğer oyunculara `MatchUpdated` (16) bildirimiyle gider. Admin ayrıca `matchDate` / `isActive` gönderebilir.
 - `MatchLiked` (eski GET): `ToggleLike` ile aynı davranır ama sadece beğenir (geri uyumluluk).
 
 ## Oyuncu uç noktaları (`/api/Players/...`)

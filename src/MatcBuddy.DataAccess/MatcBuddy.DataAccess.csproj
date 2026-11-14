@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EF Core DbContext, yapılandırmalar, migration'lar ve DAL sınıfları. Business / Api'ye bağımlı olmamalı. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Microsoft.Data.SqlClient'ın getirdiği 9.0.x sürümündeki bilinen açıklar (GHSA-2fmv / GHSA-846f) için sabitleme -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MatcBuddy.Core\MatcBuddy.Core.csproj" />
+    <ProjectReference Include="..\MatcBuddy.Entities\MatcBuddy.Entities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="MatcBuddy.Core.Errors" />
+    <Using Include="MatcBuddy.Core.Localization" />
+    <Using Include="MatcBuddy.Core.Parameters" />
+  </ItemGroup>
+
+</Project>

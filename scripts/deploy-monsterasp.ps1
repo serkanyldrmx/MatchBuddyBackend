@@ -1,5 +1,5 @@
 ﻿<#
-  MatchBuddy API'yi MonsterASP.NET'e (ücretsiz plan) yükler — docs/deploy-monsterasp.md.
+  MatcBuddy API'yi MonsterASP.NET'e (ücretsiz plan) yükler — docs/deploy-monsterasp.md.
 
   Ne yapar:
     1. API'yi Release olarak derler (dotnet publish).
@@ -9,14 +9,16 @@
     5. https://<site>/api/Auth/Providers ile çalıştığını kontrol eder.
 
   Şifreler yalnızca bu pencerede sorulur; hiçbir dosyaya ya da depoya yazılmaz.
-  JWT anahtarı ilk çalıştırmada üretilir ve %APPDATA%\MatchBuddyDeploy\jwt.key içinde saklanır (sonraki yüklemelerde oturumlar düşmesin).
+  JWT anahtarı ilk çalıştırmada üretilir ve %APPDATA%\MatcBuddyDeploy\jwt.key içinde saklanır (sonraki yüklemelerde oturumlar düşmesin).
 
   Kullanım (backend deposunun kökünde, PowerShell):
     powershell -ExecutionPolicy Bypass -File scripts\deploy-monsterasp.ps1              # ilk kurulum: veritabanı + uygulama
     powershell -ExecutionPolicy Bypass -File scripts\deploy-monsterasp.ps1 -SkipDatabase # sonraki güncellemeler: yalnızca uygulama
 #>
 param(
-  [string]$SiteUrl = "https://matchbuddy.runasp.net",
+  [string]$SiteUrl = "https://matcbuddy.runasp.net",
+  # Canlı ön yüz adresi: e-posta doğrulama / davet linkleri ve CORS için kullanılır
+  [string]$FrontendUrl = "https://matcbuddy.com",
   [string]$FtpHost = "",
   [string]$FtpUser = "",
   [string]$FtpRoot = "/wwwroot",
@@ -29,8 +31,8 @@ param(
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $repo = Split-Path -Parent $PSScriptRoot
-$api = Join-Path $repo "src\Api\MatchBuddy.Api"
-$work = Join-Path $env:TEMP "matchbuddy-deploy"
+$api = Join-Path $repo "src\MatcBuddy.Api"
+$work = Join-Path $env:TEMP "matcbuddy-deploy"
 $out = Join-Path $work "publish"
 $env:PATH = "$env:USERPROFILE\.dotnet;$env:USERPROFILE\.dotnet\tools;$env:PATH"
 $env:DOTNET_ROOT = "$env:USERPROFILE\.dotnet"
@@ -45,7 +47,7 @@ $conn = Plain (Read-Host "Veritabanı bağlantı dizesi (Databases > bağlantı 
 if ([string]::IsNullOrWhiteSpace($conn)) { throw "Bağlantı dizesi boş olamaz." }
 if ($conn -notmatch "TrustServerCertificate") { $conn = $conn.TrimEnd(';') + ";TrustServerCertificate=True" }
 if (-not $SkipUpload) {
-  Write-Host "FTP bilgileri VERİTABANI sayfasında değil, WEB SİTESİ (matchbuddy.runasp.net) sayfasındaki FTP / Deploy bölümünde." -ForegroundColor Yellow
+  Write-Host "FTP bilgileri VERİTABANI sayfasında değil, WEB SİTESİ (matcbuddy.runasp.net) sayfasındaki FTP / Deploy bölümünde." -ForegroundColor Yellow
   while ($true) {
     if (-not $FtpHost) { $FtpHost = Read-Host "FTP sunucusu (ör. site12345.siteasp.net)" }
     $FtpHost = $FtpHost.Trim() -replace '^(ftps?|https?)://', '' -replace '[:/].*$', ''
@@ -60,7 +62,7 @@ if (-not $SkipUpload) {
 }
 
 # ------------------------------------------------------------------ Anahtarlar
-$secretDir = Join-Path $env:APPDATA "MatchBuddyDeploy"
+$secretDir = Join-Path $env:APPDATA "MatcBuddyDeploy"
 New-Item -ItemType Directory -Force $secretDir | Out-Null
 $jwtFile = Join-Path $secretDir "jwt.key"
 if (-not (Test-Path $jwtFile)) {
@@ -86,15 +88,16 @@ if (Test-Path $work) { Remove-Item -Recurse -Force $work }
 if ($LASTEXITCODE -ne 0) { throw "Derleme başarısız." }
 
 $prod = [ordered]@{
-  ConnectionStrings = @{ MatchBuddy = $conn }
+  ConnectionStrings = @{ MatcBuddy = $conn }
   Jwt = @{ Key = $jwtKey }
   Auth = @{
+    FrontendBaseUrl = $FrontendUrl
     Google = @{ ClientId = $googleId }
     Facebook = @{ AppId = $fbId; AppSecret = $fbSecret }
   }
-  # Vercel (matchbuddy-beta.vercel.app) /api isteklerini buraya iletir; gerçek istemci IP'si X-Forwarded-For'dan okunur
+  # Ön yüz (Vercel, $FrontendUrl) /api isteklerini buraya iletir; gerçek istemci IP'si X-Forwarded-For'dan okunur
   Proxy = @{ KnownNetworks = @("0.0.0.0/0", "::/0"); ForwardLimit = 1 }
-  Cors = @{ AllowedOrigins = @("https://matchbuddy-beta.vercel.app", "http://localhost:3000") }
+  Cors = @{ AllowedOrigins = @($FrontendUrl, ($FrontendUrl -replace '^https://', 'https://www.'), "http://localhost:3000") }
   Swagger = @{ Enabled = $false }
 }
 $prodJson = $prod | ConvertTo-Json -Depth 6
@@ -117,8 +120,8 @@ if (-not $SkipDatabase) {
     if (-not (Test-Path $BacpacPath)) { throw "Bacpac dosyası bulunamadı: $BacpacPath" }
     $bacpac = $BacpacPath
   } else {
-    $bacpac = Join-Path $work "MatchBuddy.bacpac"
-    & sqlpackage /Action:Export "/SourceConnectionString:Server=(localdb)\mssqllocaldb;Database=MatchBuddy;Trusted_Connection=True;TrustServerCertificate=True" "/TargetFile:$bacpac" /Quiet:True
+    $bacpac = Join-Path $work "MatcBuddy.bacpac"
+    & sqlpackage /Action:Export "/SourceConnectionString:Server=(localdb)\mssqllocaldb;Database=MatcBuddy;Trusted_Connection=True;TrustServerCertificate=True" "/TargetFile:$bacpac" /Quiet:True
     if ($LASTEXITCODE -ne 0) { throw "Yerel veritabanı dışa aktarılamadı. Hazır bir dosya varsa -BacpacPath ile ver." }
   }
   & sqlpackage /Action:Import "/SourceFile:$bacpac" "/TargetConnectionString:$conn" /Quiet:True
@@ -160,7 +163,7 @@ if (-not $SkipUpload) {
 
   # Yükleme sırasında siteyi durdur (kilitli DLL'ler serbest kalsın)
   $offline = Join-Path $work "app_offline.htm"
-  [IO.File]::WriteAllText($offline, "<html><body style='font-family:sans-serif;background:#070b12;color:#f4f8ec;text-align:center;padding-top:20vh'><h2>MatchBuddy güncelleniyor</h2><p>Birkaç dakika içinde geri döneceğiz.</p></body></html>")
+  [IO.File]::WriteAllText($offline, "<html><body style='font-family:sans-serif;background:#070b12;color:#f4f8ec;text-align:center;padding-top:20vh'><h2>MatcBuddy güncelleniyor</h2><p>Birkaç dakika içinde geri döneceğiz.</p></body></html>")
   FtpUpload $offline "$FtpRoot/app_offline.htm"
   Start-Sleep -Seconds 3
 
