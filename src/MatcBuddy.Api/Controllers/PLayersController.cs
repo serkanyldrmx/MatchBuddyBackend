@@ -151,11 +151,38 @@ namespace MatcBuddy.Api.Controllers
                     _auth.SendEmailVerification(player.PlayerId, enforceCooldown: false, AuthSessionIssuer.Client(HttpContext));
                 // Hoş geldin e-postası (e-posta varsa; şablon yönetim panelinden düzenlenir / kapatılır)
                 HttpContext.RequestServices.GetRequiredService<IEmailCenterService>().SendWelcome(player.PlayerId);
-                return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
+                // Otomatik giriş: /api/Auth/Login ile aynı yanıt (+ mb_rt çerezi). Eski alanlar da korunur.
+                // Oturum açılamazsa kayıt yine başarılıdır; istemci eski akışla giriş sayfasına yönlenir.
+                try
+                {
+                    var session = _issuer.SignIn(HttpContext, player, rememberMe: true);
+                    return Ok(RegisterResponse.From(session, result.Message, player.ProfilePictureUrl));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Kayıt sonrası otomatik giriş başarısız: oyuncu {PlayerId}", player.PlayerId);
+                    return Ok(new { result.Success, result.Message, player.ProfilePictureUrl });
+                }
             }
             if (avatar != null) await _mediaService.DeleteAsync(avatar.MediaId, CancellationToken.None);
+            // Alan hataları errors sözlüğüyle döner (kayıt formu ilgili alanın altında gösterir); kod ve mesaj aynı kalır
+            var field = RegisterErrorField(result.Code);
+            if (field != null)
+            {
+                return this.Error(StatusCodes.Status400BadRequest, result.Code!, result.Message,
+                    new Dictionary<string, string[]> { [field] = new[] { result.Message } });
+            }
             return this.ToHttp(result);
         }
+
+        /// <summary>Kayıt doğrulama hata kodu → playerModel alan adı (bilinmiyorsa null).</summary>
+        private static string? RegisterErrorField(string? code) => code switch
+        {
+            ErrorCodes.Player.NameInvalid => "playerName",
+            ErrorCodes.Auth.UserNameRequired or ErrorCodes.Auth.UserNameTaken => "userName",
+            ErrorCodes.Auth.PasswordRequired or ErrorCodes.Auth.PasswordTooShort or ErrorCodes.Auth.PasswordTooWeak => "password",
+            _ => null,
+        };
 
         // Profil güncelle: sadece kendi profilini (admin herkesinkini)
         [HttpPost("UpdatePlayer")]
