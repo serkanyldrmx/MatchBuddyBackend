@@ -124,6 +124,10 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     RejectReason = m.RejectReason,
                     RepeatWeekly = m.SeriesId.HasValue && activeSeries.Contains(m.SeriesId.Value),
                     CreatorReliability = m.CreatedByPlayerId.HasValue && reliability.TryGetValue(m.CreatedByPlayerId.Value, out var r) ? r : null,
+                    IsPaid = m.IsPaid,
+                    NoShow = m.NoShow,
+                    CancelledAt = m.CancelledAt,
+                    LateCancelledAt = m.LateCancelledAt,
                 };
             }).ToList();
         }
@@ -169,8 +173,15 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .Where(m => m.MatchDate >= weekStart.AddDays(-1) || m.MatchDate >= now)
                 .ToList();
 
-            var todayCount = matches.Count(m => m.MatchDate >= today && m.MatchDate < today.AddDays(1));
+            // Telefonla alınan (harici) rezervasyonlar da sayılır: Kind 1 bloklar
+            var pitchIds = context.Pitches.AsNoTracking().Where(p => ids!.Contains(p.StadiumId)).Select(p => p.PitchId).ToList();
+            var manual = VenueRules.Blocks(context, pitchIds, weekStart < today ? weekStart : today, weekEnd > today.AddDays(1) ? weekEnd : today.AddDays(1))
+                .Where(b => b.Kind == SlotBlockKind.Manual).ToList();
+
+            var todayCount = matches.Count(m => m.MatchDate >= today && m.MatchDate < today.AddDays(1))
+                             + manual.Count(b => b.StartAt >= today && b.StartAt < today.AddDays(1));
             var weekMatches = matches.Where(m => m.MatchDate >= weekStart && m.MatchDate < weekEnd).ToList();
+            var weekManual = manual.Where(b => b.StartAt >= weekStart && b.StartAt < weekEnd).ToList();
             var future = matches.Where(m => m.MatchDate >= now).OrderBy(m => m.MatchDate).ThenBy(m => m.MatchId).ToList();
             var pending = future.Where(m => m.IsActive == MatchStatus.Pending).ToList();
 
@@ -183,10 +194,11 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 var activePitches = context.Pitches.AsNoTracking().Count(p => p.StadiumId == sid && p.IsActive);
                 openMinutes += VenuePricing.OpenMinutesBetween(weekStart, weekEnd, pricing.Week) * activePitches;
             }
-            foreach (var m in matches.Where(m => m.MatchDate.HasValue))
+            var booked = matches.Where(m => m.MatchDate.HasValue)
+                .Select(m => (Start: m.MatchDate!.Value, End: m.MatchDate!.Value.AddMinutes(m.DurationMinutes <= 0 ? 60 : m.DurationMinutes)))
+                .Concat(manual.Select(b => (Start: b.StartAt, End: b.EndAt)));
+            foreach (var (s, e) in booked)
             {
-                var s = m.MatchDate!.Value;
-                var e = s.AddMinutes(m.DurationMinutes <= 0 ? 60 : m.DurationMinutes);
                 var os = s < weekStart ? weekStart : s;
                 var oe = e > weekEnd ? weekEnd : e;
                 if (oe > os) bookedMinutes += (oe - os).TotalMinutes;
@@ -197,10 +209,12 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             return OperationResult<OwnerDashboardDto>.Ok(new OwnerDashboardDto
             {
                 TodayCount = todayCount,
-                WeekCount = weekMatches.Count,
+                WeekCount = weekMatches.Count + weekManual.Count,
                 PendingCount = pending.Count,
                 OccupancyPercent = openMinutes > 0 ? (int)Math.Round(Math.Min(100, bookedMinutes * 100 / openMinutes)) : 0,
-                WeekRevenue = weekMatches.Where(m => m.IsActive == MatchStatus.Approved).Sum(m => m.TotalPrice ?? 0m),
+                // Onaylı uygulama maçları (gelmedi hariç) + fiyatı girilmiş telefon rezervasyonları
+                WeekRevenue = weekMatches.Where(m => m.IsActive == MatchStatus.Approved && !m.NoShow).Sum(m => m.TotalPrice ?? 0m)
+                              + weekManual.Sum(b => b.Price ?? 0m),
                 Rating = reviews.Count > 0 ? Math.Round(reviews.Average(), 1) : null,
                 ReviewCount = reviews.Count,
                 Upcoming = BuildReservations(context, future.Take(5).ToList()),
@@ -208,7 +222,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             });
         }
 
-        public OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime from, DateTime to)
+        public OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime from, DateTime to, bool includeSeries = false)
         {
             using var context = new MatcBuddyContext();
             var stadium = StadiumOf(context, stadiumId);
@@ -230,7 +244,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var matchIds = matches.Select(m => m.MatchId).ToList();
             // Going + misafir
             var going = ParticipationCore.RosterCounts(context, matchIds);
-            var creatorIds = matches.Where(m => m.CreatedByPlayerId.HasValue).Select(m => m.CreatedByPlayerId!.Value).Distinct().ToList();
+            var seriesWeeks = includeSeries ? VenueRules.SeriesWeeks(context, pitchIds, from, to) : new List<VenueRules.SeriesWeek>();
+            var creatorIds = matches.Where(m => m.CreatedByPlayerId.HasValue).Select(m => m.CreatedByPlayerId!.Value)
+                .Concat(seriesWeeks.Select(w => w.CreatedByPlayerId)).Distinct().ToList();
             var creators = context.Players.AsNoTracking().Where(p => creatorIds.Contains(p.PlayerId)).ToList()
                 .ToDictionary(p => p.PlayerId, PlayerSummaryDto.FromPlayer);
 
@@ -247,6 +263,16 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 GoingCount = going.TryGetValue(m.MatchId, out var n) ? n : 0,
                 Capacity = m.UserCount,
                 TotalPrice = m.TotalPrice,
+            }));
+            items.AddRange(seriesWeeks.OrderBy(w => w.Start).Select(w => new CalendarSeriesItemDto
+            {
+                SeriesId = w.SeriesId,
+                PitchId = w.PitchId,
+                Start = w.Start,
+                End = w.End,
+                Status = w.Approved ? MatchStatus.Approved : MatchStatus.Pending,
+                Title = w.Title,
+                Creator = creators.TryGetValue(w.CreatedByPlayerId, out var sc) ? sc : null,
             }));
             items.AddRange(VenueRules.Blocks(context, pitchIds, from, to).OrderBy(b => b.StartAt).Select(b => new CalendarBlockItemDto
             {
@@ -305,18 +331,6 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
         }
 
         // ------------------------------------------------------------------ Fotoğraflar
-
-        public OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId)
-        {
-            using var context = new MatcBuddyContext();
-            var g = Guard(context, me, StadiumOf(context, stadiumId), false);
-            if (g != null) return Fail<List<VenuePhotoDto>>(g);
-            return OperationResult<List<VenuePhotoDto>>.Ok(context.StadiumPhotos.AsNoTracking()
-                .Where(p => p.StadiumId == stadiumId)
-                .OrderByDescending(p => p.IsCover).ThenBy(p => p.SortOrder).ThenBy(p => p.PhotoId)
-                .Select(p => new VenuePhotoDto { PhotoId = p.PhotoId, Url = p.Url, IsCover = p.IsCover, SortOrder = p.SortOrder })
-                .ToList());
-        }
 
         public OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId)
         {
@@ -665,7 +679,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var start = input.StartAt!.Value;
             var end = input.EndAt!.Value;
             var ids = new[] { pitch.PitchId };
-            if (VenueRules.BusyMatches(context, ids, start, end).Count > 0)
+            // Harici rezervasyon abone (haftalık seri) haftalarına da yazılamaz; kapatma (bakım/tatil) yazılabilir,
+            // o hafta seri atlanır ve kurucu + işletme bilgilendirilir.
+            if (VenueRules.BusyMatches(context, ids, start, end, includeSeries: kind == SlotBlockKind.Manual).Count > 0)
                 return OperationResult<int>.BadRequest(ErrorCodes.Owner.BlockReservationConflict);
             var selfId = block?.SlotBlockId ?? 0;
             var others = VenueRules.Blocks(context, ids, start, end).Where(b => b.SlotBlockId != selfId).ToList();

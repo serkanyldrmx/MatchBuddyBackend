@@ -32,9 +32,10 @@ namespace MatcBuddy.Business.Abstract
         OperationResult<OwnerVenueDetailDto> OwnerVenue(int me, int stadiumId);
         OperationResult<OwnerDashboardDto> Dashboard(int me, int? stadiumId);
         OperationResult<List<ReservationDto>> Reservations(int me, int? stadiumId, byte? status, DateTime? from, DateTime? to);
-        OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime? from, DateTime? to);
+        OperationResult<bool> CancelReservation(int me, CancelReservationInput input);
+        OperationResult<bool> SetReservationPayment(int me, ReservationPaymentInput input);
+        OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime? from, DateTime? to, bool includeSeries = false);
         OperationResult<bool> UpdateVenue(int me, VenueUpdateInput input);
-        OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId);
         OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId);
         OperationResult<VenueSettingsDto> GetSettings(int me, int stadiumId);
         OperationResult<VenueSettingsDto> SaveSettings(int me, VenueSettingsInput input);

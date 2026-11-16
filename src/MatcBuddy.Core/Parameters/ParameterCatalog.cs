@@ -91,6 +91,7 @@ namespace MatcBuddy.Core.Parameters
             Int(ParameterKeys.Booking.DefaultMinNoticeHours, 0, GroupBooking, 0, 168, isPublic: true),
             Int(ParameterKeys.Booking.DefaultFreeCancellationHours, 24, GroupBooking, 0, 720, isPublic: true),
             Int(ParameterKeys.Booking.DefaultMaxAdvanceDays, 90, GroupBooking, 1, 365, isPublic: true),
+            Int(ParameterKeys.Booking.PendingExpiryHours, 24, GroupBooking, 1, 168, isPublic: true),
 
             // Maç
             Int(ParameterKeys.Match.ReminderLeadHours, 24, GroupMatch, 1, 168),

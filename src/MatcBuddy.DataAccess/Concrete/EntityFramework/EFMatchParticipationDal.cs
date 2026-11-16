@@ -103,6 +103,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var result = ParticipationCore.Leave(context, match, playerId);
             if (!result.Success) return OperationResult<LeaveResultDto>.Fail(result.Status, result.Code!, result.Args);
 
+            // Kurucu tesis rezervasyonundan ücretsiz iptal süresi içinde çekildi: işletmeye "geç iptal"
+            if (wasGoing) EFVenueDal.NotifyLateCancel(context, match, playerId, deleted: false);
+
             var penalty = wasGoing ? ReliabilityCore.PenaltyFor(match, DateTime.Now) : new LeavePenalty("none", null, 0, 0);
             if (penalty.Type.HasValue && penalty.Penalty > 0)
             {
@@ -1290,6 +1293,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             // Tesis yorumları maça NoAction FK ile bağlı: elle silinir
             context.VenueReviews.Where(r => r.MatchId == matchId).ExecuteDelete();
 
+            // Kurucu onaylı tesis rezervasyonunu ücretsiz iptal süresi içinde sildi: işletmeye "geç iptal" (genel iptal yerine)
+            var lateNotified = actorPlayerId.HasValue && EFVenueDal.NotifyLateCancel(context, match, actorPlayerId.Value, deleted: true);
+
             // Oynanmamış maç iptal edildiyse kadrodakilere, yedeklere ve tesise haber ver (sahaya boşuna gitmesinler).
             // Maç silindiği için bildirim maça bağlanmaz (MatchId = null).
             if (!IsPast(match))
@@ -1298,7 +1304,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     .Where(p => p.MatchId == matchId && (p.Status == ParticipantStatus.Going || p.Status == ParticipantStatus.Waitlist))
                     .Select(p => p.PlayerId)
                     .ToList();
-                if (match.PitchId.HasValue)
+                if (match.PitchId.HasValue && !lateNotified)
                 {
                     var ownerId = context.Stadiums.AsNoTracking().Where(s => s.StadiumId == match.StadiumId)
                         .Select(s => s.OwnerPlayerId).FirstOrDefault();

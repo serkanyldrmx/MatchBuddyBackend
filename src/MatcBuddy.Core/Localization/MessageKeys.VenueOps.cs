@@ -20,6 +20,12 @@ namespace MatcBuddy.Core.Localization
             public const string NotifTeamSquadWaitlisted = "NOTIF_RESERVATION_TEAM_SQUAD_WAITLISTED"; // {0} ekleyen, {1} maç
             public const string NotifOpponentJoined = "NOTIF_RESERVATION_OPPONENT_JOINED";        // {0} takım, {1} maç
             public const string NotifVenueReview = "NOTIF_RESERVATION_VENUE_REVIEW";              // {0} oyuncu, {1} tesis, {2} puan
+            public const string NotifCancelledByVenue = "NOTIF_RESERVATION_CANCELLED_BY_VENUE";   // {0} maç, {1} tarih, {2} tesis, {3} sebep
+            public const string NotifLateCancelDeleted = "NOTIF_RESERVATION_LATE_CANCEL_DELETED"; // {0} kurucu, {1} maç, {2} tarih, {3} tesis, {4} saat
+            public const string NotifLateCancelLeft = "NOTIF_RESERVATION_LATE_CANCEL_LEFT";       // {0} kurucu, {1} maç, {2} tarih, {3} tesis, {4} saat
+            public const string ExpiredNoResponse = "LABEL_RESERVATION_EXPIRED_NO_RESPONSE";      // {0} saat
+            public const string ExpiredStartPassed = "LABEL_RESERVATION_EXPIRED_START_PASSED";
+            public const string LabelCancelReason = "LABEL_RESERVATION_CANCEL_REASON";
 
             public const string LabelUserCount = "LABEL_RESERVATION_USER_COUNT";
             public const string LabelRejectReason = "LABEL_RESERVATION_REJECT_REASON";
@@ -47,6 +53,9 @@ namespace MatcBuddy.Core.Localization
             public const string ReviewReplySaved = "MSG_OWNER_REVIEW_REPLY_SAVED";
             public const string ExpenseSaved = "MSG_OWNER_EXPENSE_SAVED";
             public const string ExpenseDeleted = "MSG_OWNER_EXPENSE_DELETED";
+            public const string ReservationCancelled = "MSG_OWNER_RESERVATION_CANCELLED";
+            public const string NoShowMarked = "MSG_OWNER_NO_SHOW_MARKED";
+            public const string NoShowCleared = "MSG_OWNER_NO_SHOW_CLEARED";
 
             public const string LabelClosedBlockReason = "LABEL_OWNER_CLOSED_BLOCK_REASON";
         }

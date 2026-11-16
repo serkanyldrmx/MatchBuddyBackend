@@ -223,7 +223,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 FreeSlotsToday = pitches.Sum(p => slots.Count(sl => SlotStatus(sl.Start, sl.End, p.PitchId, busy, blocks, now) == "free")),
                 Description = s.Description,
                 Phone = s.Phone,
-                CancellationPolicy = s.CancellationPolicy,
+                CancellationPolicy = VenueRules.CancellationPolicyText(context, s),
                 Photos = photos.Select(p => new VenuePhotoDto { PhotoId = p.PhotoId, Url = p.Url, IsCover = p.IsCover, SortOrder = p.SortOrder }).ToList(),
                 Pitches = (ownerView ? allPitches : pitches).Select(ToDto).ToList(),
                 OpeningHours = VenueRules.ToDtos(week),
@@ -711,6 +711,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.NotPending);
                 if (status == MatchStatus.Pending)
                     return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.InvalidStatus);
+                // Saati geçmiş talep onaylanamaz (bekleyen talepler zaten arka planda düşer: ExpirePendingReservations)
+                if (status == MatchStatus.Approved && (match.MatchDate == null || match.MatchDate.Value <= DateTime.Now))
+                    return OperationResult<bool>.BadRequest(ErrorCodes.Reservation.StartPassed);
             }
             else if (match.IsActive == MatchStatus.Rejected && status != MatchStatus.Rejected && match.PitchId.HasValue && match.MatchDate.HasValue)
             {
@@ -729,28 +732,38 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var previous = match.IsActive;
             match.IsActive = status;
             match.RejectReason = status == MatchStatus.Rejected ? reason : null;
+            if (status != MatchStatus.Rejected) match.CancelledAt = null;
             if (previous != status) MatchSeriesService.OnStatusChanged(context, match, status);
 
             if (previous != status && status != MatchStatus.Pending)
-            {
-                var recipients = context.MatchParticipants
-                    .Where(p => p.MatchId == matchId && p.Status == ParticipantStatus.Going)
-                    .Select(p => p.PlayerId).ToList();
-                if (match.CreatedByPlayerId.HasValue) recipients.Add(match.CreatedByPlayerId.Value);
-                var place = stadium?.StadiumName ?? Msg.GetDefault(MessageKeys.Reservation.LabelVenueFallback);
-                var text = status == MatchStatus.Approved
-                    ? Msg.GetDefault(MessageKeys.Reservation.NotifApproved, match.MatchName, match.MatchDate, place)
-                    : reason != null
-                        ? Msg.GetDefault(MessageKeys.Reservation.NotifRejectedWithReason, match.MatchName, match.MatchDate, place, reason)
-                        : Msg.GetDefault(MessageKeys.Reservation.NotifRejected, match.MatchName, match.MatchDate, place);
-                AddNotification(context, status == MatchStatus.Approved ? NotificationType.MatchApproval : NotificationType.MatchRejection,
-                    text, matchId, recipients);
-            }
+                NotifyReservationStatus(context, match, stadium, status, reason);
 
             context.SaveChanges();
             transaction.Commit();
             return OperationResult<bool>.Ok(true, Msg.Get(status == MatchStatus.Approved ? MessageKeys.Reservation.Approved
                 : status == MatchStatus.Rejected ? MessageKeys.Reservation.Rejected : MessageKeys.Reservation.SetPending));
+        }
+
+        /// <summary>
+        /// Onay / red / iptal bildirimi: kurucu + Going (+ includeWaitlist ise yedekler). text verilmezse onay/red metni.
+        /// SaveChanges çağırmaz.
+        /// </summary>
+        private static void NotifyReservationStatus(MatcBuddyContext context, Match match, Stadium? stadium, byte status, string? reason,
+            string? text = null, bool includeWaitlist = false)
+        {
+            var recipients = context.MatchParticipants
+                .Where(p => p.MatchId == match.MatchId
+                            && (p.Status == ParticipantStatus.Going || (includeWaitlist && p.Status == ParticipantStatus.Waitlist)))
+                .Select(p => p.PlayerId).ToList();
+            if (match.CreatedByPlayerId.HasValue) recipients.Add(match.CreatedByPlayerId.Value);
+            var place = stadium?.StadiumName ?? Msg.GetDefault(MessageKeys.Reservation.LabelVenueFallback);
+            text ??= status == MatchStatus.Approved
+                ? Msg.GetDefault(MessageKeys.Reservation.NotifApproved, match.MatchName, match.MatchDate, place)
+                : reason != null
+                    ? Msg.GetDefault(MessageKeys.Reservation.NotifRejectedWithReason, match.MatchName, match.MatchDate, place, reason)
+                    : Msg.GetDefault(MessageKeys.Reservation.NotifRejected, match.MatchName, match.MatchDate, place);
+            AddNotification(context, status == MatchStatus.Approved ? NotificationType.MatchApproval : NotificationType.MatchRejection,
+                text, match.MatchId, recipients);
         }
     }
 }

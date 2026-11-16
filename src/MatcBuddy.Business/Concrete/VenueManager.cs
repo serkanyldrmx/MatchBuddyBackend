@@ -206,7 +206,26 @@ namespace MatcBuddy.Business.Concrete
         public OperationResult<List<ReservationDto>> Reservations(int me, int? stadiumId, byte? status, DateTime? from, DateTime? to) =>
             _venueDal.Reservations(me, stadiumId, status, from, to);
 
-        public OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime? from, DateTime? to)
+        public const int CancelReasonMaxLength = 200;
+
+        public OperationResult<bool> CancelReservation(int me, CancelReservationInput input)
+        {
+            if (input == null || input.MatchId <= 0) return Bad<bool>(ErrorCodes.Venue.ReservationRequired);
+            var reason = Clean(input.Reason);
+            if (reason == null) return Bad<bool>(ErrorCodes.Reservation.CancelReasonRequired);
+            var err = CheckLength(reason, CancelReasonMaxLength, MessageKeys.Reservation.LabelCancelReason);
+            if (err != null) return Bad<bool>(err);
+            return _venueDal.CancelReservation(me, input.MatchId, reason);
+        }
+
+        public OperationResult<bool> SetReservationPayment(int me, ReservationPaymentInput input)
+        {
+            if (input == null || input.MatchId <= 0) return Bad<bool>(ErrorCodes.Venue.ReservationRequired);
+            if (input.IsPaid == null && input.NoShow == null) return Bad<bool>(ErrorCodes.Reservation.InvalidStatus);
+            return _venueDal.SetReservationPayment(me, input.MatchId, input.IsPaid, input.NoShow);
+        }
+
+        public OperationResult<OwnerCalendarDto> Calendar(int me, int stadiumId, DateTime? from, DateTime? to, bool includeSeries = false)
         {
             var today = DateTime.Today;
             var start = from ?? today.AddDays(-VenuePricing.DayIndex(today));
@@ -214,7 +233,7 @@ namespace MatcBuddy.Business.Concrete
             if (end <= start) return Bad<OwnerCalendarDto>(ErrorCodes.Common.InvalidDateRange);
             var maxDays = P.Int(ParameterKeys.Venue.CalendarMaxDays);
             if ((end - start).TotalDays > maxDays) return Bad<OwnerCalendarDto>(ErrorCodes.Venue.CalendarRangeTooLong, maxDays);
-            return _venueDal.Calendar(me, stadiumId, start, end);
+            return _venueDal.Calendar(me, stadiumId, start, end, includeSeries);
         }
 
         public OperationResult<bool> UpdateVenue(int me, VenueUpdateInput input)
@@ -243,7 +262,6 @@ namespace MatcBuddy.Business.Concrete
             return _venueDal.UpdateVenue(me, input);
         }
 
-        public OperationResult<List<VenuePhotoDto>> Photos(int me, int stadiumId) => _venueDal.Photos(me, stadiumId);
         public OperationResult<bool> CheckCanAddPhoto(int me, int stadiumId) => _venueDal.CheckCanAddPhoto(me, stadiumId);
 
         public OperationResult<VenueSettingsDto> GetSettings(int me, int stadiumId) => _venueDal.GetSettings(me, stadiumId);

@@ -135,9 +135,10 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             var matches = context.Matchs.AsNoTracking()
                 .Where(m => ids!.Contains(m.StadiumId) && m.PitchId != null && m.IsActive == MatchStatus.Approved
                             && m.MatchDate >= from && m.MatchDate < to)
-                .Select(m => new { m.MatchId, PitchId = m.PitchId!.Value, m.MatchName, MatchDate = m.MatchDate!.Value, m.DurationMinutes, m.TotalPrice })
+                .Select(m => new { m.MatchId, PitchId = m.PitchId!.Value, m.MatchName, MatchDate = m.MatchDate!.Value, m.DurationMinutes, m.TotalPrice, m.IsPaid, m.NoShow })
                 .ToList()
-                .Select(m => new VenueFinance.FinanceMatch(m.MatchId, m.PitchId, m.MatchName, m.MatchDate, m.DurationMinutes, m.TotalPrice ?? 0m))
+                .Select(m => new VenueFinance.FinanceMatch(m.MatchId, m.PitchId, m.MatchName, m.MatchDate, m.DurationMinutes, m.TotalPrice ?? 0m,
+                    m.IsPaid, m.NoShow))
                 .ToList();
 
             var bookings = context.SlotBlocks.AsNoTracking()
