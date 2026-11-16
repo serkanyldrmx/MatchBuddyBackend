@@ -270,6 +270,54 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.ToTable("Campaigns", (string)null);
                 });
 
+            modelBuilder.Entity("MatcBuddy.Entities.Entity.ContactMessage", b =>
+                {
+                    b.Property<int>("ContactMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContactMessageId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("HandledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsHandled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("ContactMessageId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.HasIndex("IsHandled", "CreatedAt");
+
+                    b.ToTable("ContactMessages", (string)null);
+                });
+
             modelBuilder.Entity("MatcBuddy.Entities.Entity.EmailCampaign", b =>
                 {
                     b.Property<int>("EmailCampaignId")
@@ -584,6 +632,9 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.Property<bool>("CameraRequested")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime");
+
                     b.Property<int>("CleatCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -619,6 +670,14 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.Property<byte>("IsActive")
                         .HasColumnType("tinyint");
 
+                    b.Property<bool>("IsPaid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LateCancelledAt")
+                        .HasColumnType("datetime");
+
                     b.Property<int>("Likes")
                         .HasColumnType("int");
 
@@ -635,6 +694,11 @@ namespace MatcBuddy.DataAccess.Migrations
 
                     b.Property<int?>("MinReliability")
                         .HasColumnType("int");
+
+                    b.Property<bool>("NoShow")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<int?>("PitchId")
                         .HasColumnType("int");
@@ -667,6 +731,11 @@ namespace MatcBuddy.DataAccess.Migrations
 
                     b.Property<int>("UserCount")
                         .HasColumnType("int");
+
+                    b.Property<byte>("Visibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
 
                     b.HasKey("MatchId");
 
@@ -1310,6 +1379,13 @@ namespace MatcBuddy.DataAccess.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("int");
 
+                    b.Property<string>("BanReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("BannedUntil")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -1326,6 +1402,9 @@ namespace MatcBuddy.DataAccess.Migrations
 
                     b.Property<byte>("IsAdmin")
                         .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsBanned")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1772,6 +1851,19 @@ namespace MatcBuddy.DataAccess.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("ReporterId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("ResolutionAction")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ResolvedByPlayerId")
                         .HasColumnType("int");
 
                     b.Property<byte>("Status")
