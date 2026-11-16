@@ -7,6 +7,10 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
 {
     public class EFModerationDal : IModerationDal
     {
+        /// <summary>Veritabanından Kind = Unspecified gelen UTC tarih; JSON'da "Z" ile yazılsın diye işaretlenir.</summary>
+        internal static DateTime? AsUtc(DateTime? value) =>
+            value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
+
         public PagedDto<AdminUserDto> SearchUsers(string? query, bool bannedOnly, int page, int pageSize, DateTime utcNow)
         {
             using var context = new MatcBuddyContext();
@@ -54,7 +58,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                         Role = p.Role,
                         EmailConfirmed = p.EmailConfirmed,
                         IsBanned = active,
-                        BannedUntil = active ? p.BannedUntil : null,
+                        BannedUntil = active ? AsUtc(p.BannedUntil) : null,
                         BanReason = active ? p.BanReason : null,
                         ReportCount = c?.All ?? 0,
                         OpenReportCount = c?.Open ?? 0,
@@ -138,11 +142,11 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     Email = m.Email,
                     Subject = m.Subject,
                     Message = m.Message,
-                    CreatedAt = m.CreatedAt,
+                    CreatedAt = DateTime.SpecifyKind(m.CreatedAt, DateTimeKind.Utc),
                     PlayerId = m.PlayerId,
                     PlayerUserName = m.PlayerId.HasValue && userNames.TryGetValue(m.PlayerId.Value, out var u) ? u : null,
                     IsHandled = m.IsHandled,
-                    HandledAt = m.HandledAt,
+                    HandledAt = EFModerationDal.AsUtc(m.HandledAt),
                 }).ToList(),
             };
         }
