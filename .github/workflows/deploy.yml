@@ -1,0 +1,91 @@
+name: Deploy (MonsterASP)
+
+# Canlı API'yi MonsterASP'ye FTP ile yükler (scripts/deploy-monsterasp.ps1 -SkipDatabase ile aynı iş).
+# appsettings.Production.json ve App_Data sunucuda kalır, üzerine yazılmaz.
+# Veritabanı migration'ları uygulama açılırken kendiliğinden uygulanır (Program.cs, Database:AutoMigrate).
+#
+# Gerekli secret: MONSTERASP_FTP_PASSWORD (Settings > Secrets and variables > Actions)
+# Elle çalıştırmak için: Actions > Deploy (MonsterASP) > Run workflow (telefondan da olur).
+
+on:
+  push:
+    branches: [rebrand/matcbuddy]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-monsterasp
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://matchbuddy.runasp.net
+  FTP_HOST: site105829.siteasp.net
+  FTP_USER: site105829
+  FTP_ROOT: /wwwroot
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test MatcBuddy.sln -c Release
+
+      - name: Migration / model uyumu
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --project src/MatcBuddy.DataAccess --startup-project src/MatcBuddy.Api -c Release
+
+      - name: Publish
+        run: dotnet publish src/MatcBuddy.Api -c Release -o publish --nologo -v q
+
+      - name: Upload (FTP)
+        env:
+          FTP_PASSWORD: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FTP_PASSWORD:-}" ]; then
+            echo "::error::MONSTERASP_FTP_PASSWORD secret'ı tanımlı değil (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          rm -f publish/appsettings.Production.json publish/appsettings.Development.json
+          rm -rf publish/App_Data
+          printf 'user = "%s:%s"\n' "$FTP_USER" "$(printf '%s' "$FTP_PASSWORD" | sed 's/\\/\\\\/g; s/"/\\"/g')" > "$RUNNER_TEMP/ftp.cfg"
+          SSL=(--ssl-reqd --tls-max 1.2)
+          ftp() { curl -sS -K "$RUNNER_TEMP/ftp.cfg" --ftp-pasv --connect-timeout 30 "${SSL[@]}" "$@"; }
+          if ! ftp --list-only -o /dev/null "ftp://$FTP_HOST$FTP_ROOT/"; then
+            echo "Şifreli FTP olmadı, düz FTP deneniyor"; SSL=()
+            ftp --list-only -o /dev/null "ftp://$FTP_HOST$FTP_ROOT/"
+          fi
+          up() {
+            for i in 1 2 3; do
+              ftp --ftp-create-dirs --retry 3 --retry-delay 3 --retry-all-errors -T "$1" "ftp://$FTP_HOST$FTP_ROOT/$2" && return 0
+              echo "tekrar deneniyor ($i/3): $2"; sleep $((5*i))
+            done
+            return 1
+          }
+          echo "<html><body style='font-family:sans-serif;background:#070b12;color:#f4f8ec;text-align:center;padding-top:20vh'><h2>MatcBuddy güncelleniyor</h2><p>Birkaç dakika içinde geri döneceğiz.</p></body></html>" > "$RUNNER_TEMP/app_offline.htm"
+          up "$RUNNER_TEMP/app_offline.htm" app_offline.htm
+          sleep 5
+          cd publish
+          n=0; total=$(find . -type f | wc -l)
+          while IFS= read -r f; do
+            rel="${f#./}"
+            up "$f" "$rel"
+            n=$((n+1)); if [ $((n % 25)) -eq 0 ]; then echo "$n/$total dosya"; fi
+          done < <(find . -type f)
+          echo "$total dosya yüklendi"
+          ftp -Q "DELE $FTP_ROOT/app_offline.htm" -o /dev/null "ftp://$FTP_HOST/"
+          rm -f "$RUNNER_TEMP/ftp.cfg"
+
+      - name: Kontrol
+        run: |
+          for i in $(seq 1 18); do
+            if curl -fsS --max-time 60 "$SITE_URL/api/Auth/Providers"; then echo; echo "API çalışıyor"; exit 0; fi
+            echo "bekleniyor ($i)"; sleep 10
+          done
+          echo "::error::API yanıt vermedi"; exit 1

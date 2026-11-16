@@ -13,6 +13,7 @@ using MatcBuddy.DataAccess.Concrete.EntityFramework;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -319,6 +320,28 @@ namespace MatcBuddy.Api
             });
 
             var app = builder.Build();
+
+            // Bekleyen EF migration'ları açılışta uygulanır (canlıda veritabanına ayrıca bağlanmadan güncelleme).
+            // Development'ta varsayılan kapalı; "Database:AutoMigrate" ile açılıp kapatılabilir.
+            if (builder.Configuration.GetValue("Database:AutoMigrate", !app.Environment.IsDevelopment()))
+            {
+                try
+                {
+                    using var db = new MatcBuddyContext();
+                    var pending = db.Database.GetPendingMigrations().ToList();
+                    if (pending.Count > 0)
+                    {
+                        app.Logger.LogInformation("Veritabanı güncelleniyor: {Migrations}", string.Join(", ", pending));
+                        db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+                        db.Database.Migrate();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    app.Logger.LogCritical(ex, "Veritabanı migration'ları uygulanamadı.");
+                    throw;
+                }
+            }
 
             // Parametreler: statik yardımcılar DI'daki önbellekli servisi kullanır; tanımlar tabloya senkronlanır
             Parameters.Current = app.Services.GetRequiredService<IParameterService>();
