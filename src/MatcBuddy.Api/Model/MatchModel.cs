@@ -23,6 +23,8 @@ namespace MatcBuddy.Api.Model
         /// <summary>En düşük güvenilirlik puanı (null = sınır yok)</summary>
         public int? MinReliability { get; set; }
         public bool RepeatWeekly { get; set; }
+        /// <summary>MatchVisibility: 0 herkese açık, 1 sadece davet / link (UpdateMatch'te null = değişmez)</summary>
+        public byte? Visibility { get; set; }
         //public Stadium Stadium { get; set; }
     }
 }

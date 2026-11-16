@@ -56,6 +56,8 @@ namespace MatcBuddy.Entities.DTOs
         public TeamRefDto? AwayTeam { get; set; }
         public bool LookingForOpponent { get; set; }
         public string? RejectReason { get; set; }
+        /// <summary>MatchVisibility: 0 herkese açık, 1 sadece davet / link.</summary>
+        public byte Visibility { get; set; }
     }
 
     // ---- GET GetMatchFeed ----
@@ -103,6 +105,11 @@ namespace MatcBuddy.Entities.DTOs
         public MatchStadiumDto? Stadium { get; set; }
         public PlayerSummaryDto? CreatedBy { get; set; }
         public bool CanManage { get; set; }
+        /// <summary>
+        /// Maça normal "Katıl" ile katılabilir mi (görünürlük açısından). Açık maçta her zaman true; sadece davetle
+        /// açık maçta kurucu / davetli / kadro kaydı / takım üyesi için true (diğerleri davet linkiyle katılır).
+        /// </summary>
+        public bool HasAccess { get; set; } = true;
         /// <summary>Sahadaki dizilişi düzenleyebilir mi (yönetici ya da kadrodaki herhangi bir oyuncu).</summary>
         public bool CanArrange { get; set; }
         public bool IsPast { get; set; }
@@ -273,5 +280,7 @@ namespace MatcBuddy.Entities.DTOs
         /// <summary>Yalnızca admin: tarih ve onay durumu.</summary>
         public DateTime? MatchDate { get; set; }
         public byte? IsActive { get; set; }
+        /// <summary>MatchVisibility (null = değişmez). Kurucu / yönetici değiştirebilir.</summary>
+        public byte? Visibility { get; set; }
     }
 }

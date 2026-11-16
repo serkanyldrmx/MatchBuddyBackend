@@ -28,6 +28,7 @@ namespace MatcBuddy.Core.Localization
             public const string LabelCity = "LABEL_VENUE_CITY";
             public const string LabelDistrict = "LABEL_VENUE_DISTRICT";
             public const string LabelCancellationPolicy = "LABEL_VENUE_CANCELLATION_POLICY";
+            public const string FreeCancellationPolicy = "LABEL_VENUE_FREE_CANCELLATION_POLICY"; // {0} saat
             public const string LabelCleatRentalPrice = "LABEL_VENUE_CLEAT_RENTAL_PRICE";
             public const string LabelCameraPrice = "LABEL_VENUE_CAMERA_PRICE";
             public const string LabelPitchName = "LABEL_VENUE_PITCH_NAME";

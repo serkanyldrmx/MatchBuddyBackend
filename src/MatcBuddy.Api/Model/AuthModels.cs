@@ -71,4 +71,34 @@ namespace MatcBuddy.Api.Model
         public bool ProfileIncomplete { get; set; }
         public List<string> MissingProfileFields { get; set; } = new();
     }
+
+    /// <summary>
+    /// Kayıt (POST /api/Players/SavePlayer) yanıtı: giriş yanıtının aynısı (otomatik giriş; refresh token mb_rt çerezinde)
+    /// + geriye dönük uyumluluk için eski alanlar { success, message, profilePictureUrl }.
+    /// </summary>
+    public class RegisterResponse : AuthLoginResponse
+    {
+        public bool Success { get; set; } = true;
+        public string? Message { get; set; }
+        public string? ProfilePictureUrl { get; set; }
+
+        public static RegisterResponse From(AuthLoginResponse login, string? message, string? profilePictureUrl) => new()
+        {
+            Token = login.Token,
+            ExpiresAt = login.ExpiresAt,
+            Player = login.Player,
+            Role = login.Role,
+            RefreshExpiresAt = login.RefreshExpiresAt,
+            RememberMe = login.RememberMe,
+            ConsentRequired = login.ConsentRequired,
+            TermsVersion = login.TermsVersion,
+            EmailConfirmed = login.EmailConfirmed,
+            IsNew = login.IsNew,
+            ProfileIncomplete = login.ProfileIncomplete,
+            MissingProfileFields = login.MissingProfileFields,
+            Success = true,
+            Message = message,
+            ProfilePictureUrl = profilePictureUrl,
+        };
+    }
 }

@@ -4,7 +4,8 @@ namespace MatcBuddy.Api.Services
 {
     /// <summary>
     /// Periyodik olarak (varsayılan 10 dakikada bir, ayar: Reminders:IntervalSeconds)
-    /// 24 saat içinde başlayacak maçların onay vermemiş asil oyuncularına hatırlatma bildirimi gönderir.
+    /// 24 saat içinde başlayacak maçların onay vermemiş asil oyuncularına hatırlatma bildirimi gönderir;
+    /// haftalık serileri ilerletir, yanıtlanmayan rezervasyon taleplerini düşürür, güvenilirlik puanlarını işler.
     /// Hatalar loglanır, uygulamayı asla düşürmez.
     /// </summary>
     public class MatchReminderService : BackgroundService
@@ -43,6 +44,13 @@ namespace MatcBuddy.Api.Services
                     if (weekly > 0)
                     {
                         _logger.LogInformation("{Count} haftalık maç oluşturuldu.", weekly);
+                    }
+
+                    // Yanıtlanmayan rezervasyon talepleri: süre (booking.pendingExpiryHours) ya da maç saati geçince düşer
+                    var expired = MatcBuddy.DataAccess.Concrete.EntityFramework.EFVenueDal.ExpirePendingReservations();
+                    if (expired > 0)
+                    {
+                        _logger.LogInformation("{Count} yanıtlanmayan rezervasyon talebi düştü.", expired);
                     }
 
                     // Güvenilirlik: "gelmedi" penceresi kapanan maçlara katılım puanı (docs/reliability-api.md)

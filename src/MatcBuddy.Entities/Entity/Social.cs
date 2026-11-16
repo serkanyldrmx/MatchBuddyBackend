@@ -36,12 +36,27 @@ namespace MatcBuddy.Entities.Entity
         public string? Details { get; set; }
         public byte Status { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        // Yönetici incelemesi (Status = Reviewed olduğunda dolar)
+        public int? ResolvedByPlayerId { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public string? ResolutionNote { get; set; }
+        /// <summary>ReportResolutionActions: 0 işlem yok, 1 uyarı, 2 engel</summary>
+        public byte ResolutionAction { get; set; }
     }
 
     public static class ReportStatus
     {
         public const byte New = 0;
         public const byte Reviewed = 1;
+    }
+
+    public static class ReportResolutionActions
+    {
+        public const byte None = 0;
+        public const byte Warn = 1;
+        public const byte Ban = 2;
+        public static bool IsValid(int a) => a is >= None and <= Ban;
     }
 
     /// <summary>Oyuncu ayarları (1:1). Kayıt yoksa varsayılanlar geçerlidir.</summary>

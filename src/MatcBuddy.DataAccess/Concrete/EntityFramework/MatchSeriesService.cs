@@ -9,7 +9,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
     /// Haftalık sabit maç (docs/venue-growth-api.md). Kurucu maçı "her hafta" diye kurar; seri her zaman en fazla
     /// SeriesLeadDays (7) gün ilerisini açık tutar: sıradaki hafta yaklaşınca aynı saha/saat için yeni maç oluşturulur,
     /// önceki haftanın oyuncularına "bu hafta da geliyor musun?" daveti gider. İşletme serinin bir maçını onayladıktan
-    /// sonra yeni haftalar otomatik onaylı açılır. Saat doluysa o hafta atlanır, kurucuya haber verilir.
+    /// sonra yeni haftalar otomatik onaylı açılır. Henüz oluşturulmamış ileri haftalar VenueRules.SeriesBusy ile
+    /// başka rezervasyonlara kapalıdır. Saat yine de kapalıysa (ör. bakım bloğu) o hafta atlanır; kurucuya ve
+    /// işletmeye haber verilir.
     /// </summary>
     public static class MatchSeriesService
     {
@@ -111,13 +113,22 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .OrderByDescending(m => m.MatchDate).FirstOrDefault();
             var start = series.NextDate;
             series.NextDate = start.AddDays(7);
-            if (template == null || start < DateTime.Now)
+            if (template == null)
             {
-                if (template == null)
-                {
-                    series.IsActive = false;
-                    series.StoppedAt = DateTime.Now;
-                }
+                series.IsActive = false;
+                series.StoppedAt = DateTime.Now;
+                context.SaveChanges();
+                transaction.Commit();
+                return false;
+            }
+            if (start < DateTime.Now)
+            {
+                // Arka plan servisi zamanında çalışamadı: kaçan haftalar atlanır (sessizce değil), seri bir sonraki
+                // gelecek haftadan devam eder.
+                while (series.NextDate < DateTime.Now) series.NextDate = series.NextDate.AddDays(7);
+                AddNotification(context, NotificationType.MatchRejection,
+                    Msg.GetDefault(MessageKeys.Growth.NotifSeriesSkipped, template.MatchName, start), template.MatchId,
+                    new[] { series.CreatedByPlayerId });
                 context.SaveChanges();
                 transaction.Commit();
                 return false;
@@ -137,18 +148,26 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
 
             var duration = template.DurationMinutes <= 0 ? 60 : template.DurationMinutes;
             var pricing = VenueRules.LoadPricing(context, stadium);
-            if (VenueRules.CheckSlot(context, pricing, pitch, start, duration) != null)
+            // Serinin kendi ileri haftaları (VenueRules.SeriesBusy) kendisini engellemez
+            if (VenueRules.CheckSlot(context, pricing, pitch, start, duration, series.SeriesId) != null)
             {
-                // Saat dolu / kapalı: bu hafta atlanır, kurucuya haber verilir
+                // Saat kapalı / blok (ör. bakım) ya da seri kurulmadan önce alınmış: bu hafta atlanır,
+                // kurucuya ve işletmeye haber verilir (sessizce atlanmaz). Seri devam eder.
                 AddNotification(context, NotificationType.MatchRejection,
                     Msg.GetDefault(MessageKeys.Growth.NotifSeriesSkipped, template.MatchName, start), template.MatchId,
                     new[] { series.CreatedByPlayerId });
+                if (stadium.OwnerPlayerId.HasValue)
+                {
+                    NotificationWriter.Add(context, NotificationType.ReservationRequest,
+                        Msg.GetDefault(MessageKeys.Growth.NotifSeriesSkippedOwner, template.MatchName, start, pitch.Name),
+                        template.MatchId, stadium.StadiumId, new[] { stadium.OwnerPlayerId.Value });
+                }
                 context.SaveChanges();
                 transaction.Commit();
                 return false;
             }
 
-            var quote = VenueRules.BuildQuote(context, pricing, pitch, start, duration, template.UserCount, 0, template.CameraRequested);
+            var quote = VenueRules.BuildQuote(context, pricing, pitch, start, duration, template.UserCount, 0, template.CameraRequested, series.SeriesId);
             var status = series.Approved ? MatchStatus.Approved : MatchStatus.Pending;
             var match = new Match
             {
@@ -167,6 +186,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 HomeTeamId = template.HomeTeamId,
                 AwayTeamId = template.AwayTeamId,
                 MinReliability = template.MinReliability,
+                Visibility = template.Visibility,
                 CreatedByPlayerId = series.CreatedByPlayerId,
                 SeriesId = series.SeriesId,
                 CreatedAt = DateTime.Now,

@@ -7,7 +7,7 @@ namespace MatcBuddy.Business.Abstract
     public interface IMatchParticipationService
     {
         OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin);
-        OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null);
+        OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null, bool viaInviteLink = false);
         OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null);
         OperationResult<bool> Confirm(int matchId, int playerId);
         OperationResult<bool> SetSide(int matchId, int actorPlayerId, bool isAdmin, int targetPlayerId, byte side);

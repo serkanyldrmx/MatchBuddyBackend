@@ -50,6 +50,7 @@ namespace MatcBuddy.Core.Parameters
             public const string DefaultMinNoticeHours = "booking.defaultMinNoticeHours";
             public const string DefaultFreeCancellationHours = "booking.defaultFreeCancellationHours";
             public const string DefaultMaxAdvanceDays = "booking.defaultMaxAdvanceDays";
+            public const string PendingExpiryHours = "booking.pendingExpiryHours";
         }
 
         public static class Match

@@ -134,6 +134,13 @@ namespace MatcBuddy.Business.Auth
                 _dal.RevokeFamily(token.FamilyId, RevokeReasons.AccountDeleted, now);
                 return Unauthorized<RefreshResult>(ErrorCodes.Auth.RefreshInvalid);
             }
+            // Yönetici engeli: tüm oturumlar kapanır, istemci engel mesajını gösterir
+            var banned = BanError(player, now);
+            if (banned != null)
+            {
+                _dal.RevokeAllForPlayer(player.PlayerId, RevokeReasons.Banned, now);
+                return OperationResult<RefreshResult>.Fail(OperationStatus.Unauthorized, banned.Code, banned.Args);
+            }
 
             var (replacement, issued) = NewToken(player.PlayerId, token.FamilyId, token.Persistent, client);
             if (!_dal.TryRotate(token.RefreshTokenId, replacement, now))
@@ -162,7 +169,7 @@ namespace MatcBuddy.Business.Auth
                 var next = _dal.GetRefreshToken(token.ReplacedById.Value);
                 var player = _dal.FindPlayer(token.PlayerId);
                 if (next != null && next.ExpiresAt > now && (next.RevokedAt == null || next.RevokedReason == RevokeReasons.Rotated)
-                    && player != null && !player.IsDeleted)
+                    && player != null && !player.IsDeleted && !player.IsBanActive(now))
                     return OperationResult<RefreshResult>.Ok(new RefreshResult(player, null));
             }
 
@@ -187,6 +194,19 @@ namespace MatcBuddy.Business.Auth
         public int LogoutAll(int playerId) => RevokeAllSessions(playerId, RevokeReasons.LogoutAll);
 
         public int RevokeAllSessions(int playerId, string reason) => _dal.RevokeAllForPlayer(playerId, reason, DateTime.UtcNow);
+
+        /// <summary>
+        /// Engelli kullanıcı için giriş / yenileme hatası (403 / 401 gövdesinde kullanılır); engel yoksa ya da süresi geçtiyse null.
+        /// Süreli engelde bitiş Türkiye saatiyle {0} olarak verilir.
+        /// </summary>
+        public static AppError? BanError(Player player, DateTime utcNow)
+        {
+            if (!player.IsBanActive(utcNow)) return null;
+            if (player.BannedUntil is not DateTime until) return AppError.Forbidden(ErrorCodes.Auth.AccountBanned);
+            var utc = until.Kind == DateTimeKind.Utc ? until : DateTime.SpecifyKind(until, DateTimeKind.Utc);
+            return AppError.Forbidden(ErrorCodes.Auth.AccountBannedUntil,
+                AuthTemplates.ToTurkeyTime(utc).ToString("dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.CurrentCulture));
+        }
 
         private static OperationResult<T> Unauthorized<T>(string code, params object?[] args) =>
             OperationResult<T>.Fail(OperationStatus.Unauthorized, code, args);

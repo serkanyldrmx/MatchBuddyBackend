@@ -30,8 +30,8 @@ Base URL: `/api/Auth`. Hata gövdesi ve kodlar için bkz. `platform-api.md` §1.
 
 | Yöntem | Yol | Yetki | Gövde | Not |
 |---|---|---|---|---|
-| POST | `Login` | anonim | `{ userName, password, rememberMe }` | 401 `AUTH_INVALID_CREDENTIALS` |
-| POST | `Refresh` | çerez | — | 401 `AUTH_REFRESH_INVALID` / `AUTH_REFRESH_REUSED` |
+| POST | `Login` | anonim | `{ userName, password, rememberMe }` | 401 `AUTH_INVALID_CREDENTIALS`; engelli hesap 403 `AUTH_ACCOUNT_BANNED` / `AUTH_ACCOUNT_BANNED_UNTIL` |
+| POST | `Refresh` | çerez | — | 401 `AUTH_REFRESH_INVALID` / `AUTH_REFRESH_REUSED`; engelli hesap 401 `AUTH_ACCOUNT_BANNED*` (tüm oturumlar kapanır) |
 | POST | `Logout` | çerez | — | Bu cihaz |
 | POST | `LogoutAll` | JWT | — | Tüm cihazlar |
 | POST | `ChangePassword` | JWT | `{ currentPassword, newPassword }` | Diğer oturumlar kapanır, bu cihaza yeni oturum |
@@ -48,6 +48,8 @@ Base URL: `/api/Auth`. Hata gövdesi ve kodlar için bkz. `platform-api.md` §1.
 | GET | `/api/Me/Export` | JWT | — | KVKK veri dışa aktarımı |
 
 Kayıt (`POST /api/Players/SavePlayer`, `playerModel` JSON'u içinde) artık `termsVersion` (güncel `legal.termsVersion`) ve isteğe bağlı `marketingConsent` ister.
+
+Kayıt başarılıysa yanıt `Login` ile aynıdır (otomatik giriş: `{ token, expiresAt, player, role, refreshExpiresAt, rememberMe, consentRequired, termsVersion, emailConfirmed, isNew: false, profileIncomplete, missingProfileFields }`, refresh token `mb_rt` çerezinde) ve eski alanları da taşır: `{ success, message, profilePictureUrl }`. Oturum açılamazsa (beklenmeyen hata) yalnızca eski alanlar döner; istemci giriş sayfasına yönlendirir.
 
 ## Sosyal giriş eşleştirme
 

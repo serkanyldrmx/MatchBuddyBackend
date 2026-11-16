@@ -720,11 +720,15 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .ToList()
                 .ToDictionary(x => x.PlayerId, x => x.Count);
 
-            var playerIds = reportedIds.Concat(reports.Select(r => r.ReporterId)).Distinct().ToList();
-            var players = context.Players.AsNoTracking()
+            var playerIds = reportedIds.Concat(reports.Select(r => r.ReporterId))
+                .Concat(reports.Where(r => r.ResolvedByPlayerId.HasValue).Select(r => r.ResolvedByPlayerId!.Value))
+                .Distinct().ToList();
+            var entities = context.Players.AsNoTracking()
                 .Where(p => playerIds.Contains(p.PlayerId))
                 .ToList()
-                .ToDictionary(p => p.PlayerId, PlayerSummaryDto.FromPlayer);
+                .ToDictionary(p => p.PlayerId);
+            var players = entities.ToDictionary(e => e.Key, e => PlayerSummaryDto.FromPlayer(e.Value));
+            var now = DateTime.UtcNow;
 
             return reports
                 .Where(r => players.ContainsKey(r.ReporterId) && players.ContainsKey(r.ReportedPlayerId))
@@ -738,6 +742,12 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     Reporter = players[r.ReporterId],
                     Reported = players[r.ReportedPlayerId],
                     ReportedCount = counts.TryGetValue(r.ReportedPlayerId, out var c) ? c : 0,
+                    ReportedIsBanned = entities[r.ReportedPlayerId].IsBanActive(now),
+                    ReportedBannedUntil = entities[r.ReportedPlayerId].IsBanActive(now) ? EFModerationDal.AsUtc(entities[r.ReportedPlayerId].BannedUntil) : null,
+                    ResolvedAt = EFModerationDal.AsUtc(r.ResolvedAt),
+                    ResolvedBy = r.ResolvedByPlayerId.HasValue && players.TryGetValue(r.ResolvedByPlayerId.Value, out var by) ? by : null,
+                    ResolutionNote = r.ResolutionNote,
+                    ResolutionAction = r.ResolutionAction,
                 })
                 .ToList();
         }

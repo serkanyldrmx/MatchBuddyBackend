@@ -101,14 +101,19 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
 
         // ------------------------------------------------------------------ Doluluk
 
+        /// <summary>MatchId 0 = haftalık serinin henüz oluşturulmamış (gelecek) haftası.</summary>
         public sealed record BusyMatch(int MatchId, int PitchId, DateTime Start, DateTime End, byte Status);
 
-        /// <summary>Verilen sahalarda [from, to) ile çakışan bekleyen/onaylı maçlar.</summary>
-        public static List<BusyMatch> BusyMatches(MatcBuddyContext context, ICollection<int> pitchIds, DateTime from, DateTime to, int? exceptMatchId = null)
+        /// <summary>
+        /// Verilen sahalarda [from, to) ile çakışan bekleyen/onaylı maçlar + (includeSeries) aktif haftalık serilerin
+        /// henüz oluşturulmamış haftaları (abone takımın gelecek haftaları başkasına verilmesin; exceptSeriesId hariç).
+        /// </summary>
+        public static List<BusyMatch> BusyMatches(MatcBuddyContext context, ICollection<int> pitchIds, DateTime from, DateTime to,
+            int? exceptMatchId = null, int? exceptSeriesId = null, bool includeSeries = true)
         {
             // En uzun maç 120 dk: başlangıcı from - 2 saatten sonra olanlar yeterli
             var lower = from.AddHours(-2);
-            return context.Matchs.AsNoTracking()
+            var busy = context.Matchs.AsNoTracking()
                 .Where(m => m.PitchId != null && pitchIds.Contains(m.PitchId.Value)
                             && (m.IsActive == MatchStatus.Pending || m.IsActive == MatchStatus.Approved)
                             && m.MatchDate >= lower && m.MatchDate < to
@@ -119,7 +124,45 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                     m.MatchDate!.Value.AddMinutes(m.DurationMinutes <= 0 ? 60 : m.DurationMinutes), m.IsActive))
                 .Where(m => VenuePricing.Overlaps(m.Start, m.End, from, to))
                 .ToList();
+            if (includeSeries) busy.AddRange(SeriesBusy(context, pitchIds, from, to, exceptSeriesId));
+            return busy;
         }
+
+        /// <summary>Haftalık serinin henüz maçı oluşmamış bir haftası (abone takımın tuttuğu saat).</summary>
+        public sealed record SeriesWeek(int SeriesId, int PitchId, DateTime Start, DateTime End, bool Approved, string? Title, int CreatedByPlayerId);
+
+        /// <summary>Aktif serilerin NextDate'ten itibaren haftalık (henüz maçı oluşmamış) dilimleri.</summary>
+        public static List<SeriesWeek> SeriesWeeks(MatcBuddyContext context, ICollection<int> pitchIds, DateTime from, DateTime to, int? exceptSeriesId = null)
+        {
+            var series = context.MatchSeries.AsNoTracking()
+                .Where(s => s.IsActive && pitchIds.Contains(s.PitchId) && s.NextDate < to
+                            && (exceptSeriesId == null || s.SeriesId != exceptSeriesId))
+                .ToList();
+            if (series.Count == 0) return new List<SeriesWeek>();
+
+            // Süre / ad: serinin en son (reddedilmemiş) maçı. Hiç maçı kalmadıysa seri bir sonraki turda durur, yer tutmaz.
+            var ids = series.Select(s => s.SeriesId).ToList();
+            var templates = context.Matchs.AsNoTracking()
+                .Where(m => m.SeriesId != null && ids.Contains(m.SeriesId.Value) && m.IsActive != MatchStatus.Rejected)
+                .Select(m => new { SeriesId = m.SeriesId!.Value, m.MatchDate, m.DurationMinutes, m.MatchName })
+                .ToList()
+                .GroupBy(m => m.SeriesId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.MatchDate).First());
+
+            var result = new List<SeriesWeek>();
+            foreach (var s in series)
+            {
+                if (!templates.TryGetValue(s.SeriesId, out var t)) continue;
+                foreach (var (start, end) in VenueBookingRules.SeriesOccurrences(s.NextDate, t.DurationMinutes, from, to))
+                    result.Add(new SeriesWeek(s.SeriesId, s.PitchId, start, end, s.Approved, t.MatchName, s.CreatedByPlayerId));
+            }
+            return result;
+        }
+
+        public static List<BusyMatch> SeriesBusy(MatcBuddyContext context, ICollection<int> pitchIds, DateTime from, DateTime to, int? exceptSeriesId = null) =>
+            SeriesWeeks(context, pitchIds, from, to, exceptSeriesId)
+                .Select(w => new BusyMatch(0, w.PitchId, w.Start, w.End, w.Approved ? MatchStatus.Approved : MatchStatus.Pending))
+                .ToList();
 
         public static List<SlotBlock> Blocks(MatcBuddyContext context, ICollection<int> pitchIds, DateTime from, DateTime to) =>
             context.SlotBlocks.AsNoTracking()
@@ -130,7 +173,8 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
         /// [start, start + duration) için müsaitlik kontrolü. null = müsait, aksi halde sebep (hata kodu).
         /// (dakika, süre, geçmiş, açılış saatleri, aynı sahada bekleyen/onaylı maç ya da blok)
         /// </summary>
-        public static AppError? CheckSlot(MatcBuddyContext context, PricingContext pricing, Pitch pitch, DateTime start, int durationMinutes)
+        public static AppError? CheckSlot(MatcBuddyContext context, PricingContext pricing, Pitch pitch, DateTime start, int durationMinutes,
+            int? exceptSeriesId = null)
         {
             var step = P.Int(ParameterKeys.Venue.SlotStepMinutes);
             if (start.Second != 0 || start.Millisecond != 0 || (start.Hour * 60 + start.Minute) % step != 0)
@@ -150,7 +194,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             if (!VenuePricing.IsWithinOpening(start, end, pricing.Week))
                 return AppError.Bad(ErrorCodes.Venue.ClosedAtTime);
             var ids = new[] { pitch.PitchId };
-            if (BusyMatches(context, ids, start, end).Count > 0 || Blocks(context, ids, start, end).Count > 0)
+            if (BusyMatches(context, ids, start, end, exceptSeriesId: exceptSeriesId).Count > 0 || Blocks(context, ids, start, end).Count > 0)
                 return AppError.Bad(SlotTaken);
             return null;
         }
@@ -177,11 +221,23 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             };
         }
 
+        /// <summary>
+        /// Oyunculara gösterilen iptal koşulu: tesisin ücretsiz iptal süresinden (VenueSettings.FreeCancellationHours,
+        /// "geç iptal" kuralı bununla işler) üretilen cümle. Süre 0 ise eski serbest metin (Stadiums.CancellationPolicy;
+        /// işletme panelinden artık düzenlenmiyor, kolon duruyor).
+        /// </summary>
+        public static string? CancellationPolicyText(MatcBuddyContext context, Stadium stadium) =>
+            PolicyText(EffectiveSettings(context, stadium.StadiumId).FreeCancellationHours, stadium.CancellationPolicy);
+
+        public static string? PolicyText(int freeCancellationHours, string? legacyText) =>
+            freeCancellationHours > 0 ? Msg.Get(MessageKeys.Venue.FreeCancellationPolicy, freeCancellationHours)
+            : string.IsNullOrWhiteSpace(legacyText) ? null : legacyText;
+
         /// <summary>Teklif (müsaitlik + satırlar + ekstralar + kişi başı).</summary>
         public static QuoteDto BuildQuote(MatcBuddyContext context, PricingContext pricing, Pitch pitch, DateTime start,
-            int durationMinutes, int userCount, int cleatCount, bool cameraRequested)
+            int durationMinutes, int userCount, int cleatCount, bool cameraRequested, int? exceptSeriesId = null)
         {
-            var reason = CheckSlot(context, pricing, pitch, start, durationMinutes);
+            var reason = CheckSlot(context, pricing, pitch, start, durationMinutes, exceptSeriesId);
             reason ??= CheckExtras(pricing.Stadium, cleatCount, cameraRequested);
             var quote = new QuoteDto { Available = reason == null, Reason = reason?.Message };
             if (!VenuePricing.AllowedDurations.Contains(durationMinutes)) return quote;
@@ -218,6 +274,8 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             public Dictionary<int, Stadium> Stadiums { get; init; } = new();
             public Dictionary<int, string> Covers { get; init; } = new();
             public Dictionary<int, string> Teams { get; init; } = new();
+            // Tesis başına ücretsiz iptal saati (VenueSettings; yoksa sistem varsayılanı)
+            public Dictionary<int, int> FreeCancellationHours { get; init; } = new();
 
             public static MatchVenueLookup Load(MatcBuddyContext context, IEnumerable<Match> matches)
             {
@@ -230,7 +288,12 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 var teamIds = list.SelectMany(m => new[] { m.HomeTeamId, m.AwayTeamId }).Where(t => t.HasValue).Select(t => t!.Value).Distinct().ToList();
                 var teams = context.Teams.AsNoTracking().Where(t => teamIds.Contains(t.TeamId))
                     .Select(t => new { t.TeamId, t.TeamName }).ToList().ToDictionary(t => t.TeamId, t => t.TeamName);
-                return new MatchVenueLookup { Pitches = pitches, Stadiums = stadiums, Covers = covers, Teams = teams };
+                var defaultFree = DefaultSettings().FreeCancellationHours;
+                var free = context.VenueSettings.AsNoTracking().Where(v => stadiumIds.Contains(v.StadiumId) && v.FreeCancellationHours != null)
+                    .Select(v => new { v.StadiumId, Hours = v.FreeCancellationHours!.Value }).ToList()
+                    .ToDictionary(v => v.StadiumId, v => v.Hours);
+                foreach (var id in stadiumIds) free.TryAdd(id, defaultFree);
+                return new MatchVenueLookup { Pitches = pitches, Stadiums = stadiums, Covers = covers, Teams = teams, FreeCancellationHours = free };
             }
 
             public void Fill(MatchVenueFieldsDto dto, Match m)
@@ -249,6 +312,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 dto.CameraRequested = m.CameraRequested;
                 dto.LookingForOpponent = m.LookingForOpponent;
                 dto.RejectReason = m.RejectReason;
+                dto.Visibility = m.Visibility;
                 dto.HomeTeam = m.HomeTeamId.HasValue && Teams.TryGetValue(m.HomeTeamId.Value, out var ht)
                     ? new TeamRefDto { TeamId = m.HomeTeamId.Value, TeamName = ht } : null;
                 dto.AwayTeam = m.AwayTeamId.HasValue && Teams.TryGetValue(m.AwayTeamId.Value, out var at)
@@ -265,7 +329,8 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                         IsIndoor = pitch.IsIndoor,
                         Surface = pitch.Surface,
                         CoverPhotoUrl = Covers.TryGetValue(stadium.StadiumId, out var c) ? c : null,
-                        CancellationPolicy = stadium.CancellationPolicy,
+                        CancellationPolicy = PolicyText(FreeCancellationHours.TryGetValue(stadium.StadiumId, out var fh) ? fh
+                            : DefaultSettings().FreeCancellationHours, stadium.CancellationPolicy),
                         Address = stadium.Address,
                         City = stadium.City,
                         District = stadium.District,

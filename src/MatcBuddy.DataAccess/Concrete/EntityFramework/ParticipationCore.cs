@@ -32,6 +32,19 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .FirstOrDefault();
         }
 
+        /// <summary>Kapalı (sadece davet) maça erişimi var mı: kurucu, davetli, kadro kaydı ya da maç takımı üyesi.</summary>
+        public static bool HasClosedMatchAccess(MatcBuddyContext context, Match match, int playerId)
+        {
+            if (match.Visibility != MatchVisibility.InviteOnly) return true;
+            var matchId = match.MatchId;
+            var teamIds = new[] { match.HomeTeamId, match.AwayTeamId }.Where(t => t.HasValue).Select(t => t!.Value).ToList();
+            return MatchVisibility.HasAccess(match.Visibility,
+                isCreator: match.CreatedByPlayerId == playerId,
+                isInvited: context.MatchInvites.Any(i => i.MatchId == matchId && i.InviteeId == playerId),
+                hasParticipantRecord: context.MatchParticipants.Any(p => p.MatchId == matchId && p.PlayerId == playerId),
+                isTeamMember: teamIds.Count > 0 && context.PlayerTeam.Any(pt => pt.PlayerId == playerId && teamIds.Contains(pt.TeamId)));
+        }
+
         public static bool CanManage(MatcBuddyContext context, Match match, int playerId, bool isAdmin)
         {
             if (isAdmin) return true;

@@ -158,5 +158,18 @@ from/to ISO tarih; boşsa bu ayın başından 2 ay sonrasına kadar.
 ## Admin — `/api/Admin/...` (`[Authorize(Roles = Admin)]`)
 | Metot | Yol | Dönüş |
 |---|---|---|
-| GET | Reports | `?status=0` → `[{ reportId, reason, details, status, createdAt, reporter: PublicPlayerDto, reported: PublicPlayerDto, reportedCount: n }]` (reportedCount = o oyuncu hakkındaki toplam şikayet) |
-| POST | ResolveReport | `{ reportId }` → Status 1 |
+| GET | Reports | `?status=0` → `[{ reportId, reason, details, status, createdAt, reporter: PublicPlayerDto, reported: PublicPlayerDto, reportedCount: n, reportedIsBanned, reportedBannedUntil, resolvedAt, resolvedBy, resolutionNote, resolutionAction }]` (reportedCount = o oyuncu hakkındaki toplam şikayet) |
+| POST | ResolveReport | `{ reportId, note?, action? (0 yok, 1 uyarı, 2 engel), banUntil?, banReason? }` → Status 1, `{ success, message, bannedPlayerId }`. `action = 2`: şikayet edilen kullanıcı engellenir, oturumları kapanır. Eski gövde `{ reportId }` geçerli. |
+| GET | Users | `?q=&banned=false&page=1&pageSize=20` → `{ items: [{ playerId, playerName, playerSurname, userName, email, profilePictureUrl, role, emailConfirmed, isBanned, bannedUntil, banReason, reportCount, openReportCount }], total, page, pageSize }`. Ad, soyad, kullanıcı adı, e-posta ile arar; silinmiş hesaplar dönmez. |
+| POST | BanUser | `{ playerId, until? (UTC; boş = süresiz), reason? (≤ 500) }`. Tüm oturumları kapanır. Kendini / yöneticiyi engelleyemez (`MOD_CANNOT_BAN_SELF`, `MOD_CANNOT_BAN_ADMIN`); geçmiş tarih `MOD_BAN_UNTIL_PAST`. |
+| POST | UnbanUser | `{ playerId }` (idempotent) |
+
+Engelli kullanıcı `Auth/Login`, `Players/PlayerLogin`, sosyal giriş ve `ChangePassword`'da 403, `Auth/Refresh`'te 401 alır; kod `AUTH_ACCOUNT_BANNED` (süresiz) ya da `AUTH_ACCOUNT_BANNED_UNTIL` (mesajda bitiş tarihi). Süreli engel bitince kendiliğinden kalkar. Halihazırda verilmiş access token süresi dolana kadar geçerlidir.
+
+## İletişim formu — `/api/Contact`
+| Metot | Yol | Yetki | Not |
+|---|---|---|---|
+| POST | `/api/Contact` | anonim, `auth` hız sınırı | `{ name (≤ 100), email, subject? (≤ 150), message (≤ 2000) }` → 200 `{ ok: true, message }`; hata 400 `{ code, errors: { alan: [...] } }`. Giriş yapılmışsa mesaja PlayerId yazılır; yöneticilere e-posta gider. |
+| GET | `/api/Contact` | admin | `?handled=&page=1&pageSize=20` → `{ items: [{ contactMessageId, name, email, subject, message, createdAt, playerId, playerUserName, isHandled, handledAt }], total, page, pageSize }` (okunmamışlar önce) |
+| GET | `/api/Contact/UnhandledCount` | admin | sayı |
+| POST | `/api/Contact/SetHandled` | admin | `{ contactMessageId, handled = true }` |

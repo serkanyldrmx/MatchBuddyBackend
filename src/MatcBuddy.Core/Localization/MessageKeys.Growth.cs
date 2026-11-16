@@ -15,6 +15,7 @@ namespace MatcBuddy.Core.Localization
             public const string NotifSeriesInvite = "NOTIF_SERIES_INVITE";              // {0} maç, {1} tarih
             public const string NotifSeriesCreated = "NOTIF_SERIES_CREATED";            // {0} maç, {1} tarih
             public const string NotifSeriesSkipped = "NOTIF_SERIES_SKIPPED";            // {0} maç, {1} tarih
+            public const string NotifSeriesSkippedOwner = "NOTIF_SERIES_SKIPPED_OWNER"; // {0} maç, {1} tarih, {2} saha
             public const string NotifSeriesOwnerAuto = "NOTIF_SERIES_OWNER_AUTO";       // {0} maç, {1} tarih, {2} saha
             public const string NotifSeriesOwnerPending = "NOTIF_SERIES_OWNER_PENDING"; // {0} maç, {1} tarih, {2} saha
         }

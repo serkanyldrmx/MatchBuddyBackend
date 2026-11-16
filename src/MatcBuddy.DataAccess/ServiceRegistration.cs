@@ -15,6 +15,8 @@ namespace MatcBuddy.DataAccess
             services.AddScoped<IStadiumDal, EFStadiumDal>();
             services.AddScoped<ITeamDal, EFteamDal>();
             services.AddScoped<IBusinessApplicationDal, EFBusinessApplicationDal>();
+            services.AddScoped<IModerationDal, EFModerationDal>();
+            services.AddScoped<IContactDal, EFContactDal>();
             services.AddScoped<IEmailCenterDal, EFEmailCenterDal>();
             services.AddScoped<IPlayerTeamDal, EFPlayerTeamDal>();
             services.AddScoped<IGroupDal, EFGroupDal>();

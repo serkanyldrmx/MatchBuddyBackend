@@ -42,6 +42,7 @@ namespace MatcBuddy.DataAccess.Configuration
             builder.HasKey(x => x.ReportId);
             builder.Property(x => x.Reason).HasMaxLength(50).IsRequired();
             builder.Property(x => x.Details).HasMaxLength(500);
+            builder.Property(x => x.ResolutionNote).HasMaxLength(500);
             builder.HasIndex(x => x.ReportedPlayerId);
             builder.HasIndex(x => x.Status);
 
