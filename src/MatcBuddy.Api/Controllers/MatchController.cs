@@ -56,6 +56,7 @@ namespace MatcBuddy.Api.Controllers
                 LookingForOpponent = matchModel.LookingForOpponent,
                 MinReliability = matchModel.MinReliability,
                 RepeatWeekly = matchModel.RepeatWeekly,
+                Visibility = matchModel.Visibility,
             });
             return this.ToHttp(result, result.Success
                 ? new { Success = true, result.Message, MatchId = result.Data, Status = MatchStatus.Pending }
@@ -115,7 +116,8 @@ namespace MatcBuddy.Api.Controllers
             var matchId = share.MatchIdOf(model.Code);
             if (matchId == null) return this.NotFoundError(ErrorCodes.Share.NotFound);
             if (User.IsOwner()) return this.ForbiddenError(ErrorCodes.Match.OwnerCannotJoin);
-            var result = _participationService.Join(matchId.Value, User.GetPlayerId());
+            // Davet linkiyle gelen kapalı (sadece davet) maça da katılabilir
+            var result = _participationService.Join(matchId.Value, User.GetPlayerId(), viaInviteLink: true);
             if (!result.Success) return FromOperation(result);
             return Ok(new { Success = true, MatchId = matchId.Value, Status = result.Data, result.Message });
         }
@@ -139,6 +141,7 @@ namespace MatcBuddy.Api.Controllers
                 UserCount = matchModel.UserCount,
                 MatchDate = matchModel.MatchDate,
                 IsActive = matchModel.IsActive == 0 ? null : matchModel.IsActive,
+                Visibility = matchModel.Visibility,
             }));
 
         [HttpPost("StopRepeat")]

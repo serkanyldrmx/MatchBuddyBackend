@@ -11,6 +11,8 @@ namespace MatcBuddy.Core.Errors
             public const string SideFull = "MATCH_SIDE_FULL";
             public const string RejectedJoinClosed = "MATCH_REJECTED_JOIN_CLOSED";
             public const string PastJoinClosed = "MATCH_PAST_JOIN_CLOSED";
+            public const string InviteOnly = "MATCH_INVITE_ONLY";
+            public const string InvalidVisibility = "MATCH_INVALID_VISIBILITY";
             public const string AlreadyJoined = "MATCH_ALREADY_JOINED";
             public const string AlreadyWaitlisted = "MATCH_ALREADY_WAITLISTED";
             public const string NotParticipant = "MATCH_NOT_PARTICIPANT";

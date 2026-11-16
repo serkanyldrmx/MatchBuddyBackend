@@ -70,13 +70,17 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 : OperationResult<bool>.Forbidden();
         }
 
-        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null)
+        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null, bool viaInviteLink = false)
         {
             using var context = new MatcBuddyContext();
             using var transaction = context.Database.BeginTransaction();
 
             var match = LockMatch(context, matchId);
             if (match == null) return OperationResult<byte>.NotFound();
+
+            // Sadece davetle açık maç: davetli / takım üyesi / kadro kaydı olan ya da davet linkiyle gelen katılabilir
+            if (!viaInviteLink && !HasClosedMatchAccess(context, match, playerId))
+                return OperationResult<byte>.Forbidden(ErrorCodes.Match.InviteOnly);
 
             // side/slot: sahada dokunulan boş yer (doluysa normal kural)
             var result = ParticipationCore.Join(context, match, playerId, side is 1 or 2 ? side : null, checkReliability: true, preferredSlot: slot);
@@ -633,6 +637,14 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 changes.Add("capacity");
             }
 
+            // Görünürlük (açık / sadece davet): kadroya bildirim gitmez
+            if (input.Visibility.HasValue)
+            {
+                if (!MatchVisibility.IsValid(input.Visibility))
+                    return OperationResult<bool>.FieldError("visibility", ErrorCodes.Match.InvalidVisibility);
+                match.Visibility = input.Visibility.Value;
+            }
+
             if (isAdmin)
             {
                 if (input.MatchDate.HasValue && input.MatchDate != match.MatchDate)
@@ -741,12 +753,32 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
         // Okuma işlemleri
         // ------------------------------------------------------------------
 
+        /// <summary>Akışta gösterilen geçmiş maçlar (sonuçlar) için geriye dönük gün sayısı.</summary>
+        public const int FeedRecentDays = 14;
+
+        /// <summary>Akış penceresinin başlangıcı: bundan önce oynanmış maçlar akışa gelmez (tarihsiz maçlar gelir).</summary>
+        public static DateTime FeedWindowStart(DateTime now) => now.Date.AddDays(-FeedRecentDays);
+
         public List<MatchFeedItemDto> GetMatchFeed(int playerId)
         {
             using var context = new MatcBuddyContext();
 
+            // Yaklaşan / süren maçlar + son FeedRecentDays günün sonuçları.
+            // Sadece davetle açık maçlar yalnızca erişimi olanlara (kurucu, davetli, kadro kaydı, takım üyesi) görünür.
+            var since = FeedWindowStart(DateTime.Now);
+            var invitedMatchIds = context.MatchInvites.Where(i => i.InviteeId == playerId).Select(i => i.MatchId);
+            var myMatchIds = context.MatchParticipants.Where(p => p.PlayerId == playerId).Select(p => p.MatchId);
+            var myTeamIds = context.PlayerTeam.Where(pt => pt.PlayerId == playerId).Select(pt => pt.TeamId);
+
             var matches = (from m in context.Matchs.AsNoTracking()
                            join s in context.Stadiums.AsNoTracking() on m.StadiumId equals s.StadiumId
+                           where (m.MatchDate == null || m.MatchDate >= since)
+                                 && (m.Visibility != MatchVisibility.InviteOnly
+                                     || m.CreatedByPlayerId == playerId
+                                     || invitedMatchIds.Contains(m.MatchId)
+                                     || myMatchIds.Contains(m.MatchId)
+                                     || (m.HomeTeamId != null && myTeamIds.Contains(m.HomeTeamId.Value))
+                                     || (m.AwayTeamId != null && myTeamIds.Contains(m.AwayTeamId.Value)))
                            orderby m.MatchDate descending
                            select new
                            {
@@ -769,8 +801,11 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
             // Tesis paketi: saha / kapak / takım adları
             var venueLookup = VenueRules.MatchVenueLookup.Load(context, matches.Select(m => m.Entity));
 
+            var feedMatchIds = matches.Select(m => m.MatchId).ToList();
+
             // Aktif kadro kayıtları + benim (gelemiyor dahil) kayıtlarım
             var participants = context.MatchParticipants.AsNoTracking()
+                .Where(p => feedMatchIds.Contains(p.MatchId))
                 .Where(p => p.Status != ParticipantStatus.Declined || p.PlayerId == playerId)
                 .Select(p => new { p.MatchParticipantId, p.MatchId, p.PlayerId, p.Status, p.JoinedAt })
                 .ToList();
@@ -788,6 +823,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 .ToHashSet();
 
             var voteCounts = context.MvpVotes.AsNoTracking()
+                .Where(v => feedMatchIds.Contains(v.MatchId))
                 .GroupBy(v => new { v.MatchId, v.VotedPlayerId })
                 .Select(g => new { g.Key.MatchId, g.Key.VotedPlayerId, Votes = g.Count() })
                 .ToList();
@@ -973,6 +1009,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 },
                 CreatedBy = createdBy == null ? null : PlayerSummaryDto.FromPlayer(createdBy),
                 CanManage = canManage,
+                HasAccess = canManage || HasClosedMatchAccess(context, match, playerId),
                 CanArrange = canManage || mine?.Status == ParticipantStatus.Going,
                 IsPast = IsPast(match),
                 MyStatus = mine?.Status,

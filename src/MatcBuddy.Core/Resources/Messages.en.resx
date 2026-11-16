@@ -289,6 +289,12 @@
   <data name="MSG_AUTH_EXTERNAL_UNLINKED" xml:space="preserve">
     <value>The sign-in method was removed from your account.</value>
   </data>
+  <data name="MATCH_INVITE_ONLY" xml:space="preserve">
+    <value>This match is invite-only. Ask the organizer for an invite or the match link.</value>
+  </data>
+  <data name="MATCH_INVALID_VISIBILITY" xml:space="preserve">
+    <value>Invalid match visibility.</value>
+  </data>
   <data name="MATCH_ORGANIZER_ONLY" xml:space="preserve">
     <value>Only the match organizer can do this.</value>
   </data>
