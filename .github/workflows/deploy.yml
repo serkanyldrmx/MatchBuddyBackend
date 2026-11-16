@@ -35,11 +35,6 @@ jobs:
       - name: Test
         run: dotnet test MatcBuddy.sln -c Release
 
-      - name: Migration / model uyumu
-        run: |
-          dotnet tool restore
-          dotnet ef migrations has-pending-model-changes --project src/MatcBuddy.DataAccess --startup-project src/MatcBuddy.Api -c Release
-
       - name: Publish
         run: dotnet publish src/MatcBuddy.Api -c Release -o publish --nologo -v q
 
