@@ -121,7 +121,7 @@ namespace MatcBuddy.DataAccess.Migrations
                 column: "PlayerId");
 
             // Ödendi işareti gelmeden önce onaylanmış ve oynanmış tesis maçları tahsil edilmiş sayılır (geçmiş ciro korunur)
-            migrationBuilder.Sql("UPDATE [Matchs] SET [IsPaid] = 1 WHERE [IsActive] = 2 AND [PitchId] IS NOT NULL AND [MatchDate] < GETDATE()");
+            migrationBuilder.Sql("EXEC(N'UPDATE [Matchs] SET [IsPaid] = 1 WHERE [IsActive] = 2 AND [PitchId] IS NOT NULL AND [MatchDate] < GETDATE()')");
         }
 
         /// <inheritdoc />
