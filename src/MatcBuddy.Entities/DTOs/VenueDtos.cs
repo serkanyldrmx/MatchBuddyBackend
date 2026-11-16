@@ -373,6 +373,13 @@ namespace MatcBuddy.Entities.DTOs
         public bool RepeatWeekly { get; set; }
         /// <summary>Kurucunun güvenilirliği: işletme onaylamadan önce görür.</summary>
         public OrganizerReliabilityDto? CreatorReliability { get; set; }
+        /// <summary>İşletme: ücret tesiste tahsil edildi / ekip gelmedi (finans buna göre sayar).</summary>
+        public bool IsPaid { get; set; }
+        public bool NoShow { get; set; }
+        /// <summary>İşletme onaylı rezervasyonu iptal ettiyse zamanı (Status 3 + RejectReason).</summary>
+        public DateTime? CancelledAt { get; set; }
+        /// <summary>Kurucu ücretsiz iptal süresi içinde çekildiyse ("geç iptal") zamanı.</summary>
+        public DateTime? LateCancelledAt { get; set; }
     }
 
     public class OrganizerReliabilityDto
@@ -449,6 +456,20 @@ namespace MatcBuddy.Entities.DTOs
         public decimal? TotalPrice { get; set; }
     }
 
+    /// <summary>Abone (haftalık seri) takımın henüz maçı oluşmamış haftası: Calendar?includeSeries=true ile gelir.</summary>
+    public class CalendarSeriesItemDto
+    {
+        public string Kind { get; set; } = "series";
+        public int SeriesId { get; set; }
+        public int PitchId { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        // 2 = seri onaylı (haftalar otomatik onaylı açılır), 1 = ilk maç onay bekliyor
+        public byte Status { get; set; }
+        public string? Title { get; set; }
+        public PlayerSummaryDto? Creator { get; set; }
+    }
+
     public class CalendarBlockItemDto
     {
         // Öğe ayırıcı ("match" | "block"); bloğun türü (0 kapalı, 1 harici rezervasyon) BlockKind'da
@@ -480,6 +501,21 @@ namespace MatcBuddy.Entities.DTOs
         public int MatchId { get; set; }
         public bool Approve { get; set; }
         public string? Reason { get; set; }
+    }
+
+    /// <summary>POST /api/Owner/CancelReservation: onaylı rezervasyonu iptal (sebep zorunlu, oyunculara iletilir).</summary>
+    public class CancelReservationInput
+    {
+        public int MatchId { get; set; }
+        public string? Reason { get; set; }
+    }
+
+    /// <summary>POST /api/Owner/ReservationPayment: null alanlar değişmez.</summary>
+    public class ReservationPaymentInput
+    {
+        public int MatchId { get; set; }
+        public bool? IsPaid { get; set; }
+        public bool? NoShow { get; set; }
     }
 
     public class VenueUpdateInput

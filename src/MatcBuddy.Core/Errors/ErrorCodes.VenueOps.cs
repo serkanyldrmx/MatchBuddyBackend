@@ -21,6 +21,12 @@ namespace MatcBuddy.Core.Errors
             public const string NotTeamMember = "RESERVATION_NOT_TEAM_MEMBER";
             public const string InvalidStatus = "RESERVATION_INVALID_STATUS";
             public const string NotPending = "RESERVATION_NOT_PENDING";
+            public const string StartPassed = "RESERVATION_START_PASSED";
+            public const string NotApproved = "RESERVATION_NOT_APPROVED";
+            public const string CancelStarted = "RESERVATION_CANCEL_STARTED";
+            public const string CancelReasonRequired = "RESERVATION_CANCEL_REASON_REQUIRED";
+            public const string PaymentOnlyApproved = "RESERVATION_PAYMENT_ONLY_APPROVED";
+            public const string NoShowBeforeStart = "RESERVATION_NOSHOW_BEFORE_START";
             public const string ReviewNotVenueMatch = "RESERVATION_REVIEW_NOT_VENUE_MATCH";
             public const string ReviewMatchRejected = "RESERVATION_REVIEW_MATCH_REJECTED";
             public const string ReviewMatchNotPlayed = "RESERVATION_REVIEW_MATCH_NOT_PLAYED";

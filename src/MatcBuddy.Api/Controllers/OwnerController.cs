@@ -58,9 +58,20 @@ namespace MatcBuddy.Api.Controllers
         public IActionResult RespondReservation(RespondReservationInput model) =>
             this.ToHttp(_venueService.RespondReservation(Me, model));
 
+        /// <summary>Onaylı (henüz başlamamış) rezervasyonu iptal: { matchId, reason }. Sebep zorunlu, oyunculara iletilir.</summary>
+        [HttpPost("CancelReservation")]
+        public IActionResult CancelReservation(CancelReservationInput model) =>
+            this.ToHttp(_venueService.CancelReservation(Me, model));
+
+        /// <summary>Uygulama rezervasyonu tahsilat / gelmedi işareti: { matchId, isPaid?, noShow? }.</summary>
+        [HttpPost("ReservationPayment")]
+        public IActionResult ReservationPayment(ReservationPaymentInput model) =>
+            this.ToHttp(_venueService.SetReservationPayment(Me, model));
+
         [HttpGet("Calendar")]
-        public IActionResult Calendar([FromQuery] int stadiumId, [FromQuery] DateTime? from, [FromQuery] DateTime? to) =>
-            Data(_venueService.Calendar(Me, stadiumId, from, to));
+        // includeSeries=true: abone takımların gelecek haftaları ({ kind: "series" }) da döner (eski istemciler etkilenmez)
+        public IActionResult Calendar([FromQuery] int stadiumId, [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] bool includeSeries = false) =>
+            Data(_venueService.Calendar(Me, stadiumId, from, to, includeSeries));
 
         [HttpPost("Venue/Update")]
         public IActionResult UpdateVenue(VenueUpdateInput model) => this.ToHttp(_venueService.UpdateVenue(Me, model));
@@ -78,10 +89,7 @@ namespace MatcBuddy.Api.Controllers
             return this.ToHttp(result, result.Success ? new { success = true, message = result.Message, settings = result.Data } : null);
         }
 
-        // ---- Fotoğraflar
-
-        [HttpGet("Photos")]
-        public IActionResult Photos([FromQuery] int stadiumId) => Data(_venueService.Photos(Me, stadiumId));
+        // ---- Fotoğraflar (liste Owner/Venue yanıtında gelir)
 
         // Medya hattı (docs/media-api.md): kind venues, url = md URL
         [HttpPost("Photos/Upload")]

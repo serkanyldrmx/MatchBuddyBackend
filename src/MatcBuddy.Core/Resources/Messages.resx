@@ -885,13 +885,16 @@
     <value>Yorum bulunamadı.</value>
   </data>
   <data name="PARAMDESC_BOOKING_DEFAULTFREECANCELLATIONHOURS" xml:space="preserve">
-    <value>Maçtan kaç saat öncesine kadar ücretsiz iptal yapılabileceği (tesis ayarı yoksa; bilgilendirme amaçlı).</value>
+    <value>Maçtan kaç saat öncesine kadar ücretsiz iptal yapılabileceği (tesis ayarı yoksa). Bu süre içinde kurucu iptal ederse işletmeye "geç iptal" bildirimi gider.</value>
   </data>
   <data name="PARAMDESC_BOOKING_DEFAULTMAXADVANCEDAYS" xml:space="preserve">
     <value>En fazla kaç gün sonrasına rezervasyon yapılabileceği (tesis ayarı yoksa).</value>
   </data>
   <data name="PARAMDESC_BOOKING_DEFAULTMINNOTICEHOURS" xml:space="preserve">
     <value>Rezervasyonun maç saatinden en az kaç saat önce yapılması gerektiği (tesis ayarı yoksa).</value>
+  </data>
+  <data name="PARAMDESC_BOOKING_PENDINGEXPIRYHOURS" xml:space="preserve">
+    <value>İşletmenin yanıtlamadığı rezervasyon talebi kaç saat sonra otomatik düşer (maç saati gelirse daha önce).</value>
   </data>
   <data name="PARAMDESC_MATCH_LEADERBOARDMAX" xml:space="preserve">
     <value>Liderlik tablosunda istenebilecek en fazla satır.</value>
@@ -1078,6 +1081,59 @@
   </data>
   <data name="RESERVATION_NOT_PENDING" xml:space="preserve">
     <value>Sadece onay bekleyen rezervasyonlar yanıtlanabilir.</value>
+  </data>
+  <data name="RESERVATION_START_PASSED" xml:space="preserve">
+    <value>Başlangıç saati geçmiş bir talep onaylanamaz.</value>
+  </data>
+  <data name="RESERVATION_NOT_APPROVED" xml:space="preserve">
+    <value>Sadece onaylı rezervasyonlar iptal edilebilir.</value>
+  </data>
+  <data name="RESERVATION_CANCEL_STARTED" xml:space="preserve">
+    <value>Başlamış ya da geçmiş bir rezervasyon iptal edilemez.</value>
+  </data>
+  <data name="RESERVATION_CANCEL_REASON_REQUIRED" xml:space="preserve">
+    <value>İptal sebebini yazın; oyunculara iletilecek.</value>
+  </data>
+  <data name="RESERVATION_PAYMENT_ONLY_APPROVED" xml:space="preserve">
+    <value>Ödeme ve gelmedi işareti sadece onaylı rezervasyonlarda kullanılabilir.</value>
+  </data>
+  <data name="RESERVATION_NOSHOW_BEFORE_START" xml:space="preserve">
+    <value>Maç başlamadan "gelmedi" işaretlenemez.</value>
+  </data>
+  <data name="NOTIF_RESERVATION_CANCELLED_BY_VENUE" xml:space="preserve">
+    <value>Rezervasyon tesis tarafından iptal edildi: '{0}' maçı, {1:dd.MM.yyyy HH:mm}, {2}. Sebep: {3}</value>
+    <comment>{0}: maç adı, {1}: tarih, {2}: tesis, {3}: sebep</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_LATE_CANCEL_DELETED" xml:space="preserve">
+    <value>Geç iptal: {0}, '{1}' maçını ({2:dd.MM.yyyy HH:mm}, {3}) ücretsiz iptal süresi ({4} saat) içinde iptal etti. Saat boşaldı.</value>
+    <comment>{0}: kurucu, {1}: maç adı, {2}: tarih, {3}: tesis, {4}: ücretsiz iptal saati</comment>
+  </data>
+  <data name="NOTIF_RESERVATION_LATE_CANCEL_LEFT" xml:space="preserve">
+    <value>Geç iptal: kurucu {0}, '{1}' maçından ({2:dd.MM.yyyy HH:mm}, {3}) ücretsiz iptal süresi ({4} saat) içinde çekildi.</value>
+    <comment>{0}: kurucu, {1}: maç adı, {2}: tarih, {3}: tesis, {4}: ücretsiz iptal saati</comment>
+  </data>
+  <data name="LABEL_RESERVATION_EXPIRED_NO_RESPONSE" xml:space="preserve">
+    <value>Tesis {0} saat içinde yanıt vermediği için talep otomatik düştü.</value>
+    <comment>{0}: saat</comment>
+  </data>
+  <data name="LABEL_RESERVATION_EXPIRED_START_PASSED" xml:space="preserve">
+    <value>Maç saatine kadar tesis yanıt vermediği için talep otomatik düştü.</value>
+  </data>
+  <data name="LABEL_RESERVATION_CANCEL_REASON" xml:space="preserve">
+    <value>İptal sebebi</value>
+  </data>
+  <data name="MSG_OWNER_RESERVATION_CANCELLED" xml:space="preserve">
+    <value>Rezervasyon iptal edildi; oyunculara bildirildi.</value>
+  </data>
+  <data name="MSG_OWNER_NO_SHOW_MARKED" xml:space="preserve">
+    <value>"Gelmedi" olarak işaretlendi; gelire sayılmaz.</value>
+  </data>
+  <data name="MSG_OWNER_NO_SHOW_CLEARED" xml:space="preserve">
+    <value>"Gelmedi" işareti kaldırıldı.</value>
+  </data>
+  <data name="LABEL_VENUE_FREE_CANCELLATION_POLICY" xml:space="preserve">
+    <value>Maç saatinden {0} saat öncesine kadar ücretsiz iptal.</value>
+    <comment>{0}: saat</comment>
   </data>
   <data name="RESERVATION_NOT_TEAM_MEMBER" xml:space="preserve">
     <value>Bu takımın üyesi değilsin.</value>
@@ -1886,6 +1942,10 @@
   </data>
   <data name="NOTIF_SERIES_SKIPPED" xml:space="preserve">
     <value>'{0}' haftalık maçın {1:dd.MM HH:mm} saati dolu ya da kapalı olduğu için bu hafta oluşturulamadı.</value>
+  </data>
+  <data name="NOTIF_SERIES_SKIPPED_OWNER" xml:space="preserve">
+    <value>'{0}' haftalık maçın {1:dd.MM HH:mm} haftası {2} sahası kapalı ya da dolu olduğu için oluşturulamadı; seri sonraki hafta devam edecek.</value>
+    <comment>{0}: maç adı, {1}: tarih, {2}: saha</comment>
   </data>
   <data name="NOTIF_SERIES_OWNER_AUTO" xml:space="preserve">
     <value>Haftalık rezervasyon: '{0}' {1:dd.MM HH:mm} {2} otomatik onaylandı.</value>

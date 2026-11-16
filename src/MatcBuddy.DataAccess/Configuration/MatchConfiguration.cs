@@ -54,6 +54,11 @@ namespace MatcBuddy.DataAccess.Configuration
             builder.Property(x => x.ShareCode).HasMaxLength(12);
             builder.HasIndex(x => x.ShareCode).IsUnique().HasFilter("[ShareCode] IS NOT NULL");
             builder.Property(x => x.Visibility).HasDefaultValue(MatchVisibility.Public);
+            // İşletme tahsilat / gelmedi işaretleri (finans) ve iptal izleri
+            builder.Property(x => x.IsPaid).HasDefaultValue(false);
+            builder.Property(x => x.NoShow).HasDefaultValue(false);
+            builder.Property(x => x.CancelledAt).HasColumnType("datetime");
+            builder.Property(x => x.LateCancelledAt).HasColumnType("datetime");
 
             builder.HasOne<Pitch>().WithMany().HasForeignKey(x => x.PitchId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne<Team>().WithMany().HasForeignKey(x => x.HomeTeamId).OnDelete(DeleteBehavior.NoAction);

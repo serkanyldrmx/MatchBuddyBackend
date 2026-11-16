@@ -313,10 +313,12 @@ Her istek, `stadiumId` ya da dolaylı tesis sahibi `OwnerPlayerId == ben` kontro
 | Metot | Yol | Gövde / Query | Dönüş |
 |---|---|---|---|
 | GET | MyVenues | | `[{ stadiumId, name, coverPhotoUrl, pitchCount, isVisible, missing: ["photo","pitch",...] }]` + üyelik bilgisi: tüm dönüş `{ membershipUntil, membershipActive, venues:[...] }` |
-| GET | Dashboard | `?stadiumId=` | `{ todayCount, weekCount, pendingCount, occupancyPercent (bu hafta açık saatlerin dolu oranı), weekRevenue (onaylı maçların TotalPrice toplamı), rating, reviewCount, upcoming: [ReservationDto, ilk 5], pending: [ReservationDto] }` |
+| GET | Dashboard | `?stadiumId=` | `{ todayCount, weekCount, pendingCount, occupancyPercent (bu hafta açık saatlerin dolu oranı), weekRevenue (onaylı, "gelmedi" olmayan maçların TotalPrice + harici rezervasyonların Price toplamı; today/week sayıları ve doluluk da harici rezervasyonları içerir), rating, reviewCount, upcoming: [ReservationDto, ilk 5], pending: [ReservationDto] }` |
 | GET | Reservations | `?stadiumId=&status=&from=&to=` | `ReservationDto[]` |
-| POST | RespondReservation | `{ matchId, approve, reason? }` | Sadece IsActive 1 iken. Onay → 2, red → 3 + RejectReason. Kurucu ve Going oyunculara MatchApproval/MatchRejection bildirimi (mevcut tipler 2/3) |
-| GET | Calendar | `?stadiumId=&from=&to=` | `{ pitches:[{pitchId,name}], openingHours:[...7], items:[{ kind:"match", matchId, pitchId, start, end, status(1/2/3), title, creator, goingCount, capacity, totalPrice } \| { kind:"block", slotBlockId, pitchId, start, end, reason }] }` |
+| POST | RespondReservation | `{ matchId, approve, reason? }` | Sadece IsActive 1 iken. Onay → 2, red → 3 + RejectReason. Kurucu ve Going oyunculara MatchApproval/MatchRejection bildirimi (mevcut tipler 2/3). Başlangıcı geçmiş talep onaylanamaz (400 `RESERVATION_START_PASSED`) |
+| POST | CancelReservation | `{ matchId, reason }` | Onaylı ve başlamamış rezervasyonu iptal: 3 + RejectReason + `cancelledAt`. Sebep zorunlu (≤200). Kurucu, Going ve yedeklere MatchRejection bildirimi. Haftalık seride yalnızca o hafta iptal olur |
+| POST | ReservationPayment | `{ matchId, isPaid?, noShow? }` | Onaylı uygulama rezervasyonunun tahsilat / gelmedi işareti (null alan değişmez). Gelmedi yalnızca başlangıçtan sonra |
+| GET | Calendar | `?stadiumId=&from=&to=&includeSeries=` | `{ pitches:[{pitchId,name}], openingHours:[...7], items:[{ kind:"match", matchId, pitchId, start, end, status(1/2/3), title, creator, goingCount, capacity, totalPrice } \| { kind:"block", slotBlockId, pitchId, start, end, reason } \| { kind:"series", seriesId, pitchId, start, end, status, title, creator } (yalnızca includeSeries=true: abone takımın henüz oluşmamış haftaları)] }` |
 | POST | Venue/Update | `{ stadiumId, name, description, phone, address, city, district, location, cancellationPolicy, cleatRental, cleatRentalPrice, hasCamera, cameraPrice, hasShower, hasLockerRoom, hasParking, hasCafe, hasShuttle, providesBibs, providesBall }` | Location "lat, lon" doğrulanır. Address boş olamaz |
 | POST | Photos/Upload | multipart `stadiumId`, `file` (jpg/png ≤5MB, magic byte kontrolü) | `{ photoId, url }`. İlk foto otomatik kapak olur |
 | POST | Photos/Delete | `{ photoId }` | Son fotoğraf silinemez (400) |
@@ -340,7 +342,8 @@ Her istek, `stadiumId` ya da dolaylı tesis sahibi `OwnerPlayerId == ben` kontro
   "homeTeam": { "teamId": 5, "teamName": "..." } | null, "awayTeam": { ... } | null,
   "cleatCount": 2, "cameraRequested": true,
   "pitchPrice": 1800, "extrasPrice": 300, "totalPrice": 2100,
-  "createdAt": "...", "rejectReason": null }
+  "createdAt": "...", "rejectReason": null,
+  "isPaid": false, "noShow": false, "cancelledAt": null, "lateCancelledAt": null }
 ```
 İşletme, kurucunun telefonunu görebilir (iletişim için).
 
@@ -451,9 +454,9 @@ Kategoriler (sabit liste, frontend de kullanır): `Personel`, `Kira`, `Elektrik`
 Yazma kuralları diğer işletme uç noktalarıyla aynıdır: tesis sahipliği kontrolü, üyelik aktif değilse 403.
 
 ## 3. Gelir hesabı (otomatik)
-- **Uygulama maçı geliri:** IsActive = 2 (onaylı), PitchId dolu ve **bitmiş** (start + DurationMinutes ≤ şimdi) maçların `TotalPrice` toplamı.
+- **Uygulama maçı geliri:** IsActive = 2 (onaylı), PitchId dolu, **bitmiş** (start + DurationMinutes ≤ şimdi) ve işletmenin `IsPaid` işaretlediği maçların `TotalPrice` toplamı (`POST Owner/ReservationPayment`). `NoShow` (gelmedi) maçlar hiçbir toplama girmez.
 - **Harici rezervasyon geliri:** Kind = 1, bitmiş ve `IsPaid = true` olan blokların `Price` toplamı.
-- **Tahsil edilmemiş:** Kind = 1, bitmiş ve `IsPaid = false` olan blokların toplamı.
+- **Tahsil edilmemiş:** bitmiş ve `IsPaid = false` olan maçlar ile Kind = 1 blokların toplamı.
 - **Beklenen gelir:** Henüz oynanmamış onaylı maçlar ile harici rezervasyonların toplamı.
 - Gelir, maçın başlangıç tarihinin ayına yazılır.
 
@@ -480,6 +483,11 @@ Yazma kuralları diğer işletme uç noktalarıyla aynıdır: tesis sahipliği k
                      "amount": 2100, "isPaid": true, "refId": 123 }] }    // seçili ayın tüm hareketleri, tarihe göre azalan
 ```
 `hoursSold`: bitmiş onaylı maçlar ve bitmiş harici rezervasyonların toplam süresi (saat).
+
+## 4b. Rezervasyon süreleri ve abonelik koruması
+- **Bekleyen talep süresi:** `booking.pendingExpiryHours` (varsayılan 24) saatten uzun bekleyen ya da başlangıcı gelmiş talepler arka planda (MatchReminderService) sebebiyle reddedilir; kurucu ve kadro MatchRejection bildirimi alır.
+- **Haftalık seri (abone):** aktif serinin `NextDate`'ten itibaren henüz oluşmamış haftaları, son maçının süresiyle dolu sayılır (Availability, SaveMatch, SlotDeal, harici rezervasyon). Kapatma bloğu (bakım) yazılabilir; o hafta seri atlanır, kurucu ve işletme bilgilendirilir.
+- **Geç iptal:** kurucu onaylı rezervasyonu tesisin ücretsiz iptal süresi (`VenueSettings.FreeCancellationHours`) içinde silerse ya da maçtan çekilirse işletmeye bildirim gider; çekilmede `Matchs.LateCancelledAt` dolar. Oyunculara gösterilen iptal koşulu bu süreden üretilir.
 
 ## 5. Takım kadrosu düzeltmesi (SaveMatch ve ClaimOpponent)
 Eski davranış: takım üyelerine sadece davet gidiyordu ve kadroda görünmüyorlardı. Yeni davranış:

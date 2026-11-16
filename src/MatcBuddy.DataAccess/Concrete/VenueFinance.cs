@@ -8,16 +8,18 @@ namespace MatcBuddy.DataAccess.Concrete
     /// kayıtlar ve "şimdi" üzerinden hesaplar (birim testi kolay olsun diye VenuePricing gibi ayrı tutuldu).
     ///
     /// Kurallar:
-    /// - Uygulama maçı geliri: onaylı (IsActive 2), PitchId dolu ve bitmiş (start + süre ≤ şimdi) maçların TotalPrice'ı.
+    /// - Uygulama maçı geliri: onaylı (IsActive 2), PitchId dolu, bitmiş (start + süre ≤ şimdi) ve işletmenin
+    ///   "ödendi" işaretlediği (IsPaid) maçların TotalPrice'ı. "Gelmedi" (NoShow) maçlar hiçbir toplama girmez.
     /// - Harici rezervasyon geliri: Kind 1, bitmiş ve ödenmiş blokların Price'ı.
-    /// - Tahsil edilmemiş (receivable): Kind 1, bitmiş ve ödenmemiş blokların Price'ı (seçili ay).
+    /// - Tahsil edilmemiş (receivable): bitmiş ve ödenmemiş maç + Kind 1 blokların tutarı (seçili ay).
     /// - Beklenen gelir: seçili ayda henüz bitmemiş onaylı maçlar + bitmemiş harici rezervasyonlar.
     /// - Gelir, başlangıç tarihinin ayına (ve gününe) yazılır. Giderler kendi tarihine.
     /// Çağıran sadece onaylı ve PitchId dolu maçları, sadece Kind 1 blokları verir.
     /// </summary>
     public static class VenueFinance
     {
-        public sealed record FinanceMatch(int MatchId, int PitchId, string? Title, DateTime Start, int DurationMinutes, decimal Total)
+        public sealed record FinanceMatch(int MatchId, int PitchId, string? Title, DateTime Start, int DurationMinutes, decimal Total,
+            bool IsPaid = false, bool NoShow = false)
         {
             public DateTime End => Start.AddMinutes(DurationMinutes <= 0 ? 60 : DurationMinutes);
         }
@@ -37,7 +39,7 @@ namespace MatcBuddy.DataAccess.Concrete
         public static (decimal Matches, decimal Manual, decimal Expenses) MonthTotals(DateTime monthStart, DateTime now,
             IEnumerable<FinanceMatch> matches, IEnumerable<FinanceBooking> bookings, IEnumerable<FinanceExpense> expenses)
         {
-            var m = matches.Where(x => InMonth(x.Start, monthStart) && x.End <= now).Sum(x => x.Total);
+            var m = matches.Where(x => !x.NoShow && x.IsPaid && InMonth(x.Start, monthStart) && x.End <= now).Sum(x => x.Total);
             var b = bookings.Where(x => InMonth(x.Start, monthStart) && x.End <= now && x.IsPaid).Sum(x => x.Price);
             var e = expenses.Where(x => InMonth(x.Date.Date, monthStart)).Sum(x => x.Amount);
             return (m, b, e);
@@ -59,15 +61,17 @@ namespace MatcBuddy.DataAccess.Concrete
             var end = start.AddMonths(1);
             var pitchNames = pitches.GroupBy(p => p.PitchId).ToDictionary(g => g.Key, g => g.First().Name);
 
-            var monthMatches = matches.Where(x => InMonth(x.Start, start)).ToList();
+            // "Gelmedi" işaretli maçlar gelir / beklenen / sayım dışında
+            var monthMatches = matches.Where(x => !x.NoShow && InMonth(x.Start, start)).ToList();
             var monthBookings = bookings.Where(x => InMonth(x.Start, start)).ToList();
             var monthExpenses = expenses.Where(x => InMonth(x.Date.Date, start)).ToList();
 
             var doneMatches = monthMatches.Where(x => x.End <= now).ToList();
             var doneBookings = monthBookings.Where(x => x.End <= now).ToList();
             var paidBookings = doneBookings.Where(x => x.IsPaid).ToList();
+            var paidMatches = doneMatches.Where(x => x.IsPaid).ToList();
 
-            var incomeMatches = doneMatches.Sum(x => x.Total);
+            var incomeMatches = paidMatches.Sum(x => x.Total);
             var incomeManual = paidBookings.Sum(x => x.Price);
             var incomeTotal = incomeMatches + incomeManual;
             var expenseTotal = monthExpenses.Sum(x => x.Amount);
@@ -81,7 +85,7 @@ namespace MatcBuddy.DataAccess.Concrete
                 Year = year,
                 Month = month,
                 Income = new FinanceIncomeDto { Matches = incomeMatches, Manual = incomeManual, Total = incomeTotal },
-                Receivable = doneBookings.Where(x => !x.IsPaid).Sum(x => x.Price),
+                Receivable = doneBookings.Where(x => !x.IsPaid).Sum(x => x.Price) + doneMatches.Where(x => !x.IsPaid).Sum(x => x.Total),
                 ExpectedIncome = monthMatches.Where(x => x.End > now).Sum(x => x.Total)
                                  + monthBookings.Where(x => x.End > now).Sum(x => x.Price),
                 Expenses = expenseTotal,
@@ -108,7 +112,7 @@ namespace MatcBuddy.DataAccess.Concrete
                 dto.Daily.Add(new FinanceDailyDto
                 {
                     Date = d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    Income = doneMatches.Where(x => x.Start >= d && x.Start < next).Sum(x => x.Total)
+                    Income = paidMatches.Where(x => x.Start >= d && x.Start < next).Sum(x => x.Total)
                              + paidBookings.Where(x => x.Start >= d && x.Start < next).Sum(x => x.Price),
                     Expense = monthExpenses.Where(x => x.Date.Date == d).Sum(x => x.Amount),
                 });
@@ -122,7 +126,7 @@ namespace MatcBuddy.DataAccess.Concrete
                 {
                     PitchId = id,
                     Name = pitchNames.TryGetValue(id, out var n) ? n : null,
-                    Income = doneMatches.Where(x => x.PitchId == id).Sum(x => x.Total) + paidBookings.Where(x => x.PitchId == id).Sum(x => x.Price),
+                    Income = paidMatches.Where(x => x.PitchId == id).Sum(x => x.Total) + paidBookings.Where(x => x.PitchId == id).Sum(x => x.Price),
                     Hours = Math.Round(doneMatches.Where(x => x.PitchId == id).Sum(x => (x.End - x.Start).TotalHours)
                                        + doneBookings.Where(x => x.PitchId == id).Sum(x => (x.End - x.Start).TotalHours), 2),
                 })
@@ -155,7 +159,7 @@ namespace MatcBuddy.DataAccess.Concrete
                 });
             }
 
-            // Seçili ayın tüm hareketleri: onaylı maçlar, harici rezervasyonlar (ödenmiş/ödenmemiş, bitmiş/gelecek), giderler
+            // Seçili ayın tüm hareketleri: onaylı maçlar (gelmedi hariç), harici rezervasyonlar (ödenmiş/ödenmemiş, bitmiş/gelecek), giderler
             var tx = new List<FinanceTransactionDto>();
             tx.AddRange(monthMatches.Select(x => new FinanceTransactionDto
             {
@@ -165,7 +169,7 @@ namespace MatcBuddy.DataAccess.Concrete
                 Title = x.Title,
                 PitchName = pitchNames.TryGetValue(x.PitchId, out var n) ? n : null,
                 Amount = x.Total,
-                IsPaid = x.End <= now, // uygulama maçı oynandığında tesiste tahsil edilmiş sayılır
+                IsPaid = x.IsPaid, // işletme "ödendi" işaretler (Owner/ReservationPayment)
                 RefId = x.MatchId,
             }));
             tx.AddRange(monthBookings.Select(x => new FinanceTransactionDto

@@ -46,6 +46,13 @@ namespace MatcBuddy.Entities.Entity
         public string? ShareCode { get; set; }
         // Görünürlük (MatchVisibility): 0 herkese açık, 1 sadece davet / link. Kapalı maçlar başkalarının akışında görünmez.
         public byte Visibility { get; set; } = MatchVisibility.Public;
+        // İşletme: uygulama rezervasyonunun ücreti tesiste tahsil edildi mi / ekip gelmedi mi (finans buna göre sayar)
+        public bool IsPaid { get; set; }
+        public bool NoShow { get; set; }
+        // İşletme onaylı rezervasyonu iptal ettiyse (IsActive 3 + RejectReason) zamanı; null = normal red / iptal yok
+        public DateTime? CancelledAt { get; set; }
+        // Kurucu ücretsiz iptal süresi (VenueSettings.FreeCancellationHours) içinde maçtan çekildiyse zamanı ("geç iptal")
+        public DateTime? LateCancelledAt { get; set; }
         public List<MatchTeam> MatchTeams { get; set; }
         public List<MatchComment> MatchComments { get; set; }
     }
