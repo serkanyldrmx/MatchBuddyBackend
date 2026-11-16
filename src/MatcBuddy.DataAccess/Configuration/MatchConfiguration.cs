@@ -53,6 +53,7 @@ namespace MatcBuddy.DataAccess.Configuration
             builder.HasIndex(x => x.SeriesId);
             builder.Property(x => x.ShareCode).HasMaxLength(12);
             builder.HasIndex(x => x.ShareCode).IsUnique().HasFilter("[ShareCode] IS NOT NULL");
+            builder.Property(x => x.Visibility).HasDefaultValue(MatchVisibility.Public);
 
             builder.HasOne<Pitch>().WithMany().HasForeignKey(x => x.PitchId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne<Team>().WithMany().HasForeignKey(x => x.HomeTeamId).OnDelete(DeleteBehavior.NoAction);

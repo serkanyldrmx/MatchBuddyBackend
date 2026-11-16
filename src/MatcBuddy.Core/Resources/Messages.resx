@@ -370,6 +370,12 @@
   <data name="MATCH_PAST_JOIN_CLOSED" xml:space="preserve">
     <value>Maç tarihi geçti, katılım kapalı.</value>
   </data>
+  <data name="MATCH_INVITE_ONLY" xml:space="preserve">
+    <value>Bu maç sadece davetle katılıma açık. Kurucudan davet ya da maç linki iste.</value>
+  </data>
+  <data name="MATCH_INVALID_VISIBILITY" xml:space="preserve">
+    <value>Geçersiz maç görünürlüğü.</value>
+  </data>
   <data name="MATCH_PAST_ROSTER_LOCKED" xml:space="preserve">
     <value>Maç tarihi geçti, kadro değiştirilemez.</value>
   </data>

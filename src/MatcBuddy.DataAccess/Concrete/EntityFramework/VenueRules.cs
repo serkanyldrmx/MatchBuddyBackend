@@ -249,6 +249,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 dto.CameraRequested = m.CameraRequested;
                 dto.LookingForOpponent = m.LookingForOpponent;
                 dto.RejectReason = m.RejectReason;
+                dto.Visibility = m.Visibility;
                 dto.HomeTeam = m.HomeTeamId.HasValue && Teams.TryGetValue(m.HomeTeamId.Value, out var ht)
                     ? new TeamRefDto { TeamId = m.HomeTeamId.Value, TeamName = ht } : null;
                 dto.AwayTeam = m.AwayTeamId.HasValue && Teams.TryGetValue(m.AwayTeamId.Value, out var at)

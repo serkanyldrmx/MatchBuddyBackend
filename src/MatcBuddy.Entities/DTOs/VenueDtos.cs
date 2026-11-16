@@ -223,6 +223,8 @@ namespace MatcBuddy.Entities.DTOs
         public int? MinReliability { get; set; }
         /// <summary>Her hafta aynı gün ve saatte tekrar et (docs/venue-growth-api.md).</summary>
         public bool RepeatWeekly { get; set; }
+        /// <summary>MatchVisibility: 0 herkese açık (varsayılan), 1 sadece davet / link.</summary>
+        public byte? Visibility { get; set; }
     }
 
     /// <summary>
@@ -250,6 +252,8 @@ namespace MatcBuddy.Entities.DTOs
         public int? AwayTeamId { get; set; }
         public bool LookingForOpponent { get; set; }
         public int? MinReliability { get; set; }
+        /// <summary>MatchVisibility: 0 herkese açık (varsayılan), 1 sadece davet / link.</summary>
+        public byte? Visibility { get; set; }
     }
 
     /// <summary>Oyuncunun daha önce eklediği harici saha (tekrar seçebilsin diye).</summary>

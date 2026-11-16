@@ -167,6 +167,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 HomeTeamId = template.HomeTeamId,
                 AwayTeamId = template.AwayTeamId,
                 MinReliability = template.MinReliability,
+                Visibility = template.Visibility,
                 CreatedByPlayerId = series.CreatedByPlayerId,
                 SeriesId = series.SeriesId,
                 CreatedAt = DateTime.Now,

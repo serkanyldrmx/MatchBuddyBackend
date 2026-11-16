@@ -515,7 +515,9 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 Confirmed = true,
                 JoinedAt = DateTime.Now,
             });
-            AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
+            // Sadece davetle açık maç takipçilerin akışına "maç kurdu" olarak düşmez
+            if (match.Visibility != MatchVisibility.InviteOnly)
+                AddActivity(context, ActivityType.MatchCreated, creatorId, matchId: match.MatchId);
 
             if (home != null)
             {
@@ -590,6 +592,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 AwayTeamId = away?.TeamId,
                 LookingForOpponent = input.LookingForOpponent,
                 MinReliability = input.MinReliability is > 0 and <= 100 ? input.MinReliability : null,
+                Visibility = input.Visibility == MatchVisibility.InviteOnly ? MatchVisibility.InviteOnly : MatchVisibility.Public,
                 CreatedByPlayerId = creatorId,
                 CreatedAt = DateTime.Now,
             };

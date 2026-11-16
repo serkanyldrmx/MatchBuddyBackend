@@ -93,6 +93,7 @@ namespace MatcBuddy.DataAccess.Concrete.EntityFramework
                 AwayTeamId = away?.TeamId,
                 LookingForOpponent = input.LookingForOpponent,
                 MinReliability = input.MinReliability is > 0 and <= 100 ? input.MinReliability : null,
+                Visibility = input.Visibility == MatchVisibility.InviteOnly ? MatchVisibility.InviteOnly : MatchVisibility.Public,
                 CreatedByPlayerId = creatorId,
                 CreatedAt = DateTime.Now,
             };

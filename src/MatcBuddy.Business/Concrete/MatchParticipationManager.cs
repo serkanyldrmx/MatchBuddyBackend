@@ -21,8 +21,8 @@ namespace MatcBuddy.Business.Concrete
         public OperationResult<bool> CheckCanManage(int matchId, int playerId, bool isAdmin) =>
             _participationDal.CheckCanManage(matchId, playerId, isAdmin);
 
-        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null) =>
-            _participationDal.Join(matchId, playerId, side, slot);
+        public OperationResult<byte> Join(int matchId, int playerId, byte? side = null, int? slot = null, bool viaInviteLink = false) =>
+            _participationDal.Join(matchId, playerId, side, slot, viaInviteLink);
 
         public OperationResult<LeaveResultDto> Leave(int matchId, int playerId, string? reasonCode = null, string? note = null)
         {
