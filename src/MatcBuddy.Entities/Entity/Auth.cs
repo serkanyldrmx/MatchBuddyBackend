@@ -94,5 +94,6 @@ namespace MatcBuddy.Entities.Entity
         public const string PasswordChanged = "password_changed";
         public const string PasswordReset = "password_reset";
         public const string AccountDeleted = "account_deleted";
+        public const string Banned = "banned";
     }
 }

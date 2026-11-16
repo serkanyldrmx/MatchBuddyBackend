@@ -2085,6 +2085,33 @@
   <data name="MSG_BIZAPP_RECEIVED" xml:space="preserve">
     <value>Başvurunuz alındı. En kısa sürede sizi arayacağız.</value>
   </data>
+  <data name="AUTH_ACCOUNT_BANNED" xml:space="preserve">
+    <value>Hesabınız yönetici tarafından engellendi. Bir yanlışlık olduğunu düşünüyorsanız iletişim formundan bize yazın.</value>
+  </data>
+  <data name="AUTH_ACCOUNT_BANNED_UNTIL" xml:space="preserve">
+    <value>Hesabınız {0} tarihine kadar engellendi. Bir yanlışlık olduğunu düşünüyorsanız iletişim formundan bize yazın.</value>
+  </data>
+  <data name="MOD_CANNOT_BAN_SELF" xml:space="preserve">
+    <value>Kendi hesabınızı engelleyemezsiniz.</value>
+  </data>
+  <data name="MOD_CANNOT_BAN_ADMIN" xml:space="preserve">
+    <value>Yönetici hesapları engellenemez.</value>
+  </data>
+  <data name="MOD_BAN_UNTIL_PAST" xml:space="preserve">
+    <value>Engel bitiş tarihi ileri bir tarih olmalıdır.</value>
+  </data>
+  <data name="CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>Mesaj bulunamadı.</value>
+  </data>
+  <data name="MSG_MOD_USER_BANNED" xml:space="preserve">
+    <value>Kullanıcı engellendi; açık oturumları kapatıldı.</value>
+  </data>
+  <data name="MSG_MOD_USER_UNBANNED" xml:space="preserve">
+    <value>Kullanıcının engeli kaldırıldı.</value>
+  </data>
+  <data name="MSG_CONTACT_RECEIVED" xml:space="preserve">
+    <value>Mesajınız alındı. En kısa sürede size dönüş yapacağız.</value>
+  </data>
   <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>Şablon bulunamadı.</value>
   </data>

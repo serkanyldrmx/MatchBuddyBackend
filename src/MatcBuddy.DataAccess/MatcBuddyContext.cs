@@ -74,6 +74,7 @@ namespace MatcBuddy.DataAccess
         public DbSet<ReliabilityEvent> ReliabilityEvents { get; set; }
         public DbSet<PushSubscription> PushSubscriptions { get; set; }
         public DbSet<MatchSeries> MatchSeries { get; set; }
+        public DbSet<ContactMessage> ContactMessages { get; set; }
 
     }
 }

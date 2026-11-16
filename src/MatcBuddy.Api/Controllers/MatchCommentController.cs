@@ -67,13 +67,6 @@ namespace MatcBuddy.Api.Controllers
             return this.ToHttp(result);
         }
 
-        [Authorize(Roles = Roles.Admin)]
-        [HttpGet("GetMatchCommentList")]
-        public List<MatchComment> GetMatchCommentList()
-        {
-            return _matchCommentsService.GetAll().Data;
-        }
-
         [HttpGet("GetMatchComments")]
         public List<MatchComentsDto> GetMatchComments([FromQuery] int matchId)
         {

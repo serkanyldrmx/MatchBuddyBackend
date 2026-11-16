@@ -22,10 +22,12 @@ namespace MatcBuddy.Api.Controllers
         private readonly IMediaService _mediaService;
 
         private readonly MatcBuddy.Business.Auth.IAuthService _auth;
+        private readonly IModerationService _moderation;
 
         public AdminController(ISocialService socialService, IVenueService venueService, OsmService osmService, IMediaService mediaService,
-            MatcBuddy.Business.Auth.IAuthService auth)
+            MatcBuddy.Business.Auth.IAuthService auth, IModerationService moderation)
         {
+            _moderation = moderation;
             _auth = auth;
             _mediaService = mediaService;
             _socialService = socialService;
@@ -40,11 +42,37 @@ namespace MatcBuddy.Api.Controllers
             return _socialService.GetReports(status);
         }
 
+        /// <summary>
+        /// Şikayeti sonuçlandır: { reportId, note?, action? (0 yok, 1 uyarı, 2 engel), banUntil?, banReason? }.
+        /// Eski gövde { reportId } de geçerlidir. Engelde kullanıcının tüm oturumları kapatılır.
+        /// </summary>
         [HttpPost("ResolveReport")]
-        public IActionResult ResolveReport(ReportIdModel model)
+        public IActionResult ResolveReport(ResolveReportInput model)
         {
-            return this.ToHttp(_socialService.ResolveReport(model.ReportId));
+            var result = _moderation.ResolveReport(User.GetPlayerId(), model);
+            if (result.Success && result.Data is int bannedId) _auth.RevokeAllSessions(bannedId, RevokeReasons.Banned);
+            return result.Success ? Ok(new { Success = true, result.Message, BannedPlayerId = result.Data }) : this.ToHttp(result);
         }
+
+        // ------------------------------------------------------------------ Kullanıcılar
+
+        /// <summary>Kullanıcı ara (ad, soyad, kullanıcı adı, e-posta). Silinmiş hesaplar dönmez. Yanıt: { items, total, page, pageSize }.</summary>
+        [HttpGet("Users")]
+        public ActionResult<PagedDto<AdminUserDto>> Users([FromQuery] string? q, [FromQuery] bool banned = false,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20) =>
+            _moderation.SearchUsers(q, banned, page, pageSize);
+
+        /// <summary>Kullanıcıyı engelle: { playerId, until? (UTC, boş = süresiz), reason? }. Açık oturumları kapatılır.</summary>
+        [HttpPost("BanUser")]
+        public IActionResult BanUser(BanUserInput model)
+        {
+            var result = _moderation.Ban(User.GetPlayerId(), model);
+            if (result.Success) _auth.RevokeAllSessions(model.PlayerId, RevokeReasons.Banned);
+            return this.ToHttp(result);
+        }
+
+        [HttpPost("UnbanUser")]
+        public IActionResult UnbanUser(UnbanUserInput model) => this.ToHttp(_moderation.Unban(model.PlayerId));
 
         // ------------------------------------------------------------------ Harici saha satış listesi (docs/engagement-api.md §4)
 

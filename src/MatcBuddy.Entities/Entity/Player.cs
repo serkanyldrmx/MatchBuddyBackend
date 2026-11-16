@@ -46,6 +46,15 @@ namespace MatcBuddy.Entities.Entity
         // Güvenilirlik puanı önbelleği (0–100, yeni oyuncu 100). Kaynak: ReliabilityEvents — docs/reliability-api.md
         public int ReliabilityScore { get; set; } = 100;
         public DateTime? MarketingConsentAt { get; set; }
+
+        // ---- Yönetici engeli (Admin → Kullanıcılar). BannedUntil UTC; null = süresiz.
+        // Engelli kullanıcı giriş yapamaz, oturumu yenilenemez; engel anında tüm oturumları kapatılır.
+        public bool IsBanned { get; set; }
+        public DateTime? BannedUntil { get; set; }
+        public string? BanReason { get; set; }
+
+        /// <summary>Engel şu an geçerli mi (süreli engelin bitiş zamanı geçtiyse false).</summary>
+        public bool IsBanActive(DateTime utcNow) => IsBanned && (BannedUntil == null || BannedUntil.Value > utcNow);
         public List<MatchComment> MatchComments { get; set; }
         public List<PlayerTeam> PlayerTeams { get; set; }
         public List<GroupPlayer> GroupPlayers { get; set; }
