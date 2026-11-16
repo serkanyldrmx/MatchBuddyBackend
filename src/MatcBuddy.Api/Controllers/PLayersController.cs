@@ -282,6 +282,7 @@ namespace MatcBuddy.Api.Controllers
                 _logger.LogWarning("Başarısız giriş denemesi: {UserName}", loginModel.UserName);
                 return this.UnauthorizedError(ErrorCodes.Auth.InvalidCredentials);
             }
+            if (MatcBuddy.Business.Auth.AuthManager.BanError(result.Data, DateTime.UtcNow) is { } ban) return this.Error(ban);
 
             // ESKİ uç nokta (geriye uyumluluk): /api/Auth/Login ile aynı; access token eski süreyle
             // (auth.legacyAccessTokenMinutes, varsayılan 120 dk), refresh çerezi de yazılır. docs/auth-api.md.

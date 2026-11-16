@@ -634,6 +634,33 @@
   <data name="MSG_BIZAPP_RECEIVED" xml:space="preserve">
     <value>Your application has been received. We will call you shortly.</value>
   </data>
+  <data name="AUTH_ACCOUNT_BANNED" xml:space="preserve">
+    <value>Your account has been blocked by an administrator. If you think this is a mistake, write to us using the contact form.</value>
+  </data>
+  <data name="AUTH_ACCOUNT_BANNED_UNTIL" xml:space="preserve">
+    <value>Your account is blocked until {0}. If you think this is a mistake, write to us using the contact form.</value>
+  </data>
+  <data name="MOD_CANNOT_BAN_SELF" xml:space="preserve">
+    <value>You cannot block your own account.</value>
+  </data>
+  <data name="MOD_CANNOT_BAN_ADMIN" xml:space="preserve">
+    <value>Administrator accounts cannot be blocked.</value>
+  </data>
+  <data name="MOD_BAN_UNTIL_PAST" xml:space="preserve">
+    <value>The block end date must be in the future.</value>
+  </data>
+  <data name="CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>Message not found.</value>
+  </data>
+  <data name="MSG_MOD_USER_BANNED" xml:space="preserve">
+    <value>User blocked; their open sessions were closed.</value>
+  </data>
+  <data name="MSG_MOD_USER_UNBANNED" xml:space="preserve">
+    <value>User unblocked.</value>
+  </data>
+  <data name="MSG_CONTACT_RECEIVED" xml:space="preserve">
+    <value>Your message has been received. We will get back to you soon.</value>
+  </data>
   <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
     <value>Template not found.</value>
   </data>

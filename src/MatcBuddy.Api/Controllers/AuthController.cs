@@ -63,6 +63,8 @@ namespace MatcBuddy.Api.Controllers
                 _logger.LogWarning("Başarısız giriş denemesi: {UserName}", model.UserName);
                 return this.UnauthorizedError(ErrorCodes.Auth.InvalidCredentials);
             }
+            // Engelli hesap: 403 AUTH_ACCOUNT_BANNED / AUTH_ACCOUNT_BANNED_UNTIL
+            if (AuthManager.BanError(result.Data, DateTime.UtcNow) is { } ban) return this.Error(ban);
             return _issuer.SignIn(HttpContext, result.Data, model.RememberMe);
         }
 
@@ -111,6 +113,7 @@ namespace MatcBuddy.Api.Controllers
             var remember = _auth.IsPersistent(_cookie.Read(HttpContext)) ?? true;
             var result = _auth.ChangePassword(User.GetPlayerId(), model.CurrentPassword, model.NewPassword);
             if (!result.Success || result.Data == null) return this.ToHttp(result);
+            if (AuthManager.BanError(result.Data, DateTime.UtcNow) is { } ban) return this.Error(ban);
             return _issuer.SignIn(HttpContext, result.Data, remember);
         }
 
@@ -145,6 +148,7 @@ namespace MatcBuddy.Api.Controllers
             if (!result.Success || result.Data == null) return AuthError(result);
 
             var player = result.Data.Player;
+            if (AuthManager.BanError(player, DateTime.UtcNow) is { } ban) return this.Error(ban);
             if (result.Data.IsNew && !string.IsNullOrEmpty(result.Data.Identity.PictureUrl))
             {
                 var url = await _avatars.ImportAsync(player.PlayerId, result.Data.Identity.PictureUrl, ct);

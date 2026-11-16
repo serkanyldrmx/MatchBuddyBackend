@@ -153,6 +153,17 @@ namespace MatcBuddy.Entities.DTOs
         public PlayerSummaryDto Reporter { get; set; } = null!;
         public PlayerSummaryDto Reported { get; set; } = null!;
         public int ReportedCount { get; set; }
+
+        /// <summary>Şikayet edilen kullanıcı şu an engelli mi (süreli engel bitmişse false)</summary>
+        public bool ReportedIsBanned { get; set; }
+        public DateTime? ReportedBannedUntil { get; set; }
+
+        // Sonuçlandırma (Status = 1)
+        public DateTime? ResolvedAt { get; set; }
+        public PlayerSummaryDto? ResolvedBy { get; set; }
+        public string? ResolutionNote { get; set; }
+        /// <summary>0 işlem yok, 1 uyarı, 2 engel</summary>
+        public byte ResolutionAction { get; set; }
     }
 
     // ---- Davetler ----

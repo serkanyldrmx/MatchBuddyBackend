@@ -69,6 +69,9 @@ namespace MatcBuddy.DataAccess.Configuration
             builder.Property(b => b.TermsVersion).HasMaxLength(20);
             builder.Property(b => b.ReliabilityScore).HasDefaultValue(100);
 
+            // Yönetici engeli (IsBanned: bool, varsayılan false)
+            builder.Property(b => b.BanReason).HasMaxLength(500);
+
         }
     }
 }

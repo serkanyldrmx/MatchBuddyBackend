@@ -29,6 +29,8 @@ namespace MatcBuddy.Business.Auth
             return Build(p, email, MessageKeys.Auth.MailPasswordChangedSubject, body, null, null, null, false);
         }
 
+        public static DateTime ToTurkeyTime(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, TurkeyTime);
+
         private static TimeZoneInfo TurkeyTime
         {
             get

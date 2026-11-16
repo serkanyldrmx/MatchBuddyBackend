@@ -30,8 +30,8 @@ Base URL: `/api/Auth`. Hata gövdesi ve kodlar için bkz. `platform-api.md` §1.
 
 | Yöntem | Yol | Yetki | Gövde | Not |
 |---|---|---|---|---|
-| POST | `Login` | anonim | `{ userName, password, rememberMe }` | 401 `AUTH_INVALID_CREDENTIALS` |
-| POST | `Refresh` | çerez | — | 401 `AUTH_REFRESH_INVALID` / `AUTH_REFRESH_REUSED` |
+| POST | `Login` | anonim | `{ userName, password, rememberMe }` | 401 `AUTH_INVALID_CREDENTIALS`; engelli hesap 403 `AUTH_ACCOUNT_BANNED` / `AUTH_ACCOUNT_BANNED_UNTIL` |
+| POST | `Refresh` | çerez | — | 401 `AUTH_REFRESH_INVALID` / `AUTH_REFRESH_REUSED`; engelli hesap 401 `AUTH_ACCOUNT_BANNED*` (tüm oturumlar kapanır) |
 | POST | `Logout` | çerez | — | Bu cihaz |
 | POST | `LogoutAll` | JWT | — | Tüm cihazlar |
 | POST | `ChangePassword` | JWT | `{ currentPassword, newPassword }` | Diğer oturumlar kapanır, bu cihaza yeni oturum |
